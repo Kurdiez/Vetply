@@ -10,7 +10,7 @@ From repo root (after `yarn` and `yarn build` so `shared` has `dist/`):
 yarn workspace @vetply/web dev
 ```
 
-Or `yarn dev` at the root (Turborepo runs server + web).
+Or `yarn dev` at the root (Turborepo runs server + web)..
 
 Default dev URL: [http://localhost:6238](http://localhost:6238).
 
