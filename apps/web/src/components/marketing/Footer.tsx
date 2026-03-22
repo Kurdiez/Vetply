@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import Link from "next/link";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -6,7 +7,7 @@ const navigation = {
   main: [
     { name: "Features", href: "#features" },
     { name: "Pricing", href: "#pricing" },
-    { name: "Log in", href: "#login" },
+    { name: "Sign in", href: "/sign-in" },
   ],
   social: [
     {
@@ -81,15 +82,25 @@ export function Footer() {
           aria-label="Footer"
           className="-mb-6 flex flex-wrap justify-center gap-x-12 gap-y-3 text-sm/6"
         >
-          {navigation.main.map((item) => (
-            <a
-              key={item.name}
-              href={item.href}
-              className="text-gray-400 hover:text-white"
-            >
-              {item.name}
-            </a>
-          ))}
+          {navigation.main.map((item) =>
+            item.href.startsWith("/") ? (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="text-gray-400 hover:text-white"
+              >
+                {item.name}
+              </Link>
+            ) : (
+              <a
+                key={item.name}
+                href={item.href}
+                className="text-gray-400 hover:text-white"
+              >
+                {item.name}
+              </a>
+            ),
+          )}
         </nav>
         <div className="mt-16 flex justify-center gap-x-10">
           {navigation.social.map((item) => {

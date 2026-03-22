@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/Button";
 import { CheckIcon } from "@heroicons/react/20/solid";
 
 const tiers = [
@@ -123,18 +124,15 @@ export function PricingSection() {
                   ))}
                 </ul>
               </div>
-              <a
+              <Button
                 href={tier.href}
                 aria-describedby={tier.id}
-                className={classNames(
-                  tier.mostPopular
-                    ? "bg-primary-500 text-white hover:bg-primary-400 focus-visible:outline-primary-500"
-                    : "bg-white/10 text-white ring-1 ring-inset ring-white/5 hover:bg-white/20 focus-visible:outline-white/75",
-                  "mt-8 block rounded-md px-3 py-2 text-center text-sm/6 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2",
-                )}
+                fullWidth
+                variant={tier.mostPopular ? "primary" : "secondary"}
+                className="mt-8"
               >
                 Start free trial
-              </a>
+              </Button>
             </div>
           ))}
         </div>

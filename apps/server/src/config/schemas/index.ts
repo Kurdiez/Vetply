@@ -17,6 +17,10 @@ export const configSchema = z
     REDIS_USERNAME: z.string().optional(),
     REDIS_PASSWORD: z.string().optional(),
     SERVER_TYPE: z.nativeEnum(ServerType).default(ServerType.API),
+    JWT_SECRET: z
+      .string()
+      .min(1)
+      .default('dev-jwt-secret-change-in-production'),
   })
   .merge(databaseConfigSchema)
   .refine(

@@ -11,7 +11,7 @@ import { useState } from "react";
 const navigation = [
   { name: "Features", href: "#features" },
   { name: "Pricing", href: "#pricing" },
-  { name: "Log in", href: "#login" },
+  { name: "Sign in", href: "/sign-in" },
 ];
 
 export function HeroSection() {
@@ -45,21 +45,31 @@ export function HeroSection() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="-m-2.5 rounded-md p-2.5 text-gray-200 lg:hidden"
+                className="-m-2.5 cursor-pointer rounded-md p-2.5 text-gray-200 lg:hidden"
               >
                 <span className="sr-only">Open main menu</span>
                 <Bars3Icon aria-hidden className="size-6" />
               </button>
               <div className="hidden lg:ml-12 lg:flex lg:gap-x-14">
-                {navigation.map((item) => (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    className="text-sm/6 font-semibold text-white"
-                  >
-                    {item.name}
-                  </a>
-                ))}
+                {navigation.map((item) =>
+                  item.href.startsWith("/") ? (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm/6 font-semibold text-white"
+                    >
+                      {item.name}
+                    </Link>
+                  ) : (
+                    <a
+                      key={item.name}
+                      href={item.href}
+                      className="text-sm/6 font-semibold text-white"
+                    >
+                      {item.name}
+                    </a>
+                  ),
+                )}
               </div>
             </nav>
           </div>
@@ -90,7 +100,7 @@ export function HeroSection() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="-m-2.5 rounded-md p-2.5 text-gray-200"
+                className="-m-2.5 cursor-pointer rounded-md p-2.5 text-gray-200"
               >
                 <span className="sr-only">Close menu</span>
                 <XMarkIcon aria-hidden className="size-6" />
@@ -99,16 +109,27 @@ export function HeroSection() {
             <div className="mt-6 flow-root">
               <div className="-my-6 divide-y divide-white/10">
                 <div className="space-y-2 py-6">
-                  {navigation.map((item) => (
-                    <a
-                      key={item.name}
-                      href={item.href}
-                      className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-white hover:bg-white/5"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {item.name}
-                    </a>
-                  ))}
+                  {navigation.map((item) =>
+                    item.href.startsWith("/") ? (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-white hover:bg-white/5"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-white hover:bg-white/5"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {item.name}
+                      </a>
+                    ),
+                  )}
                 </div>
               </div>
             </div>
