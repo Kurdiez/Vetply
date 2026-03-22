@@ -1,11 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as Sentry from '@sentry/node';
-import { json, Request } from 'express';
+import { json } from 'express';
 import { AppModule } from './app.module';
 import { ConfigModule, ConfigService } from './config';
 import { Environment } from './config/types';
-import basicAuth = require('express-basic-auth');
 
 function setupCors(app: INestApplication, configService: ConfigService) {
   const corsOrigins: (string | RegExp)[] = [configService.get('APP_URL')];
@@ -32,32 +31,6 @@ async function setupSentry() {
   });
 }
 
-function prependBullBoardAuth(
-  _app: INestApplication,
-  expressApp: unknown,
-  configService: ConfigService,
-) {
-  const env = configService.get('ENVIRONMENT');
-  const secret = configService.get('SYSTEM_SECRET');
-  const requireAuth =
-    env === Environment.Staging || env === Environment.Production;
-  if (!requireAuth || !secret) return;
-
-  const authMiddleware = basicAuth({
-    challenge: true,
-    users: { admin: secret },
-    realm: 'Bull Board',
-  });
-  const Layer = require('express/lib/router/layer') as new (
-    path: string,
-    opts: { end?: boolean },
-    fn: (req: Request, res: unknown, next: () => void) => void,
-  ) => { handle: unknown; regexp: RegExp; match: (path: string) => boolean };
-  const layer = new Layer('/jobs', { end: false }, authMiddleware);
-  const router = (expressApp as { _router?: { stack: unknown[] } })._router;
-  if (router?.stack) router.stack.unshift(layer);
-}
-
 async function setupServer(configService: ConfigService) {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn'],
@@ -65,8 +38,6 @@ async function setupServer(configService: ConfigService) {
 
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', true);
-
-  prependBullBoardAuth(app, expressApp, configService);
 
   app.use(json({ limit: '10mb' }));
 
