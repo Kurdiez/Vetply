@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { ContinueWithGoogle } from "@/components/auth/ContinueWithGoogle";
 import { Button } from "@/components/ui/Button";
 import { VETPLY_ACCESS_TOKEN_KEY } from "@/utils/vetply-api/storage";
+import { vetplyApiUnexpectedErrorToastShown } from "@/utils/vetply-api/http-client";
 import { login } from "@/utils/vetply-api/user-auth";
 import { isAxiosError } from "axios";
 
@@ -32,6 +33,9 @@ export default function SignInPage() {
       }
       if (isAxiosError(err) && err.response?.status === 400) {
         setError("Please check your email and password.");
+        return;
+      }
+      if (vetplyApiUnexpectedErrorToastShown(err)) {
         return;
       }
       setError("Something went wrong. Try again.");

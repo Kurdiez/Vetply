@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -49,8 +48,6 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<CreateAccountRes> {
-    // TEMP: remove after testing client toast on 5xx (vetplyApiClient interceptor)
-    throw new InternalServerErrorException();
     const normalized = email.toLowerCase();
     const user = await this.userRepository.findOne({
       where: { email: normalized },

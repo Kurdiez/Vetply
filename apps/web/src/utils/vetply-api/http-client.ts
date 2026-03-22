@@ -8,6 +8,27 @@ import { VETPLY_ACCESS_TOKEN_KEY } from "./storage";
 const UNEXPECTED_MESSAGE =
   "Something unexpected happened. Please try again or contact support.";
 
+export function vetplyApiUnexpectedErrorToastShown(err: unknown): boolean {
+  if (!isAxiosError(err)) {
+    return true;
+  }
+  const status = err.response?.status;
+  const data = err.response?.data;
+  if (status === 400 && data !== undefined && typeof data === "object") {
+    const parsed = createAccountBusinessErrorBodySchema.safeParse(data);
+    if (parsed.success) {
+      return false;
+    }
+  }
+  if (status !== undefined && status >= 500) {
+    return true;
+  }
+  if (err.response === undefined) {
+    return true;
+  }
+  return false;
+}
+
 function readStoredToken(): string | null {
   if (typeof window === "undefined") {
     return null;

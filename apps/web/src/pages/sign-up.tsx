@@ -7,6 +7,7 @@ import { FormEvent, useState } from "react";
 import { ContinueWithGoogle } from "@/components/auth/ContinueWithGoogle";
 import { Button } from "@/components/ui/Button";
 import { VETPLY_ACCESS_TOKEN_KEY } from "@/utils/vetply-api/storage";
+import { vetplyApiUnexpectedErrorToastShown } from "@/utils/vetply-api/http-client";
 import { createAccount } from "@/utils/vetply-api/user-auth";
 import { isVetplyBadRequestError } from "@/utils/vetply-api/vetply-bad-request-error";
 
@@ -43,6 +44,9 @@ export default function SignUpPage() {
             "This email is registered with Google. Sign in with Google instead.",
           );
         }
+        return;
+      }
+      if (vetplyApiUnexpectedErrorToastShown(err)) {
         return;
       }
       setError("Something went wrong. Try again.");
