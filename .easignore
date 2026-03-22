@@ -1,0 +1,24 @@
+node_modules
+.vscode
+.turbo
+.next
+dist
+
+.DS_Store
+.idea
+# Package files
+*.tgz
+service-account.json
+service-account-prod.json
+service-account-staging.json
+.windsurfrules
+.cursor
+*.log
+.claudeignore
+
+# Ignore all apps and packages except shared, mobile, and mobile-admin
+/apps/*
+/packages/*
+!/packages/shared
+!/apps/mobile
+!/apps/mobile-admin

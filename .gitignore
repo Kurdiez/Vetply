@@ -1,0 +1,26 @@
+node_modules
+.vscode/*
+.turbo
+.next
+dist
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.staging
+.env.production
+.env.production.local
+.DS_Store
+.idea
+# Package files
+package-lock.json
+*.tgz
+service-account.json
+service-account-prod.json
+service-account-staging.json
+.windsurfrules
+.cursor
+*.log
+apps/test-results/
+.claudeignore

@@ -1,0 +1,25 @@
+{
+  "name": "@vetply/shared",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "author": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "yarn build"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.7",
+    "typescript": "^5.9.3"
+  },
+  "volta": {
+    "node": "22.15.1",
+    "yarn": "1.22.22"
+  }
+}

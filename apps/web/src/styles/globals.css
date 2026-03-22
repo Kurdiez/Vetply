@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    overflow-x: clip;
+  }
+}
+
+/* Primary: 100 = brightest … 700 = darkest */
+@theme {
+  --color-primary-100: #4dc48e;
+  --color-primary-200: #45af7f;
+  --color-primary-300: #3d9a70;
+  --color-primary-400: #358661;
+  --color-primary-500: #2c7152;
+  --color-primary-600: #245c43;
+  --color-primary-700: #1c4734;
+}

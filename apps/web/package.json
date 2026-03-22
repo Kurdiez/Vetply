@@ -1,0 +1,37 @@
+{
+  "name": "@vetply/web",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "node ./scripts/dev-restart.mjs",
+    "dev:next": "next dev --port 6238",
+    "dev:turbo": "node ./scripts/dev-restart-turbo.mjs",
+    "lint": "next lint",
+    "start": "next start --port 6238"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "@heroicons/react": "^2.2.0",
+    "@vetply/shared": "*",
+    "next": "^15.5.14",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^22.19.7",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.14",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
+  },
+  "volta": {
+    "node": "22.15.1",
+    "yarn": "1.22.22"
+  }
+}
