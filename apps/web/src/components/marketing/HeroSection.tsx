@@ -175,7 +175,7 @@ export function HeroSection() {
                   are not rebuilding spreadsheets every week.
                 </p>
                 <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-                  <Button href="#get-started">Get started</Button>
+                  <Button href="/sign-up">Get started</Button>
                   <a
                     href="#features"
                     className="text-sm/6 font-semibold text-white"

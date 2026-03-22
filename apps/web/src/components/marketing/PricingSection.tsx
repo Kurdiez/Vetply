@@ -5,7 +5,7 @@ const tiers = [
   {
     name: "Essentials",
     id: "tier-essentials",
-    href: "#get-started",
+    href: "/sign-up",
     priceMonthly: "$79",
     description:
       "For a single clinic that wants distributor pricing and rebates in one place—not another spreadsheet.",
@@ -21,7 +21,7 @@ const tiers = [
   {
     name: "Professional",
     id: "tier-professional",
-    href: "#get-started",
+    href: "/sign-up",
     priceMonthly: "$199",
     description:
       "For busy practices that need shared access, richer analytics, and faster answers when programs change.",
@@ -37,7 +37,7 @@ const tiers = [
   {
     name: "Organization",
     id: "tier-organization",
-    href: "#get-started",
+    href: "/sign-up",
     priceMonthly: "$449",
     description:
       "For groups and multi-location operators that need governance, rollups, and a partner in rollout.",

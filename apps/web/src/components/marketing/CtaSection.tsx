@@ -16,11 +16,8 @@ export function CtaSection() {
           <br />
           Get started with Vetply today.
         </h2>
-        <div className="mt-10 flex items-center gap-x-6 lg:mt-0 lg:shrink-0">
-          <Button href="#get-started">Get started</Button>
-          <a href="#features" className="text-sm/6 font-semibold text-gray-100">
-            Learn more <span aria-hidden="true">→</span>
-          </a>
+        <div className="mt-10 lg:mt-0 lg:shrink-0">
+          <Button href="/sign-up">Get started</Button>
         </div>
       </div>
     </section>
