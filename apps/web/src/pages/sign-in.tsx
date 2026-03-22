@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
@@ -48,14 +47,14 @@ export default function SignInPage() {
     <div className="flex min-h-screen flex-col justify-center bg-gray-900 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center">
-          <Image
+          <img
             src="/logo.svg"
             alt="Vetply"
             width={360}
             height={90}
             className="h-24 w-auto"
-            unoptimized
-            priority
+            fetchPriority="high"
+            decoding="async"
           />
         </Link>
         <h2 className="mt-3 text-center text-2xl/9 font-bold tracking-tight text-white">

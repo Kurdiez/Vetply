@@ -4,7 +4,6 @@ import { HeroImagePanel } from "@/components/marketing/HeroImagePanel";
 import { Button } from "@/components/ui/Button";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -31,14 +30,14 @@ export function HeroSection() {
                 className="-m-1.5 shrink-0 p-1.5"
               >
                 <span className="sr-only">Vetply</span>
-                <Image
+                <img
                   src="/logo.svg"
                   alt="Vetply"
                   width={160}
                   height={40}
                   className="h-14 w-auto sm:h-10"
-                  unoptimized
-                  priority
+                  fetchPriority="high"
+                  decoding="async"
                 />
               </Link>
 
@@ -88,13 +87,13 @@ export function HeroSection() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <span className="sr-only">Vetply</span>
-                <Image
+                <img
                   src="/logo.svg"
                   alt=""
                   width={280}
                   height={70}
                   className="h-14 w-auto sm:h-16"
-                  unoptimized
+                  decoding="async"
                 />
               </Link>
               <button

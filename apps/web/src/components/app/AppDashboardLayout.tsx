@@ -12,7 +12,6 @@ import {
 } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useState } from "react";
@@ -95,14 +94,14 @@ export function AppDashboardLayout() {
               <div className="relative flex shrink-0 items-start pt-5 pb-2">
                 <Link href="/app" onClick={() => setSidebarOpen(false)}>
                   <span className="sr-only">Vetply</span>
-                  <Image
+                  <img
                     src="/long-logo.svg"
                     alt="Vetply"
                     width={680}
                     height={269}
                     className="h-12 w-auto"
-                    unoptimized
-                    priority
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 </Link>
               </div>
@@ -117,14 +116,14 @@ export function AppDashboardLayout() {
           <div className="flex shrink-0 items-start pt-5 pb-2">
             <Link href="/app">
               <span className="sr-only">Vetply</span>
-              <Image
+              <img
                 src="/long-logo.svg"
                 alt="Vetply"
                 width={680}
                 height={269}
                 className="h-12 w-auto"
-                unoptimized
-                priority
+                fetchPriority="high"
+                decoding="async"
               />
             </Link>
           </div>
@@ -153,13 +152,13 @@ export function AppDashboardLayout() {
               <MenuButton className="relative flex cursor-pointer items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500">
                 <span className="absolute -inset-1.5" />
                 <span className="sr-only">Open user menu</span>
-                <Image
+                <img
                   src="/avatar-placeholder.svg"
                   alt=""
                   width={32}
                   height={32}
                   className="size-8 shrink-0 rounded-full object-cover outline -outline-offset-1 outline-white/10"
-                  unoptimized
+                  decoding="async"
                 />
                 <span className="hidden lg:flex lg:items-center">
                   <span
