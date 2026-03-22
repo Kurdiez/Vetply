@@ -3,16 +3,25 @@ import { NestFactory } from '@nestjs/core';
 import * as Sentry from '@sentry/node';
 import { json } from 'express';
 import { AppModule } from './app.module';
-import { ConfigModule, ConfigService } from './config';
+import { ConfigService } from './config';
 import { Environment } from './config/types';
 
+function normalizeAppUrlForCors(url: string | undefined): string | undefined {
+  if (typeof url !== 'string') return undefined;
+  const trimmed = url.trim();
+  if (trimmed === '') return undefined;
+  return trimmed.replace(/\/$/, '');
+}
+
 function setupCors(app: INestApplication, configService: ConfigService) {
-  const corsOrigins: (string | RegExp)[] = [configService.get('APP_URL')];
+  const appUrl = normalizeAppUrlForCors(configService.get('APP_URL'));
+  const corsOrigins: (string | RegExp)[] = [];
+  if (appUrl) corsOrigins.push(appUrl);
   if (configService.get('ENVIRONMENT') === Environment.Development) {
     corsOrigins.push(/^(http|https):\/\/localhost(:\d+)?$/);
   }
   app.enableCors({
-    origin: corsOrigins,
+    origin: corsOrigins.length > 0 ? corsOrigins : false,
     credentials: true,
   });
 }
@@ -31,31 +40,26 @@ async function setupSentry() {
   });
 }
 
-async function setupServer(configService: ConfigService) {
+async function setupServer() {
   const app = await NestFactory.create(AppModule, {
     logger: ['log', 'error', 'warn'],
   });
+  const configService = app.get(ConfigService);
 
   const expressApp = app.getHttpAdapter().getInstance();
   expressApp.set('trust proxy', true);
 
-  app.use(json({ limit: '10mb' }));
-
   setupCors(app, configService);
+
+  app.use(json({ limit: '10mb' }));
 
   const port = configService.get('PORT') ?? 8580;
   await app.listen(port, '::');
 }
 
 async function bootstrap() {
-  const configModuleContext = await NestFactory.createApplicationContext(
-    ConfigModule,
-    { logger: ['log', 'error', 'warn'] },
-  );
-  const configService = configModuleContext.get(ConfigService);
-
   await setupSentry();
-  await setupServer(configService);
+  await setupServer();
 }
 
 bootstrap();
