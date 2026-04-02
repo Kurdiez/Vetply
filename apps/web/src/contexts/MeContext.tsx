@@ -1,7 +1,14 @@
 "use client";
 
+import {
+  clearStoredAccessToken,
+  VETPLY_ACCESS_TOKEN_KEY,
+} from "@/utils/vetply-api/storage";
+import { fetchUserGetMe } from "@/utils/vetply-api/user-api";
 import type { UserGetMeRes } from "@vetply/shared";
-import { useRouter } from "next/router";
+import { isAxiosError } from "axios";
+import Router from "next/router";
+import { routes } from "@/constants/routes";
 import {
   createContext,
   useCallback,
@@ -10,12 +17,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { isAxiosError } from "axios";
-import {
-  clearStoredAccessToken,
-  VETPLY_ACCESS_TOKEN_KEY,
-} from "@/utils/vetply-api/storage";
-import { fetchUserGetMe } from "@/utils/vetply-api/user-api";
 
 type MeStatus = "idle" | "loading" | "ready" | "error";
 
@@ -28,7 +29,6 @@ type MeContextValue = {
 const MeContext = createContext<MeContextValue | null>(null);
 
 export function MeProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [me, setMe] = useState<UserGetMeRes | null>(null);
   const [status, setStatus] = useState<MeStatus>("idle");
 
@@ -38,7 +38,7 @@ export function MeProvider({ children }: { children: ReactNode }) {
         ? localStorage.getItem(VETPLY_ACCESS_TOKEN_KEY)
         : null;
     if (!token) {
-      await router.replace("/sign-in");
+      await Router.replace(routes.signIn);
       return;
     }
     setStatus("loading");
@@ -49,13 +49,13 @@ export function MeProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       if (isAxiosError(e) && e.response?.status === 401) {
         clearStoredAccessToken();
-        await router.replace("/sign-in");
+        await Router.replace(routes.signIn);
         return;
       }
       setMe(null);
       setStatus("error");
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     void refetch();

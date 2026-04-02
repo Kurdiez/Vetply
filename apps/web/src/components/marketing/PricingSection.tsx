@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/Button";
+import { routes } from "@/constants/routes";
 import { CheckIcon } from "@heroicons/react/20/solid";
 
 const tiers = [
   {
     name: "Essentials",
     id: "tier-essentials",
-    href: "/sign-up",
+    href: routes.signUp,
     priceMonthly: "$79",
     description:
       "For a single clinic that wants distributor pricing and rebates in one place—not another spreadsheet.",
@@ -21,7 +22,7 @@ const tiers = [
   {
     name: "Professional",
     id: "tier-professional",
-    href: "/sign-up",
+    href: routes.signUp,
     priceMonthly: "$199",
     description:
       "For busy practices that need shared access, richer analytics, and faster answers when programs change.",
@@ -37,7 +38,7 @@ const tiers = [
   {
     name: "Organization",
     id: "tier-organization",
-    href: "/sign-up",
+    href: routes.signUp,
     priceMonthly: "$449",
     description:
       "For groups and multi-location operators that need governance, rollups, and a partner in rollout.",

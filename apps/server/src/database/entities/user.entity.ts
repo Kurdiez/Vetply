@@ -1,3 +1,4 @@
+import { UserType } from '@vetply/shared';
 import {
   Column,
   CreateDateColumn,
@@ -6,12 +7,21 @@ import {
 } from 'typeorm';
 
 @Entity('users')
-export class User {
+export class UserEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ unique: true })
   email!: string;
+
+  @Column({
+    name: 'user_type',
+    type: 'enum',
+    enum: UserType,
+    enumName: 'user_type_enum',
+    default: UserType.Member,
+  })
+  userType!: UserType;
 
   @Column({ name: 'password_hash', type: 'varchar', nullable: true })
   passwordHash!: string | null;

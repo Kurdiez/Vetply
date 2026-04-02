@@ -5,8 +5,10 @@ import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
 import { ContinueWithGoogle } from "@/components/auth/ContinueWithGoogle";
 import { Button } from "@/components/ui/Button";
+import { TextInput } from "@/components/ui/TextInput";
 import { VETPLY_ACCESS_TOKEN_KEY } from "@/utils/vetply-api/storage";
 import { vetplyApiUnexpectedErrorToastShown } from "@/utils/vetply-api/http-client";
+import { routes } from "@/constants/routes";
 import { login } from "@/utils/vetply-api/user-auth";
 import { isAxiosError } from "axios";
 
@@ -24,7 +26,7 @@ export default function SignInPage() {
     try {
       const res = await login({ email, password });
       localStorage.setItem(VETPLY_ACCESS_TOKEN_KEY, res.accessToken);
-      await router.push("/app");
+      await router.push(routes.app);
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 401) {
         setError("Invalid email or password");
@@ -46,7 +48,7 @@ export default function SignInPage() {
   return (
     <div className="flex min-h-screen flex-col justify-center bg-gray-900 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link href="/" className="flex justify-center">
+        <Link href={routes.home} className="flex justify-center">
           <img
             src="/logo.svg"
             alt="Vetply"
@@ -81,7 +83,7 @@ export default function SignInPage() {
                 Email address
               </label>
               <div className="mt-2">
-                <input
+                <TextInput
                   id="email"
                   name="email"
                   type="email"
@@ -89,7 +91,6 @@ export default function SignInPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-500 sm:text-sm/6"
                 />
               </div>
             </div>
@@ -102,7 +103,7 @@ export default function SignInPage() {
                 Password
               </label>
               <div className="mt-2">
-                <input
+                <TextInput
                   id="password"
                   name="password"
                   type="password"
@@ -110,7 +111,6 @@ export default function SignInPage() {
                   autoComplete="current-password"
                   value={password}
                   onChange={(ev) => setPassword(ev.target.value)}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-500 sm:text-sm/6"
                 />
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function SignInPage() {
         <p className="mt-10 text-center text-sm/6 text-gray-400">
           Not a member?{" "}
           <Link
-            href="/sign-up"
+            href={routes.signUp}
             className="font-semibold text-primary-100 hover:text-primary-200"
           >
             Start your 1 month free trial

@@ -2,6 +2,8 @@
 
 import { HeroImagePanel } from "@/components/marketing/HeroImagePanel";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { routes } from "@/constants/routes";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
@@ -10,7 +12,7 @@ import { useState } from "react";
 const navigation = [
   { name: "Features", href: "#features" },
   { name: "Pricing", href: "#pricing" },
-  { name: "Sign in", href: "/sign-in" },
+  { name: "Sign in", href: routes.signIn },
 ];
 
 export function HeroSection() {
@@ -26,7 +28,7 @@ export function HeroSection() {
               className="flex items-center justify-between lg:justify-start"
             >
               <Link
-                href="/"
+                href={routes.home}
                 className="-m-1.5 shrink-0 p-1.5"
               >
                 <span className="sr-only">Vetply</span>
@@ -41,14 +43,14 @@ export function HeroSection() {
                 />
               </Link>
 
-              <button
+              <IconButton
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="-m-2.5 cursor-pointer rounded-md p-2.5 text-gray-200 lg:hidden"
+                className="lg:hidden"
               >
                 <span className="sr-only">Open main menu</span>
                 <Bars3Icon aria-hidden className="size-6" />
-              </button>
+              </IconButton>
               <div className="hidden lg:ml-12 lg:flex lg:gap-x-14">
                 {navigation.map((item) =>
                   item.href.startsWith("/") ? (
@@ -82,7 +84,7 @@ export function HeroSection() {
           <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-gray-900 px-6 pt-4 pb-6 sm:max-w-sm sm:pt-6 sm:ring-1 sm:ring-gray-100/10">
             <div className="flex items-center justify-between">
               <Link
-                href="/"
+                href={routes.home}
                 className="-m-1.5 p-1.5"
                 onClick={() => setMobileMenuOpen(false)}
               >
@@ -96,14 +98,13 @@ export function HeroSection() {
                   decoding="async"
                 />
               </Link>
-              <button
+              <IconButton
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="-m-2.5 cursor-pointer rounded-md p-2.5 text-gray-200"
               >
                 <span className="sr-only">Close menu</span>
                 <XMarkIcon aria-hidden className="size-6" />
-              </button>
+              </IconButton>
             </div>
             <div className="mt-6 flow-root">
               <div className="-my-6 divide-y divide-white/10">
@@ -174,7 +175,7 @@ export function HeroSection() {
                   are not rebuilding spreadsheets every week.
                 </p>
                 <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-                  <Button href="/sign-up">Get started</Button>
+                  <Button href={routes.signUp}>Get started</Button>
                   <a
                     href="#features"
                     className="text-sm/6 font-semibold text-white"

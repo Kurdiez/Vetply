@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { routes } from "@/constants/routes";
 
 export function CtaSection() {
   return (
@@ -17,7 +18,7 @@ export function CtaSection() {
           Get started with Vetply today.
         </h2>
         <div className="mt-10 lg:mt-0 lg:shrink-0">
-          <Button href="/sign-up">Get started</Button>
+          <Button href={routes.signUp}>Get started</Button>
         </div>
       </div>
     </section>

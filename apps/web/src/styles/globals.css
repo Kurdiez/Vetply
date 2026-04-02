@@ -3,7 +3,15 @@
 @layer base {
   html {
     overflow-x: clip;
-    scrollbar-gutter: stable;
+    @apply min-h-screen w-full bg-gray-900;
+  }
+
+  body {
+    @apply min-h-screen w-full max-w-none bg-gray-900;
+  }
+
+  #__next {
+    @apply min-h-screen w-full;
   }
 }
 

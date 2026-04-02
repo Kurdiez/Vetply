@@ -14,13 +14,13 @@ import {
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
-import { User } from '~/database/user.entity';
+import { UserEntity } from '~/database/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -63,7 +63,9 @@ export class AuthService {
     return zodResTransform(raw, loginResSchema) as CreateAccountRes;
   }
 
-  private resolveDuplicateFailReason(user: User): CreateAccountFailReason {
+  private resolveDuplicateFailReason(
+    user: UserEntity,
+  ): CreateAccountFailReason {
     if (user.passwordHash) {
       return 'ACCOUNT_EXISTS_VETPLY';
     }
@@ -73,7 +75,7 @@ export class AuthService {
     return 'ACCOUNT_EXISTS_VETPLY';
   }
 
-  private buildAuthResponse(user: User) {
+  private buildAuthResponse(user: UserEntity) {
     const accessToken = this.jwtService.sign({ sub: user.id });
     return {
       accessToken,

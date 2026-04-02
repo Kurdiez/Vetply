@@ -11,6 +11,7 @@ import { MonitorModule } from '~/system/monitor/monitor.module';
 import { UserModule } from '~/user/user.module';
 import { JobsModule } from '~/jobs/jobs.module';
 import { AppController } from './app.controller';
+import { CatalogueModule } from '~/catalogue/catalogue.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AppController } from './app.controller';
     JobsModule,
     ExampleModule,
     MonitorModule,
+    CatalogueModule,
   ],
   controllers: [AppController],
   providers: [

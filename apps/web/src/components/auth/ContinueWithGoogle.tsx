@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/Button";
+
 export function ContinueWithGoogle() {
   return (
     <div>
@@ -10,9 +12,11 @@ export function ContinueWithGoogle() {
       </div>
 
       <div className="mt-6">
-        <button
+        <Button
           type="button"
-          className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-white ring-1 ring-white/5 hover:bg-white/20 focus-visible:ring-transparent"
+          variant="secondary"
+          fullWidth
+          className="gap-3"
         >
           <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5">
             <path
@@ -33,7 +37,7 @@ export function ContinueWithGoogle() {
             />
           </svg>
           <span className="text-sm/6 font-semibold">Google</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

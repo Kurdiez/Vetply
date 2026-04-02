@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserGetMeRes, userGetMeResSchema } from '@vetply/shared';
 import { Repository } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
-import { User } from '~/database/user.entity';
+import { UserEntity } from '~/database/entities/user.entity';
 
 const STUB_FIRST_NAME = 'Jamie';
 const STUB_CLINIC_ID = 'stub-clinic-id';
@@ -12,8 +12,8 @@ const STUB_CLINIC_NAME = 'Stub Animal Hospital';
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   async getMeForRequest(userId: string): Promise<UserGetMeRes> {
@@ -27,6 +27,7 @@ export class UserService {
       firstName: STUB_FIRST_NAME,
       clinicId: STUB_CLINIC_ID,
       clinicName: STUB_CLINIC_NAME,
+      userType: user.userType,
     };
     return zodResTransform(raw, userGetMeResSchema) as UserGetMeRes;
   }

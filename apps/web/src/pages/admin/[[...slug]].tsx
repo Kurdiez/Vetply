@@ -1,0 +1,45 @@
+"use client";
+
+import { AdminGate } from "@/components/admin/AdminGate";
+import { ImportSupplierPricesForm } from "@/components/admin/ImportSupplierPricesForm";
+import { ADMIN_VALID_PATHS, routes } from "@/constants/routes";
+import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+
+function AdminMain() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!router.isReady) {
+      return;
+    }
+    const path = pathWithoutQueryAndTrailingSlash(router.asPath);
+    if (!ADMIN_VALID_PATHS.has(path)) {
+      void router.replace(routes.admin.root);
+    }
+  }, [router.isReady, router.asPath, router]);
+
+  if (!router.isReady) {
+    return null;
+  }
+
+  const path = pathWithoutQueryAndTrailingSlash(router.asPath);
+  if (!ADMIN_VALID_PATHS.has(path)) {
+    return null;
+  }
+
+  if (path === routes.admin.catalogue.importSupplierPrices) {
+    return <ImportSupplierPricesForm />;
+  }
+
+  return null;
+}
+
+export default function AdminPage() {
+  return (
+    <AdminGate>
+      <AdminMain />
+    </AdminGate>
+  );
+}

@@ -1,5 +1,6 @@
 import type { SVGProps } from "react";
 import Link from "next/link";
+import { routes } from "@/constants/routes";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -7,7 +8,7 @@ const navigation = {
   main: [
     { name: "Features", href: "#features" },
     { name: "Pricing", href: "#pricing" },
-    { name: "Sign in", href: "/sign-in" },
+    { name: "Sign in", href: routes.signIn },
   ],
   social: [
     {

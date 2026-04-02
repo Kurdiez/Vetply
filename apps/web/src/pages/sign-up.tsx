@@ -5,9 +5,11 @@ import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
 import { ContinueWithGoogle } from "@/components/auth/ContinueWithGoogle";
 import { Button } from "@/components/ui/Button";
+import { TextInput } from "@/components/ui/TextInput";
 import { VETPLY_ACCESS_TOKEN_KEY } from "@/utils/vetply-api/storage";
 import { vetplyApiUnexpectedErrorToastShown } from "@/utils/vetply-api/http-client";
 import { createAccount } from "@/utils/vetply-api/user-auth";
+import { routes } from "@/constants/routes";
 import { isVetplyBadRequestError } from "@/utils/vetply-api/vetply-bad-request-error";
 
 export default function SignUpPage() {
@@ -33,7 +35,7 @@ export default function SignUpPage() {
     try {
       const res = await createAccount({ email, password });
       localStorage.setItem(VETPLY_ACCESS_TOKEN_KEY, res.accessToken);
-      await router.push("/app");
+      await router.push(routes.app);
     } catch (err) {
       if (isVetplyBadRequestError(err)) {
         if (err.failReason === "ACCOUNT_EXISTS_VETPLY") {
@@ -57,7 +59,7 @@ export default function SignUpPage() {
   return (
     <div className="flex min-h-screen flex-col justify-center bg-gray-900 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link href="/" className="flex justify-center">
+        <Link href={routes.home} className="flex justify-center">
           <img
             src="/logo.svg"
             alt="Vetply"
@@ -96,7 +98,7 @@ export default function SignUpPage() {
                 Email address
               </label>
               <div className="mt-2">
-                <input
+                <TextInput
                   id="email"
                   name="email"
                   type="email"
@@ -104,7 +106,6 @@ export default function SignUpPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-500 sm:text-sm/6"
                 />
               </div>
             </div>
@@ -117,7 +118,7 @@ export default function SignUpPage() {
                 Password
               </label>
               <div className="mt-2">
-                <input
+                <TextInput
                   id="password"
                   name="password"
                   type="password"
@@ -125,7 +126,6 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(ev) => setPassword(ev.target.value)}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-500 sm:text-sm/6"
                 />
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function SignUpPage() {
                 Confirm password
               </label>
               <div className="mt-2">
-                <input
+                <TextInput
                   id="confirm-password"
                   name="confirm-password"
                   type="password"
@@ -146,7 +146,6 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(ev) => setConfirmPassword(ev.target.value)}
-                  className="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-primary-500 sm:text-sm/6"
                 />
               </div>
             </div>
@@ -164,7 +163,7 @@ export default function SignUpPage() {
         <p className="mt-10 text-center text-sm/6 text-gray-400">
           Already have an account?{" "}
           <Link
-            href="/sign-in"
+            href={routes.signIn}
             className="font-semibold text-primary-100 hover:text-primary-200"
           >
             Sign in

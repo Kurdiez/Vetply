@@ -14,6 +14,7 @@ const dataSource = new DataSource({
   },
   entities: ['src/database/entities/**/*.entity{.ts,.js}'],
   migrations: [],
+  // synchronize applies entity diffs to the DB; for production data, prefer explicit migrations over renames/drops.
   synchronize: true,
   logging: true,
 });
