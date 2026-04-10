@@ -24,4 +24,9 @@
   --color-primary-500: #2c7152;
   --color-primary-600: #245c43;
   --color-primary-700: #1c4734;
+
+  /* Danger: muted, slightly desaturated red for destructive actions */
+  --color-danger-400: #d88a8a;
+  --color-danger-500: #b86c6c;
+  --color-danger-600: #9a5555;
 }

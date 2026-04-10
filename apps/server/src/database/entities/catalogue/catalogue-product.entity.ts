@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -13,6 +14,18 @@ import { CatalogueManufacturerEntity } from './catalogue-manufacturer.entity';
 import { CatalogueProductVariantEntity } from './catalogue-product-variant.entity';
 
 @Entity('catalogue_products')
+@Index('IDX_catalogue_products_name', ['name'])
+@Index('IDX_catalogue_products_sales_category', ['salesCategory'])
+@Index('IDX_catalogue_products_legal_category', ['legalCategory'])
+@Index('IDX_catalogue_products_pom', ['pom'])
+@Index('IDX_catalogue_products_updated_at_id', ['updatedAt', 'id'])
+@Index('IDX_catalogue_products_import_lookup', [
+  'manufacturerId',
+  'salesCategory',
+  'legalCategory',
+  'pom',
+  'name',
+])
 export class CatalogueProductEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;

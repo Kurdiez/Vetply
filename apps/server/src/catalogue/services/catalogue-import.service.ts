@@ -20,7 +20,7 @@ import {
   parsePom,
   resolveLegalCategory,
   resolveSalesCategory,
-} from './nvs-csv-parsers';
+} from '../utils/nvs-csv-parsers';
 
 const SKIP_REASONS_CAP = 50;
 

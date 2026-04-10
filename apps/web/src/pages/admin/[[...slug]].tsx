@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminGate } from "@/components/admin/AdminGate";
+import { CatalogueViewPage } from "@/components/admin/catalogue/CatalogueViewPage";
 import { ImportSupplierPricesForm } from "@/components/admin/ImportSupplierPricesForm";
 import { ADMIN_VALID_PATHS, routes } from "@/constants/routes";
 import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
@@ -31,6 +32,10 @@ function AdminMain() {
 
   if (path === routes.admin.catalogue.importSupplierPrices) {
     return <ImportSupplierPricesForm />;
+  }
+
+  if (path === routes.admin.catalogue.view) {
+    return <CatalogueViewPage />;
   }
 
   return null;

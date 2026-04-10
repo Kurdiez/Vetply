@@ -1,10 +1,12 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { entitiesToReigster } from './entities-registry';
+import { getMigrationPaths } from './typeorm-migration-options';
 
 export const createDBConnectionImport = () =>
   TypeOrmModule.forRootAsync({
     name: 'default',
-    useFactory: (configService: ConfigService) => ({
+    useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
       type: 'postgres',
       host: configService.get('DATABASE_HOST'),
       port: configService.get('DATABASE_PORT'),
@@ -15,9 +17,10 @@ export const createDBConnectionImport = () =>
       extra: {
         driver: { family: 4 },
       },
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      migrations: [],
-      synchronize: true,
+      entities: entitiesToReigster,
+      migrations: getMigrationPaths(),
+      synchronize: false,
+      migrationsRun: process.env.TYPEORM_MIGRATIONS_RUN === 'true',
     }),
     imports: [ConfigModule],
     inject: [ConfigService],

@@ -5,7 +5,7 @@ import {
   parsePom,
   resolveLegalCategory,
   resolveSalesCategory,
-} from '../nvs-csv-parsers';
+} from '../utils/nvs-csv-parsers';
 
 describe('parseNvsVpp', () => {
   it('parses pound sterling amounts', () => {

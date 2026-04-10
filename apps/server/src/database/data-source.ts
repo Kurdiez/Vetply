@@ -1,5 +1,7 @@
 import 'dotenv/config';
-import { DataSource } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
+import { entitiesToReigster } from './entities-registry';
+import { getMigrationPaths } from './typeorm-migration-options';
 
 const dataSource = new DataSource({
   type: 'postgres',
@@ -12,10 +14,9 @@ const dataSource = new DataSource({
   extra: {
     driver: { family: 4 },
   },
-  entities: ['src/database/entities/**/*.entity{.ts,.js}'],
-  migrations: [],
-  // synchronize applies entity diffs to the DB; for production data, prefer explicit migrations over renames/drops.
-  synchronize: true,
+  entities: entitiesToReigster as DataSourceOptions['entities'],
+  migrations: getMigrationPaths(),
+  synchronize: false,
   logging: true,
 });
 

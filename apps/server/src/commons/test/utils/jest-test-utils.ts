@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { DatabaseModule } from '~/database/database.module';
 import { entitiesToReigster } from '~/database/entities-registry';
+import { getMigrationPaths } from '~/database/typeorm-migration-options';
 
 const OriginalDate = global.Date;
 const CONNECTION_TIMEOUT = 30000;
@@ -34,7 +35,8 @@ function getDbConfig(): DataSourceOptions {
     database: process.env.VETPLY_TEST_DB_DATABASE,
     schema: 'public',
     entities: entitiesToReigster as DataSourceOptions['entities'],
-    synchronize: true,
+    migrations: getMigrationPaths(),
+    synchronize: false,
     poolSize: 5,
     connectTimeoutMS: CONNECTION_TIMEOUT,
   };
@@ -74,6 +76,7 @@ export async function createTestingModule(
       TypeOrmModule.forRoot({
         ...getDbConfig(),
         autoLoadEntities: true,
+        synchronize: false,
       } as TypeOrmModuleOptions),
       DatabaseModule,
     ],

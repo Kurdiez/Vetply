@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -11,6 +12,7 @@ import {
 import { CatalogueProductEntity } from './catalogue-product.entity';
 
 @Entity('catalogue_product_variants')
+@Index('IDX_catalogue_product_variants_product_id', ['productId'])
 export class CatalogueProductVariantEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
