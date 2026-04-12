@@ -11,6 +11,7 @@ import {
 import {
   importSupplierPricesBatchResSchema,
   type ImportSupplierPricesBatchReq,
+  NVS_IMPORT_BATCH_MAX,
   Supplier,
 } from "@vetply/shared";
 import { useRouter } from "next/router";
@@ -112,7 +113,8 @@ export function ImportSupplierPricesForm() {
       <h1 className="text-lg font-semibold text-white">Import supplier prices</h1>
       <p className="mt-2 text-sm text-gray-400">
         Upload an NVS price CSV. Only fields that map to the catalogue schema are
-        imported. Large files are sent in batches of 100 rows.
+        imported. Large files are sent in batches of{" "}
+        {NVS_IMPORT_BATCH_MAX.toLocaleString()} rows.
       </p>
       <form className="mt-8 space-y-6" onSubmit={onSubmit}>
         <div>

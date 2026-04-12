@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Supplier } from './supplier';
 
-export const NVS_IMPORT_BATCH_MAX = 100;
+export const NVS_IMPORT_BATCH_MAX = 500;
 
 export const nvsImportRowSchema = z.object({
   salesGroup: z.string(),
