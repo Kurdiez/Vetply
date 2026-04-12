@@ -21,6 +21,7 @@ export type DataTableProps<T> = {
   sortColumnId?: string | null;
   sortDirection?: "asc" | "desc" | null;
   onSortColumnClick?: (columnId: string) => void;
+  onRowClick?: (row: T) => void;
 };
 
 export function DataTable<T>({
@@ -33,6 +34,7 @@ export function DataTable<T>({
   sortColumnId = null,
   sortDirection = null,
   onSortColumnClick,
+  onRowClick,
 }: DataTableProps<T>) {
   return (
     <div className={className}>
@@ -100,7 +102,17 @@ export function DataTable<T>({
               </thead>
               <tbody className="divide-y divide-white/10 bg-gray-800/50">
                 {rows.map((row) => (
-                  <tr key={getRowKey(row)}>
+                  <tr
+                    key={getRowKey(row)}
+                    className={
+                      onRowClick
+                        ? "cursor-pointer transition-colors hover:bg-admin-table-row-hover"
+                        : undefined
+                    }
+                    onClick={
+                      onRowClick ? () => onRowClick(row) : undefined
+                    }
+                  >
                     {columns.map((col, idx) => (
                       <td
                         key={col.id}

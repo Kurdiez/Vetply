@@ -5,11 +5,15 @@ import {
   type DataTableColumn,
 } from "@/components/ui/data-table/DataTable";
 import { Button } from "@/components/ui/Button";
+import { CATALOGUE_RETURN_URL_STORAGE_KEY } from "@/constants/catalogue-session";
+import { routes } from "@/constants/routes";
 import {
   CatalogueFilterFieldId,
   type CatalogueProductListItem,
 } from "@vetply/shared";
+import { useRouter } from "next/router";
 import type { CatalogueSortFieldId } from "./catalogue-filter-model";
+import { buildCatalogueListUrl } from "./catalogue-list-url";
 import { useCatalogueView } from "./CatalogueViewContext";
 
 const COLUMNS: DataTableColumn[] = [
@@ -30,7 +34,17 @@ const COLUMNS: DataTableColumn[] = [
 ];
 
 export function CatalogueProductsTable() {
-  const { items, status, refetch, sort, toggleSortColumn } = useCatalogueView();
+  const router = useRouter();
+  const {
+    items,
+    status,
+    refetch,
+    sort,
+    toggleSortColumn,
+    page,
+    pageSize,
+    appliedFilters,
+  } = useCatalogueView();
 
   if (status === "loading" && items.length === 0) {
     return (
@@ -71,6 +85,20 @@ export function CatalogueProductsTable() {
         toggleSortColumn(columnId as CatalogueSortFieldId)
       }
       getRowKey={(row) => row.id}
+      onRowClick={(row) => {
+        const returnUrl = buildCatalogueListUrl(routes.admin.catalogue.view, {
+          page,
+          pageSize,
+          appliedFilters,
+          sort,
+        });
+        try {
+          sessionStorage.setItem(CATALOGUE_RETURN_URL_STORAGE_KEY, returnUrl);
+        } catch {
+          /* ignore quota / private mode */
+        }
+        void router.push(routes.admin.catalogue.productDetail(row.id));
+      }}
       renderCell={(row, columnId) => {
         if (columnId === CatalogueFilterFieldId.Pom) {
           return row.pom ? "Yes" : "No";

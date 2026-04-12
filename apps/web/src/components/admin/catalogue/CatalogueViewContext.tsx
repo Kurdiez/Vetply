@@ -1,22 +1,34 @@
 "use client";
 
+import { routes } from "@/constants/routes";
+import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
+import { isNextRouterAsPathInSyncWithBrowser } from "@/utils/next-router-location";
 import {
   CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE,
   type CatalogueProductListItem,
 } from "@vetply/shared";
 import { fetchCatalogueProducts } from "@/utils/vetply-api/catalogue-api";
+import { useRouter } from "next/router";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
 } from "react";
 import { toast } from "sonner";
+import {
+  buildCatalogueListDynamicRouteNavigation,
+  buildCatalogueListUrl,
+  catalogueListStateEquals,
+  parseCatalogueListFromQuery,
+  type CatalogueListUrlState,
+} from "./catalogue-list-url";
 import type { AppliedFilter, CatalogueSortFieldId } from "./catalogue-filter-model";
 import {
   appliedFiltersToApiPayload,
@@ -54,7 +66,18 @@ const CatalogueViewContext = createContext<CatalogueViewContextValue | null>(
   null,
 );
 
+function toListState(
+  page: number,
+  pageSize: number,
+  appliedFilters: AppliedFilter[],
+  sort: CatalogueSortState,
+): CatalogueListUrlState {
+  return { page, pageSize, appliedFilters, sort };
+}
+
 export function CatalogueViewProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [hydratedFromUrl, setHydratedFromUrl] = useState(false);
   const [page, setPageState] = useState(1);
   const [pageSize, setPageSizeState] = useState(
     CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE,
@@ -71,24 +94,104 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     createEmptyDraft(),
   );
 
-  const items = fetchedItems;
+  const stateRef = useRef(
+    toListState(1, CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE, [], null),
+  );
+  useEffect(() => {
+    stateRef.current = toListState(page, pageSize, appliedFilters, sort);
+  }, [page, pageSize, appliedFilters, sort]);
 
-  const setPage = useCallback((next: number) => {
-    setPageState(Math.max(1, next));
-  }, []);
+  /**
+   * Hydration: URL → state.
+   * Only runs when router.asPath is in sync with window.location, ensuring we parse
+   * the real address bar params and not a transitional router snapshot.
+   */
+  useEffect(() => {
+    if (!router.isReady) {
+      return;
+    }
+    const path = pathWithoutQueryAndTrailingSlash(router.asPath);
+    if (path !== routes.admin.catalogue.view) {
+      return;
+    }
+    if (!isNextRouterAsPathInSyncWithBrowser(router.asPath)) {
+      return;
+    }
 
-  const setPageSize = useCallback((size: number) => {
-    setPageSizeState(size);
-    setPageState(1);
-  }, []);
+    const parsed = parseCatalogueListFromQuery(router.query);
+    if (!parsed.ok) {
+      setPageState(1);
+      setPageSizeState(CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE);
+      setAppliedFilters([]);
+      setSort(null);
+      setHydratedFromUrl(true);
+      return;
+    }
+
+    const next = parsed.data;
+    if (catalogueListStateEquals(next, stateRef.current)) {
+      setHydratedFromUrl(true);
+      return;
+    }
+
+    setPageState(next.page);
+    setPageSizeState(next.pageSize);
+    setAppliedFilters(next.appliedFilters);
+    setSort(next.sort);
+    setHydratedFromUrl(true);
+  }, [router.isReady, router.asPath]);
+
+  /**
+   * URL push helper called directly by user-action callbacks.
+   * The URL is ONLY updated from explicit user actions — never from a reactive state effect —
+   * to avoid racing with the hydration effect above.
+   */
+  const pushListUrl = useCallback(
+    (state: CatalogueListUrlState) => {
+      const url = buildCatalogueListUrl(routes.admin.catalogue.view, state);
+      const nav = buildCatalogueListDynamicRouteNavigation(
+        url,
+        window.location.origin,
+      );
+      if (nav) {
+        void router.push(nav.url, nav.as, { shallow: true });
+      } else {
+        void router.push(url, undefined, { shallow: true });
+      }
+    },
+    [router],
+  );
+
+  const setPage = useCallback(
+    (nextPage: number) => {
+      const n = Math.max(1, nextPage);
+      setPageState(n);
+      pushListUrl({ page: n, pageSize, appliedFilters, sort });
+    },
+    [pushListUrl, pageSize, appliedFilters, sort],
+  );
+
+  const setPageSize = useCallback(
+    (size: number) => {
+      setPageSizeState(size);
+      setPageState(1);
+      pushListUrl({ page: 1, pageSize: size, appliedFilters, sort });
+    },
+    [pushListUrl, appliedFilters, sort],
+  );
 
   const refetch = useCallback(() => {
     setFetchTick((t) => t + 1);
   }, []);
 
-  const toggleSortColumn = useCallback((fieldId: CatalogueSortFieldId) => {
-    setSort((s) => nextSortState(s, fieldId));
-  }, []);
+  const toggleSortColumn = useCallback(
+    (fieldId: CatalogueSortFieldId) => {
+      const newSort = nextSortState(sort, fieldId);
+      setSort(newSort);
+      pushListUrl({ page, pageSize, appliedFilters, sort: newSort });
+    },
+    [pushListUrl, sort, page, pageSize, appliedFilters],
+  );
 
   const addFilter = useCallback((): boolean => {
     const result = validateDraftAndBuildFilter(filterDraft, () =>
@@ -98,33 +201,46 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       toast.error(result.message);
       return false;
     }
-    setAppliedFilters((prev) => {
-      const next = [...prev, result.filter];
-      logCatalogueListRequestPayload({
-        page: 1,
-        pageSize,
-        sort,
-        filters: next,
-      });
-      return next;
+    const newFilters = [...appliedFilters, result.filter];
+    logCatalogueListRequestPayload({
+      page: 1,
+      pageSize,
+      sort,
+      filters: newFilters,
     });
+    setAppliedFilters(newFilters);
     setPageState(1);
     setFilterDraft(createEmptyDraft());
+    pushListUrl({ page: 1, pageSize, appliedFilters: newFilters, sort });
     return true;
-  }, [filterDraft, pageSize, sort]);
+  }, [filterDraft, pageSize, sort, appliedFilters, pushListUrl]);
 
-  const removeFilter = useCallback((id: string) => {
-    setAppliedFilters((prev) => prev.filter((f) => f.id !== id));
-  }, []);
+  const removeFilter = useCallback(
+    (id: string) => {
+      const newFilters = appliedFilters.filter((f) => f.id !== id);
+      setAppliedFilters(newFilters);
+      setPageState(1);
+      pushListUrl({ page: 1, pageSize, appliedFilters: newFilters, sort });
+    },
+    [appliedFilters, pageSize, sort, pushListUrl],
+  );
 
   useEffect(() => {
+    if (status !== "ready") {
+      return;
+    }
     const maxPage = Math.max(1, Math.ceil(totalCount / pageSize));
     if (page > maxPage) {
-      setPageState(maxPage);
+      const clamped = maxPage;
+      setPageState(clamped);
+      pushListUrl({ page: clamped, pageSize, appliedFilters, sort });
     }
-  }, [totalCount, pageSize, page]);
+  }, [status, totalCount, pageSize, page, pushListUrl, appliedFilters, sort]);
 
   useEffect(() => {
+    if (!hydratedFromUrl) {
+      return;
+    }
     let cancelled = false;
 
     async function run() {
@@ -155,13 +271,13 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [page, pageSize, fetchTick, appliedFilters, sort]);
+  }, [page, pageSize, fetchTick, appliedFilters, sort, hydratedFromUrl]);
 
   const value = useMemo<CatalogueViewContextValue>(
     () => ({
       page,
       pageSize,
-      items,
+      items: fetchedItems,
       totalCount,
       status,
       setPage,
@@ -178,7 +294,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     [
       page,
       pageSize,
-      items,
+      fetchedItems,
       totalCount,
       status,
       setPage,

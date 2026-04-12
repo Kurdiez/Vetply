@@ -27,7 +27,7 @@ export class CatalogueVariantSupplierListingEntity {
   @Column({ name: 'variant_id', type: 'uuid' })
   variantId!: string;
 
-  @ManyToOne(() => CatalogueProductVariantEntity, {
+  @ManyToOne(() => CatalogueProductVariantEntity, (v) => v.listings, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'variant_id' })

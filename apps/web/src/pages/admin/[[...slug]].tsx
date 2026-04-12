@@ -2,8 +2,14 @@
 
 import { AdminGate } from "@/components/admin/AdminGate";
 import { CatalogueViewPage } from "@/components/admin/catalogue/CatalogueViewPage";
+import { CatalogueProductDetailPage } from "@/components/admin/catalogue/product-detail/CatalogueProductDetailPage";
+import { ProductDetailProvider } from "@/components/admin/catalogue/product-detail/ProductDetailContext";
 import { ImportSupplierPricesForm } from "@/components/admin/ImportSupplierPricesForm";
-import { ADMIN_VALID_PATHS, routes } from "@/constants/routes";
+import {
+  isValidAdminPath,
+  parseAdminCatalogueProductDetailId,
+  routes,
+} from "@/constants/routes";
 import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
@@ -16,7 +22,7 @@ function AdminMain() {
       return;
     }
     const path = pathWithoutQueryAndTrailingSlash(router.asPath);
-    if (!ADMIN_VALID_PATHS.has(path)) {
+    if (!isValidAdminPath(path)) {
       void router.replace(routes.admin.root);
     }
   }, [router.isReady, router.asPath, router]);
@@ -26,8 +32,17 @@ function AdminMain() {
   }
 
   const path = pathWithoutQueryAndTrailingSlash(router.asPath);
-  if (!ADMIN_VALID_PATHS.has(path)) {
+  if (!isValidAdminPath(path)) {
     return null;
+  }
+
+  const catalogueProductId = parseAdminCatalogueProductDetailId(path);
+  if (catalogueProductId) {
+    return (
+      <ProductDetailProvider productId={catalogueProductId}>
+        <CatalogueProductDetailPage />
+      </ProductDetailProvider>
+    );
   }
 
   if (path === routes.admin.catalogue.importSupplierPrices) {

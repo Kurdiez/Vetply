@@ -29,4 +29,7 @@
   --color-danger-400: #d88a8a;
   --color-danger-500: #b86c6c;
   --color-danger-600: #9a5555;
+
+  /* Admin data tables: row hover (base row uses bg-gray-800/50 on tbody) */
+  --color-admin-table-row-hover: rgb(55 65 81 / 0.85);
 }

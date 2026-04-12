@@ -9,13 +9,16 @@ import {
 } from '@nestjs/common';
 import { ZodError } from 'zod';
 import {
+  CatalogueProductDetailReq,
   ImportSupplierPricesBatchReq,
+  catalogueProductDetailReqSchema,
   catalogueProductsListQuerySchema,
   importSupplierPricesBatchReqSchema,
 } from '@vetply/shared';
 import { ZodValidationPipe } from '~/commons/validations';
 import { SuperUserGuard } from '../guards/super-user.guard';
 import { CatalogueImportService } from '../services/catalogue-import.service';
+import { CatalogueProductDetailService } from '../services/catalogue-product-detail.service';
 import { CatalogueProductListService } from '../services/catalogue-product-list.service';
 
 @Controller('admin/catalogue')
@@ -23,6 +26,7 @@ import { CatalogueProductListService } from '../services/catalogue-product-list.
 export class CatalogueController {
   constructor(
     private readonly catalogueImportService: CatalogueImportService,
+    private readonly catalogueProductDetailService: CatalogueProductDetailService,
     private readonly catalogueProductListService: CatalogueProductListService,
   ) {}
 
@@ -42,6 +46,14 @@ export class CatalogueController {
       );
     }
     return this.catalogueProductListService.listProducts(parsed.data);
+  }
+
+  @Post('products/detail')
+  getProductDetail(
+    @Body(new ZodValidationPipe(catalogueProductDetailReqSchema))
+    body: CatalogueProductDetailReq,
+  ) {
+    return this.catalogueProductDetailService.getProductDetail(body.productId);
   }
 
   @Post('import-supplier-prices/batch')

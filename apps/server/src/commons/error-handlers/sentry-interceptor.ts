@@ -36,12 +36,20 @@ export class SentryInterceptor implements NestInterceptor {
           logger: this.logger,
         });
 
+        if (error instanceof CustomException) {
+          return throwError(
+            () =>
+              new InternalServerErrorException({
+                statusCode: 500,
+                message: error.message,
+                error: 'Internal Server Error',
+                context: error.context,
+              }),
+          );
+        }
+
         const message =
-          error instanceof CustomException
-            ? error.message
-            : error instanceof Error
-              ? error.message
-              : 'Internal server error';
+          error instanceof Error ? error.message : 'Internal server error';
 
         return throwError(() => new InternalServerErrorException(message));
       }),

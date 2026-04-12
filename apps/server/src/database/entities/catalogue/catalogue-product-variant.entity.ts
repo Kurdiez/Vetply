@@ -6,10 +6,12 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CatalogueProductEntity } from './catalogue-product.entity';
+import { CatalogueVariantSupplierListingEntity } from './catalogue-variant-supplier-listing.entity';
 
 @Entity('catalogue_product_variants')
 @Index('IDX_catalogue_product_variants_product_id', ['productId'])
@@ -50,4 +52,7 @@ export class CatalogueProductVariantEntity {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
+
+  @OneToMany(() => CatalogueVariantSupplierListingEntity, (l) => l.variant)
+  listings!: CatalogueVariantSupplierListingEntity[];
 }

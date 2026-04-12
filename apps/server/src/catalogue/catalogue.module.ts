@@ -6,6 +6,7 @@ import { UserEntity } from '~/database/entities/user.entity';
 import { CatalogueController } from './controllers/catalogue.controller';
 import { SuperUserGuard } from './guards/super-user.guard';
 import { CatalogueImportService } from './services/catalogue-import.service';
+import { CatalogueProductDetailService } from './services/catalogue-product-detail.service';
 import { CatalogueProductListService } from './services/catalogue-product-list.service';
 
 @Module({
@@ -16,6 +17,7 @@ import { CatalogueProductListService } from './services/catalogue-product-list.s
   controllers: [CatalogueController],
   providers: [
     CatalogueImportService,
+    CatalogueProductDetailService,
     CatalogueProductListService,
     SuperUserGuard,
   ],
