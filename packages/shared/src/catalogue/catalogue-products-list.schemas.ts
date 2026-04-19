@@ -80,10 +80,10 @@ export type CatalogueProductsListQueryInput = z.infer<
 export const catalogueProductListItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  manufacturerName: z.string(),
-  salesCategory: z.nativeEnum(SalesCategory),
-  legalCategory: z.nativeEnum(LegalCategory),
-  pom: z.boolean(),
+  manufacturerName: z.string().nullable(),
+  salesCategory: z.nativeEnum(SalesCategory).nullable(),
+  legalCategory: z.nativeEnum(LegalCategory).nullable(),
+  pom: z.boolean().nullable(),
 });
 
 export type CatalogueProductListItem = z.infer<

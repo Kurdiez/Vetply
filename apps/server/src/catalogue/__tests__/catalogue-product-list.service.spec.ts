@@ -111,6 +111,23 @@ describe('CatalogueProductListService', () => {
     );
   });
 
+  it('maps nullable manufacturer and classification to null in list items', async () => {
+    await saveCatalogueProduct(productRepo, {
+      manufacturerId: null,
+      name: 'Supplier-unknown widget',
+      salesCategory: null,
+      legalCategory: null,
+      pom: null,
+    });
+    const res = await service.listProducts({ page: 1, pageSize: 50 });
+    const row = res.items.find((i) => i.name === 'Supplier-unknown widget');
+    expect(row).toBeDefined();
+    expect(row!.manufacturerName).toBeNull();
+    expect(row!.salesCategory).toBeNull();
+    expect(row!.legalCategory).toBeNull();
+    expect(row!.pom).toBeNull();
+  });
+
   it('filters name isExactly — positive match', async () => {
     const { p1 } = await seedThreeProducts();
     const res = await service.listProducts({

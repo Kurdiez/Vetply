@@ -101,9 +101,15 @@ export function CatalogueProductsTable() {
       }}
       renderCell={(row, columnId) => {
         if (columnId === CatalogueFilterFieldId.Pom) {
+          if (row.pom === null) {
+            return "—";
+          }
           return row.pom ? "Yes" : "No";
         }
         const v = row[columnId as keyof CatalogueProductListItem];
+        if (v === null || v === undefined) {
+          return "—";
+        }
         return typeof v === "string" || typeof v === "boolean" ? String(v) : "";
       }}
     />

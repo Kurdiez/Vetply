@@ -9,10 +9,15 @@ import {
   runNvsCsvBatchedImport,
 } from "@/utils/nvs-csv-batched-import";
 import {
+  countValidVeenakDataRows,
+  runVeenakCsvBatchedImport,
+} from "@/utils/veenak-csv-batched-import";
+import {
   importSupplierPricesBatchResSchema,
   type ImportSupplierPricesBatchReq,
   NVS_IMPORT_BATCH_MAX,
   Supplier,
+  VEENAK_IMPORT_BATCH_MAX,
 } from "@vetply/shared";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
@@ -36,8 +41,8 @@ export function ImportSupplierPricesForm() {
         toast.error("Select a supplier.");
         return;
       }
-      if (supplier !== Supplier.NVS) {
-        toast.error("Only NVS imports are supported.");
+      if (supplier !== Supplier.NVS && supplier !== Supplier.VEENAK) {
+        toast.error("Unsupported supplier.");
         return;
       }
       if (!file) {
@@ -50,33 +55,58 @@ export function ImportSupplierPricesForm() {
       setProgressLabel("Scanning file…");
 
       try {
-        const totalDataRows = await countValidNvsDataRows(file);
-        if (totalDataRows === 0) {
-          throw new Error("NO_DATA_ROWS");
-        }
-
         const postBatch = async (body: ImportSupplierPricesBatchReq) => {
           const { data } = await vetplyApiClient.post(BATCH_ENDPOINT, body);
           return importSupplierPricesBatchResSchema.parse(data);
         };
 
+        let totalDataRows: number;
+        if (supplier === Supplier.NVS) {
+          totalDataRows = await countValidNvsDataRows(file);
+        } else {
+          totalDataRows = await countValidVeenakDataRows(file);
+        }
+
+        if (totalDataRows === 0) {
+          throw new Error("NO_DATA_ROWS");
+        }
+
         setProgressLabel(
           `Processed 0 / ${totalDataRows.toLocaleString()} rows`,
         );
 
-        const { totalImported, totalSkipped } = await runNvsCsvBatchedImport(
-          file,
-          Supplier.NVS,
-          postBatch,
-          ({ rowsPosted, totalDataRows: total }) => {
-            const pct = Math.min(100, Math.round((rowsPosted / total) * 100));
-            setProgressPct(pct);
-            setProgressLabel(
-              `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
-            );
-          },
-          { totalDataRows },
-        );
+        const { totalImported, totalSkipped } =
+          supplier === Supplier.NVS
+            ? await runNvsCsvBatchedImport(
+                file,
+                postBatch,
+                ({ rowsPosted, totalDataRows: total }) => {
+                  const pct = Math.min(
+                    100,
+                    Math.round((rowsPosted / total) * 100),
+                  );
+                  setProgressPct(pct);
+                  setProgressLabel(
+                    `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
+                  );
+                },
+                { totalDataRows },
+              )
+            : await runVeenakCsvBatchedImport(
+                file,
+                postBatch,
+                ({ rowsPosted, totalDataRows: total }) => {
+                  const pct = Math.min(
+                    100,
+                    Math.round((rowsPosted / total) * 100),
+                  );
+                  setProgressPct(pct);
+                  setProgressLabel(
+                    `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
+                  );
+                },
+                { totalDataRows },
+              );
 
         setProgressPct(100);
         setProgressLabel(
@@ -108,13 +138,17 @@ export function ImportSupplierPricesForm() {
     return null;
   }
 
+  const batchMaxLabel =
+    supplier === Supplier.VEENAK
+      ? VEENAK_IMPORT_BATCH_MAX.toLocaleString()
+      : NVS_IMPORT_BATCH_MAX.toLocaleString();
+
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-lg font-semibold text-white">Import supplier prices</h1>
       <p className="mt-2 text-sm text-gray-400">
-        Upload an NVS price CSV. Only fields that map to the catalogue schema are
-        imported. Large files are sent in batches of{" "}
-        {NVS_IMPORT_BATCH_MAX.toLocaleString()} rows.
+        Upload a supplier price CSV. Only fields that map to the catalogue schema
+        are imported. Large files are sent in batches of {batchMaxLabel} rows.
       </p>
       <form className="mt-8 space-y-6" onSubmit={onSubmit}>
         <div>
@@ -135,6 +169,7 @@ export function ImportSupplierPricesForm() {
           >
             <option value="">Select a supplier</option>
             <option value={Supplier.NVS}>NVS</option>
+            <option value={Supplier.VEENAK}>Veenak</option>
           </Select>
         </div>
         <div>

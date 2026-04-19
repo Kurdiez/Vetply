@@ -192,25 +192,29 @@ export function CatalogueProductDetailPage() {
                 <div>
                   <dt className="text-gray-400">Manufacturer</dt>
                   <dd className="mt-1 text-gray-100">
-                    {detail.product.manufacturerName}
+                    {detail.product.manufacturerName ?? "—"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-gray-400">Sales category</dt>
                   <dd className="mt-1 text-gray-100">
-                    {detail.product.salesCategory}
+                    {detail.product.salesCategory ?? "—"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-gray-400">Legal category</dt>
                   <dd className="mt-1 text-gray-100">
-                    {detail.product.legalCategory}
+                    {detail.product.legalCategory ?? "—"}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-gray-400">POM</dt>
                   <dd className="mt-1 text-gray-100">
-                    {detail.product.pom ? "Yes" : "No"}
+                    {detail.product.pom === null
+                      ? "—"
+                      : detail.product.pom
+                        ? "Yes"
+                        : "No"}
                   </dd>
                 </div>
                 <div className="grid grid-cols-1 gap-5 border-t border-white/10 pt-5 sm:grid-cols-2">

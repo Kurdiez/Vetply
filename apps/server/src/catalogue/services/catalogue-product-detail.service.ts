@@ -34,7 +34,9 @@ export class CatalogueProductDetailService {
     private readonly productRepository: Repository<CatalogueProductEntity>,
   ) {}
 
-  async getProductDetail(productId: string): Promise<CatalogueProductDetailRes> {
+  async getProductDetail(
+    productId: string,
+  ): Promise<CatalogueProductDetailRes> {
     const product = await this.productRepository.findOne({
       where: { id: productId },
       relations: [
@@ -110,7 +112,7 @@ export class CatalogueProductDetailService {
       product: {
         id: product.id,
         name: product.name,
-        manufacturerName: product.manufacturer.name,
+        manufacturerName: product.manufacturer?.name ?? null,
         salesCategory: product.salesCategory,
         legalCategory: product.legalCategory,
         pom: product.pom,
@@ -120,8 +122,7 @@ export class CatalogueProductDetailService {
       supplierGroups,
     };
 
-    return (
-      zodResTransform(raw, catalogueProductDetailResSchema) ?? raw
-    ) as CatalogueProductDetailRes;
+    return (zodResTransform(raw, catalogueProductDetailResSchema) ??
+      raw) as CatalogueProductDetailRes;
   }
 }

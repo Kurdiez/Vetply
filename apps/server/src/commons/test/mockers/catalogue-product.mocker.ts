@@ -13,11 +13,11 @@ export async function saveCatalogueManufacturer(
 export async function saveCatalogueProduct(
   repo: Repository<CatalogueProductEntity>,
   input: {
-    manufacturerId: string;
+    manufacturerId?: string | null;
     name: string;
-    salesCategory: SalesCategory;
-    legalCategory: LegalCategory;
-    pom: boolean;
+    salesCategory?: SalesCategory | null;
+    legalCategory?: LegalCategory | null;
+    pom?: boolean | null;
   },
 ): Promise<CatalogueProductEntity> {
   return repo.save(repo.create(input));

@@ -1,12 +1,12 @@
 import type {
   ImportSupplierPricesBatchReq,
   ImportSupplierPricesBatchRes,
-  NvsImportRow,
+  VeenakImportRow,
 } from "@vetply/shared";
-import { NVS_IMPORT_BATCH_MAX, Supplier } from "@vetply/shared";
+import { Supplier, VEENAK_IMPORT_BATCH_MAX } from "@vetply/shared";
 import Papa from "papaparse";
 
-const NVS_MIN_COLS = 11;
+const VEENAK_MIN_COLS = 5;
 
 function cell(data: unknown[], i: number): string {
   const v = data[i];
@@ -16,23 +16,20 @@ function cell(data: unknown[], i: number): string {
   return String(v).trim();
 }
 
-export function mapPapaRowToNvs(data: unknown[]): NvsImportRow | null {
-  if (!Array.isArray(data) || data.length < NVS_MIN_COLS) {
+export function mapPapaRowToVeenak(data: unknown[]): VeenakImportRow | null {
+  if (!Array.isArray(data) || data.length < VEENAK_MIN_COLS) {
     return null;
   }
   return {
-    salesGroup: cell(data, 0),
-    partNo: cell(data, 2),
-    description: cell(data, 3),
-    uom: cell(data, 5),
-    vpp: cell(data, 6),
-    pom: cell(data, 7),
-    manufacturer: cell(data, 8),
-    legalLabel: cell(data, 10),
+    productName: cell(data, 0),
+    packSize: cell(data, 1),
+    form: cell(data, 2),
+    productId: cell(data, 3),
+    newPrice: cell(data, 4),
   };
 }
 
-export function countValidNvsDataRows(file: File): Promise<number> {
+export function countValidVeenakDataRows(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
     let rowIndex = 0;
     let count = 0;
@@ -47,7 +44,7 @@ export function countValidNvsDataRows(file: File): Promise<number> {
         if (rowIndex++ === 0) {
           return;
         }
-        if (mapPapaRowToNvs(data) !== null) {
+        if (mapPapaRowToVeenak(data) !== null) {
           count += 1;
         }
       },
@@ -57,41 +54,40 @@ export function countValidNvsDataRows(file: File): Promise<number> {
   });
 }
 
-export type NvsImportProgress = {
+export type VeenakImportProgress = {
   rowsPosted: number;
   totalDataRows: number;
 };
 
-export type NvsImportTotals = {
+export type VeenakImportTotals = {
   totalImported: number;
   totalSkipped: number;
 };
 
-export type RunNvsCsvBatchedImportOptions = {
-  /** When set, skips a second full-file scan for row count (caller should count first). */
+export type RunVeenakCsvBatchedImportOptions = {
   totalDataRows?: number;
 };
 
-export async function runNvsCsvBatchedImport(
+export async function runVeenakCsvBatchedImport(
   file: File,
   postBatch: (
     body: ImportSupplierPricesBatchReq,
   ) => Promise<ImportSupplierPricesBatchRes>,
-  onProgress: (p: NvsImportProgress) => void,
-  options?: RunNvsCsvBatchedImportOptions,
-): Promise<NvsImportTotals> {
+  onProgress: (p: VeenakImportProgress) => void,
+  options?: RunVeenakCsvBatchedImportOptions,
+): Promise<VeenakImportTotals> {
   const totalDataRows =
-    options?.totalDataRows ?? (await countValidNvsDataRows(file));
+    options?.totalDataRows ?? (await countValidVeenakDataRows(file));
   if (totalDataRows === 0) {
     throw new Error("NO_DATA_ROWS");
   }
 
-  const totalBatches = Math.ceil(totalDataRows / NVS_IMPORT_BATCH_MAX);
+  const totalBatches = Math.ceil(totalDataRows / VEENAK_IMPORT_BATCH_MAX);
   onProgress({ rowsPosted: 0, totalDataRows });
 
   return new Promise((resolve, reject) => {
     let rowIdx = 0;
-    const buf: NvsImportRow[] = [];
+    const buf: VeenakImportRow[] = [];
     let chain: Promise<void> = Promise.resolve();
     let batchIdx = 0;
     let rowsPosted = 0;
@@ -105,9 +101,9 @@ export async function runNvsCsvBatchedImport(
       });
     };
 
-    const flush = async (rows: NvsImportRow[], index: number) => {
+    const flush = async (rows: VeenakImportRow[], index: number) => {
       const res = await postBatch({
-        supplier: Supplier.NVS,
+        supplier: Supplier.VEENAK,
         batchIndex: index,
         totalBatches,
         totalDataRows,
@@ -128,14 +124,14 @@ export async function runNvsCsvBatchedImport(
         if (rowIdx++ === 0) {
           return;
         }
-        const row = mapPapaRowToNvs(data);
+        const row = mapPapaRowToVeenak(data);
         if (!row) {
           return;
         }
         schedule(async () => {
           buf.push(row);
-          if (buf.length >= NVS_IMPORT_BATCH_MAX) {
-            const batch = buf.splice(0, NVS_IMPORT_BATCH_MAX);
+          if (buf.length >= VEENAK_IMPORT_BATCH_MAX) {
+            const batch = buf.splice(0, VEENAK_IMPORT_BATCH_MAX);
             await flush(batch, batchIdx);
             batchIdx += 1;
             rowsPosted += batch.length;

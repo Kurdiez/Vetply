@@ -40,7 +40,7 @@ export class CatalogueProductListService {
     const items: CatalogueProductListItem[] = entities.map((p) => ({
       id: p.id,
       name: p.name,
-      manufacturerName: p.manufacturer.name,
+      manufacturerName: p.manufacturer?.name ?? null,
       salesCategory: p.salesCategory,
       legalCategory: p.legalCategory,
       pom: p.pom,

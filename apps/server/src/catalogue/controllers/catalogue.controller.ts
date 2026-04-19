@@ -61,6 +61,6 @@ export class CatalogueController {
     @Body(new ZodValidationPipe(importSupplierPricesBatchReqSchema))
     body: ImportSupplierPricesBatchReq,
   ) {
-    return this.catalogueImportService.importNvsBatch(body);
+    return this.catalogueImportService.importSupplierPricesBatch(body);
   }
 }

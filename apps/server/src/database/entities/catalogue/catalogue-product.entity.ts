@@ -30,36 +30,39 @@ export class CatalogueProductEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
-  @Column({ name: 'manufacturer_id', type: 'uuid' })
-  manufacturerId!: string;
+  @Column({ name: 'manufacturer_id', type: 'uuid', nullable: true })
+  manufacturerId!: string | null;
 
   @ManyToOne(() => CatalogueManufacturerEntity, (m) => m.products, {
     onDelete: 'RESTRICT',
+    nullable: true,
   })
   @JoinColumn({ name: 'manufacturer_id' })
-  manufacturer!: CatalogueManufacturerEntity;
+  manufacturer!: CatalogueManufacturerEntity | null;
 
   @Column({
     name: 'sales_category',
     type: 'enum',
     enum: SalesCategory,
     enumName: 'sales_category_enum',
+    nullable: true,
   })
-  salesCategory!: SalesCategory;
+  salesCategory!: SalesCategory | null;
 
   @Column({
     name: 'legal_category',
     type: 'enum',
     enum: LegalCategory,
     enumName: 'legal_category_enum',
+    nullable: true,
   })
-  legalCategory!: LegalCategory;
+  legalCategory!: LegalCategory | null;
 
   @Column({ name: 'name', type: 'varchar', length: 1024 })
   name!: string;
 
-  @Column({ type: 'boolean', name: 'pom' })
-  pom!: boolean;
+  @Column({ type: 'boolean', name: 'pom', nullable: true })
+  pom!: boolean | null;
 
   @OneToMany(() => CatalogueProductVariantEntity, (v) => v.product)
   variants!: CatalogueProductVariantEntity[];

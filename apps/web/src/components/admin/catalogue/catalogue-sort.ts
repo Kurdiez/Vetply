@@ -24,14 +24,16 @@ export function sortCatalogueItems(
       case CatalogueFilterFieldId.ManufacturerName:
       case CatalogueFilterFieldId.SalesCategory:
       case CatalogueFilterFieldId.LegalCategory: {
-        const sa = String(a[sort.fieldId]);
-        const sb = String(b[sort.fieldId]);
+        const va = a[sort.fieldId];
+        const vb = b[sort.fieldId];
+        const sa = va == null ? "" : String(va);
+        const sb = vb == null ? "" : String(vb);
         cmp = sa.localeCompare(sb, undefined, { sensitivity: "base" });
         break;
       }
       case CatalogueFilterFieldId.Pom: {
-        const na = a.pom ? 1 : 0;
-        const nb = b.pom ? 1 : 0;
+        const na = a.pom === true ? 1 : a.pom === false ? 0 : -1;
+        const nb = b.pom === true ? 1 : b.pom === false ? 0 : -1;
         cmp = na - nb;
         break;
       }
