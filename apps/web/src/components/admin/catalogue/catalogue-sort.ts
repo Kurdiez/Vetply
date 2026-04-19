@@ -37,6 +37,7 @@ export function sortCatalogueItems(
         cmp = na - nb;
         break;
       }
+      case CatalogueFilterFieldId.Supplier:
       default:
         cmp = 0;
     }

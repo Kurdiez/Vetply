@@ -1,9 +1,11 @@
 import { TestingModule } from '@nestjs/testing';
 import {
+  CatalogUnitType,
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
   LegalCategory,
   SalesCategory,
+  Supplier,
   catalogueProductsListQuerySchema,
 } from '@vetply/shared';
 import { DataSource } from 'typeorm';
@@ -20,7 +22,10 @@ import {
   saveCatalogueProduct,
 } from '~/commons/test/mockers/catalogue-product.mocker';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
+import { CatalogueProductVariantEntity } from '~/database/entities/catalogue/catalogue-product-variant.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
+import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
+import { CatalogueVariantSupplierListingEntity } from '~/database/entities/catalogue/catalogue-variant-supplier-listing.entity';
 import { CatalogueProductListService } from '../services/catalogue-product-list.service';
 
 describe('CatalogueProductListService', () => {
@@ -426,6 +431,103 @@ describe('CatalogueProductListService', () => {
     expect(page2.items).toHaveLength(1);
     const allIds = [...page1.items, ...page2.items].map((i) => i.id);
     expect(new Set(allIds).size).toBe(3);
+  });
+
+  it('filters supplier isExactly — NVS listing only', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const variantRepo = getTestRepository(
+      dbContext,
+      CatalogueProductVariantEntity,
+    );
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueVariantSupplierListingEntity,
+    );
+
+    let nvsSupplier = await supplierRepo.findOne({
+      where: { name: Supplier.NVS },
+    });
+    if (!nvsSupplier) {
+      nvsSupplier = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+    let veenakSupplier = await supplierRepo.findOne({
+      where: { name: Supplier.VEENAK },
+    });
+    if (!veenakSupplier) {
+      veenakSupplier = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.VEENAK }),
+      );
+    }
+
+    const alpha = await saveCatalogueManufacturer(manufacturerRepo, 'Mfg A');
+    const productNvs = await saveCatalogueProduct(productRepo, {
+      manufacturerId: alpha.id,
+      name: 'Listed NVS only',
+      salesCategory: SalesCategory.Misc,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+    const productVeenak = await saveCatalogueProduct(productRepo, {
+      manufacturerId: alpha.id,
+      name: 'Listed Veenak only',
+      salesCategory: SalesCategory.Misc,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const variantNvs = await variantRepo.save(
+      variantRepo.create({
+        productId: productNvs.id,
+        name: 'Listed NVS only (ref1)',
+        unitType: CatalogUnitType.EA,
+        unitQuantity: '1.000000',
+      }),
+    );
+    const variantVeenak = await variantRepo.save(
+      variantRepo.create({
+        productId: productVeenak.id,
+        name: 'Listed Veenak only (ref2)',
+        unitType: CatalogUnitType.EA,
+        unitQuantity: '1.000000',
+      }),
+    );
+
+    await listingRepo.save(
+      listingRepo.create({
+        variantId: variantNvs.id,
+        supplierId: nvsSupplier.id,
+        variantRef: 'NVS-REF-1',
+        name: 'Listed NVS only',
+        listedPrice: '10.0000',
+      }),
+    );
+    await listingRepo.save(
+      listingRepo.create({
+        variantId: variantVeenak.id,
+        supplierId: veenakSupplier.id,
+        variantRef: 'VEE-REF-1',
+        name: 'Listed Veenak only',
+        listedPrice: '20.0000',
+      }),
+    );
+
+    const res = await service.listProducts({
+      page: 1,
+      pageSize: 50,
+      filters: [
+        {
+          kind: 'string',
+          fieldId: CatalogueFilterFieldId.Supplier,
+          operator: CatalogueFilterOperator.IsExactly,
+          value: Supplier.NVS,
+        },
+      ],
+    });
+
+    expect(res.totalCount).toBe(1);
+    expect(res.items[0].id).toBe(productNvs.id);
   });
 });
 

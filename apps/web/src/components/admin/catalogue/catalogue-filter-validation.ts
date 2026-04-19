@@ -1,4 +1,4 @@
-import type { LegalCategory, SalesCategory } from "@vetply/shared";
+import type { LegalCategory, SalesCategory, Supplier } from "@vetply/shared";
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
@@ -15,6 +15,8 @@ export type CatalogueFilterDraft = {
   operator: CatalogueFilterOperator | "";
   stringSingle: string;
   stringTags: string[];
+  supplierSingle: Supplier | "";
+  supplierTags: Supplier[];
   salesCategorySingle: SalesCategory | "";
   salesCategoryTags: SalesCategory[];
   legalCategorySingle: LegalCategory | "";
@@ -28,6 +30,8 @@ export function createEmptyDraft(): CatalogueFilterDraft {
     operator: "",
     stringSingle: "",
     stringTags: [],
+    supplierSingle: "",
+    supplierTags: [],
     salesCategorySingle: "",
     salesCategoryTags: [],
     legalCategorySingle: "",
@@ -82,6 +86,41 @@ export function validateDraftAndBuildFilter(
   }
 
   if (kind === "string") {
+    if (fieldId === CatalogueFilterFieldId.Supplier) {
+      if (isStringMultiOperator(op)) {
+        const tags = draft.supplierTags;
+        if (tags.length === 0) {
+          return {
+            ok: false,
+            message: "Select at least one supplier.",
+          };
+        }
+        return {
+          ok: true,
+          filter: {
+            id: newId(),
+            kind: "string",
+            fieldId: CatalogueFilterFieldId.Supplier,
+            operator: op,
+            value: tags,
+          },
+        };
+      }
+      if (draft.supplierSingle === "") {
+        return { ok: false, message: "Select a supplier." };
+      }
+      return {
+        ok: true,
+        filter: {
+          id: newId(),
+          kind: "string",
+          fieldId: CatalogueFilterFieldId.Supplier,
+          operator: op,
+          value: draft.supplierSingle,
+        },
+      };
+    }
+
     if (isStringMultiOperator(op)) {
       const tags = normalizeTags(draft.stringTags);
       if (tags.length === 0) {

@@ -9,12 +9,14 @@ import {
   type CatalogueProductFilter,
   LegalCategory,
   SalesCategory,
+  Supplier,
 } from "@vetply/shared";
 
 export { CatalogueFilterFieldId, CatalogueFilterOperator } from "@vetply/shared";
 
 export const SALES_CATEGORY_OPTIONS = Object.values(SalesCategory) as SalesCategory[];
 export const LEGAL_CATEGORY_OPTIONS = Object.values(LegalCategory) as LegalCategory[];
+export const SUPPLIER_OPTIONS = Object.values(Supplier) as Supplier[];
 
 export type FieldKind = "string" | "enum" | "boolean";
 
@@ -60,7 +62,8 @@ export type AppliedFilter =
       kind: "string";
       fieldId:
         | typeof CatalogueFilterFieldId.Name
-        | typeof CatalogueFilterFieldId.ManufacturerName;
+        | typeof CatalogueFilterFieldId.ManufacturerName
+        | typeof CatalogueFilterFieldId.Supplier;
       operator: CatalogueFilterOperator;
       value: string | string[];
     }
@@ -120,6 +123,7 @@ export function formatOperandSummary(filter: AppliedFilter): string {
 const FIELD_LABELS: Record<CatalogueFilterFieldId, string> = {
   [CatalogueFilterFieldId.Name]: "Name",
   [CatalogueFilterFieldId.ManufacturerName]: "Manufacturer",
+  [CatalogueFilterFieldId.Supplier]: "Supplier",
   [CatalogueFilterFieldId.SalesCategory]: "Sales category",
   [CatalogueFilterFieldId.LegalCategory]: "Legal category",
   [CatalogueFilterFieldId.Pom]: "POM",

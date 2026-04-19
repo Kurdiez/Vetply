@@ -1,6 +1,7 @@
 export const CatalogueFilterFieldId = {
   Name: 'name',
   ManufacturerName: 'manufacturerName',
+  Supplier: 'supplier',
   SalesCategory: 'salesCategory',
   LegalCategory: 'legalCategory',
   Pom: 'pom',
@@ -24,6 +25,7 @@ export type CatalogueFilterOperator =
 export const CATALOGUE_FILTER_STRING_FIELDS = [
   CatalogueFilterFieldId.Name,
   CatalogueFilterFieldId.ManufacturerName,
+  CatalogueFilterFieldId.Supplier,
 ] as const satisfies readonly CatalogueFilterFieldId[];
 
 export const CATALOGUE_FILTER_STRING_OPERATORS = [

@@ -15,6 +15,7 @@ import {
   LEGAL_CATEGORY_OPTIONS,
   operatorsForField,
   SALES_CATEGORY_OPTIONS,
+  SUPPLIER_OPTIONS,
 } from "./catalogue-filter-model";
 import { createEmptyDraft } from "./catalogue-filter-validation";
 import { useCatalogueView } from "./CatalogueViewContext";
@@ -24,6 +25,10 @@ const FIELD_OPTIONS: FilterSelectOption[] = [
   {
     value: CatalogueFilterFieldId.ManufacturerName,
     label: "Manufacturer",
+  },
+  {
+    value: CatalogueFilterFieldId.Supplier,
+    label: "Supplier",
   },
   {
     value: CatalogueFilterFieldId.SalesCategory,
@@ -105,6 +110,15 @@ export function CatalogueFilterForm() {
     [],
   );
 
+  const supplierEnumOptions: FilterSelectOption[] = useMemo(
+    () =>
+      SUPPLIER_OPTIONS.map((v) => ({
+        value: v,
+        label: v,
+      })),
+    [],
+  );
+
   const setField = useCallback(
     (value: string) => {
       if (value === "") {
@@ -139,6 +153,68 @@ export function CatalogueFilterForm() {
     }
 
     if (kind === "string") {
+      if (fieldId === CatalogueFilterFieldId.Supplier) {
+        if (isStringMultiOp(effectiveOperator)) {
+          return (
+            <FilterEnumTagList
+              id="filter-supplier-hint"
+              label="Suppliers"
+              addControlId="filter-supplier-add"
+              options={supplierEnumOptions}
+              selected={filterDraft.supplierTags}
+              onAdd={(value) => {
+                setFilterDraft((d) =>
+                  d.supplierTags.includes(value as never)
+                    ? d
+                    : {
+                        ...d,
+                        supplierTags: [
+                          ...d.supplierTags,
+                          value as (typeof d.supplierTags)[number],
+                        ],
+                      },
+                );
+              }}
+              onRemove={(index) => {
+                setFilterDraft((d) => ({
+                  ...d,
+                  supplierTags: d.supplierTags.filter((_, i) => i !== index),
+                }));
+              }}
+            />
+          );
+        }
+        return (
+          <div>
+            <label
+              htmlFor="filter-supplier-single"
+              className="block text-sm/6 font-medium text-white"
+            >
+              Supplier
+            </label>
+            <div className="mt-2">
+              <Select
+                id="filter-supplier-single"
+                value={filterDraft.supplierSingle}
+                onChange={(e) =>
+                  setFilterDraft((d) => ({
+                    ...d,
+                    supplierSingle: e.target.value as never,
+                  }))
+                }
+              >
+                <option value="">Select supplier…</option>
+                {SUPPLIER_OPTIONS.map((v) => (
+                  <option key={v} value={v}>
+                    {v}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+        );
+      }
+
       if (isStringMultiOp(effectiveOperator)) {
         return (
           <FilterStringTagList
@@ -350,6 +426,7 @@ export function CatalogueFilterForm() {
     filterDraft,
     salesEnumOptions,
     legalEnumOptions,
+    supplierEnumOptions,
     setFilterDraft,
   ]);
 

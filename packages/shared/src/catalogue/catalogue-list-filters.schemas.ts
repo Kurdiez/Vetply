@@ -29,6 +29,7 @@ export const catalogueProductFilterStringSchema = z
     fieldId: z.union([
       z.literal(CatalogueFilterFieldId.Name),
       z.literal(CatalogueFilterFieldId.ManufacturerName),
+      z.literal(CatalogueFilterFieldId.Supplier),
     ]),
     operator: z.nativeEnum(CatalogueFilterOperator),
     value: z.union([
