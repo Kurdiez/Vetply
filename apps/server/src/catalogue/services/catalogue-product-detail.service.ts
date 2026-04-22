@@ -1,0 +1,76 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import {
+  CatalogueProductDetail,
+  catalogueProductDetailSchema,
+} from '@vetply/shared';
+import { Repository } from 'typeorm';
+import { zodResTransform } from '~/commons/validations';
+import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
+import {
+  ceilPriceToTwoDecimalPlaces,
+  formatUnitQuantityAsWholeNumber,
+} from '../utils/catalogue-price-format';
+
+@Injectable()
+export class CatalogueProductDetailService {
+  constructor(
+    @InjectRepository(CatalogueProductEntity)
+    private readonly productRepository: Repository<CatalogueProductEntity>,
+  ) {}
+
+  async getProductDetail(id: string): Promise<CatalogueProductDetail> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: {
+        manufacturer: true,
+        listings: { supplier: true },
+      },
+    });
+
+    if (!product) {
+      throw new NotFoundException();
+    }
+
+    const listings = [...(product.listings ?? [])].sort((a, b) => {
+      const sa = a.supplier?.name ?? '';
+      const sb = b.supplier?.name ?? '';
+      const c = sa.localeCompare(sb, undefined, { sensitivity: 'base' });
+      if (c !== 0) {
+        return c;
+      }
+      return a.variantRef.localeCompare(b.variantRef, undefined, {
+        sensitivity: 'base',
+      });
+    });
+
+    const payload: CatalogueProductDetail = {
+      id: product.id,
+      name: product.name,
+      image: product.image ?? null,
+      manufacturerName: product.manufacturer?.name ?? null,
+      salesCategory: product.salesCategory,
+      legalCategory: product.legalCategory,
+      pom: product.pom,
+      unitType: product.unitType,
+      unitQuantity: formatUnitQuantityAsWholeNumber(product.unitQuantity),
+      createdAt: product.createdAt.toISOString(),
+      updatedAt: product.updatedAt.toISOString(),
+      listings: listings.map((l) => ({
+        id: l.id,
+        supplierName: l.supplier?.name ?? 'Unknown supplier',
+        variantRef: l.variantRef,
+        name: l.name,
+        listedPrice: ceilPriceToTwoDecimalPlaces(
+          l.listedPrice === null || l.listedPrice === undefined
+            ? null
+            : String(l.listedPrice),
+        ),
+      })),
+    };
+
+    return (
+      zodResTransform(payload, catalogueProductDetailSchema) ?? payload
+    );
+  }
+}

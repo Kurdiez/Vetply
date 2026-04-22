@@ -118,6 +118,19 @@ export function catalogueListStateEquals(
 /** `pages/admin/[[...slug]].tsx` — the dynamic route that covers all admin paths. */
 const ADMIN_CATALOGUE_PAGE_ROUTE = "/admin/[[...slug]]";
 
+export function buildCatalogueProductDetailNavigation(
+  productId: string,
+): { url: UrlObject; as: string } {
+  const as = routes.admin.catalogue.productDetail(productId);
+  return {
+    url: {
+      pathname: ADMIN_CATALOGUE_PAGE_ROUTE,
+      query: { slug: ["catalogue", "product", productId] },
+    },
+    as,
+  };
+}
+
 /**
  * Builds the object-form navigation args needed by Next.js Pages Router for the
  * `[[...slug]]` dynamic route.  A plain string URL can drop search params for this route.

@@ -30,6 +30,10 @@ const FIELD_OPTIONS: FilterSelectOption[] = [
     label: "Supplier",
   },
   {
+    value: CatalogueFilterFieldId.BestSupplier,
+    label: "Best supplier",
+  },
+  {
     value: CatalogueFilterFieldId.SalesCategory,
     label: "Sales category",
   },
@@ -152,7 +156,14 @@ export function CatalogueFilterForm() {
     }
 
     if (kind === "string") {
-      if (fieldId === CatalogueFilterFieldId.Supplier) {
+      if (
+        fieldId === CatalogueFilterFieldId.Supplier ||
+        fieldId === CatalogueFilterFieldId.BestSupplier
+      ) {
+        const supplierFieldLabel =
+          fieldId === CatalogueFilterFieldId.BestSupplier
+            ? "Best supplier"
+            : "Supplier";
         if (isStringMultiOp(effectiveOperator)) {
           return (
             <FilterEnumTagList
@@ -189,7 +200,7 @@ export function CatalogueFilterForm() {
               htmlFor="filter-supplier-single"
               className="block text-sm/6 font-medium text-white"
             >
-              Supplier
+              {supplierFieldLabel}
             </label>
             <div className="mt-2">
               <Select

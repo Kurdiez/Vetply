@@ -8,15 +8,32 @@ export const routes = {
     catalogue: {
       view: "/admin/catalogue",
       importSupplierPrices: "/admin/catalogue/import-supplier-prices",
+      productDetail: (productId: string) =>
+        `/admin/catalogue/product/${productId}`,
     },
   },
 } as const;
+
+const CATALOGUE_PRODUCT_DETAIL_PREFIX = `${routes.admin.catalogue.view}/product/`;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Returns product id when `path` is a valid catalogue product detail URL. */
+export function parseCatalogueProductDetailId(path: string): string | null {
+  if (!path.startsWith(CATALOGUE_PRODUCT_DETAIL_PREFIX)) {
+    return null;
+  }
+  const id = path.slice(CATALOGUE_PRODUCT_DETAIL_PREFIX.length);
+  return UUID_RE.test(id) ? id : null;
+}
 
 export function isValidAdminPath(path: string): boolean {
   return (
     path === routes.admin.root ||
     path === routes.admin.catalogue.view ||
-    path === routes.admin.catalogue.importSupplierPrices
+    path === routes.admin.catalogue.importSupplierPrices ||
+    parseCatalogueProductDetailId(path) !== null
   );
 }
 

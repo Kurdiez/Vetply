@@ -111,8 +111,10 @@ export const catalogueProductListItemSchema = z.object({
   pom: z.boolean().nullable(),
   unitType: z.nativeEnum(CatalogUnitType),
   unitQuantity: z.string(),
+  /** Supplier name on a listing that achieves the minimum listed price (deterministic tie-break). */
+  bestSupplierName: z.string().nullable(),
   /** Minimum `listed_price` across all supplier listings for this product. */
-  lowestPrice: z.string().nullable(),
+  bestPrice: z.string().nullable(),
 });
 
 export type CatalogueProductListItem = z.infer<

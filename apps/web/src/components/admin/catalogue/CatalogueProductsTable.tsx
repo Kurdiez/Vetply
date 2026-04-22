@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@/components/ui/Button";
 import {
   DataTable,
   type DataTableColumn,
 } from "@/components/ui/data-table/DataTable";
-import { Button } from "@/components/ui/Button";
 import {
   CatalogueFilterFieldId,
   type CatalogueProductListItem,
@@ -39,7 +39,8 @@ const COLUMNS: DataTableColumn[] = [
   },
   { id: CatalogueFilterFieldId.Pom, header: "POM" },
   { id: "unit", header: "Unit" },
-  { id: "lowestPrice", header: "Lowest price" },
+  { id: "bestSupplierName", header: "Best supplier" },
+  { id: "bestPrice", header: "Best price" },
 ];
 
 export function CatalogueProductsTable() {
@@ -49,6 +50,7 @@ export function CatalogueProductsTable() {
     refetch,
     sort,
     toggleSortColumn,
+    navigateToProduct,
   } = useCatalogueView();
 
   if (status === "loading" && items.length === 0) {
@@ -89,6 +91,7 @@ export function CatalogueProductsTable() {
       onSortColumnClick={(columnId) =>
         toggleSortColumn(columnId as CatalogueSortFieldId)
       }
+      onRowClick={(row) => navigateToProduct(row.id)}
       getRowKey={(row) => row.id}
       renderCell={(row, columnId) => {
         if (columnId === "image") {
@@ -102,11 +105,14 @@ export function CatalogueProductsTable() {
         if (columnId === "unit") {
           return `${row.unitQuantity} ${row.unitType}`;
         }
-        if (columnId === "lowestPrice") {
-          if (row.lowestPrice === null) {
+        if (columnId === "bestSupplierName") {
+          return row.bestSupplierName ?? "—";
+        }
+        if (columnId === "bestPrice") {
+          if (row.bestPrice === null) {
             return "—";
           }
-          return row.lowestPrice;
+          return row.bestPrice;
         }
         if (columnId === CatalogueFilterFieldId.Pom) {
           if (row.pom === null) {

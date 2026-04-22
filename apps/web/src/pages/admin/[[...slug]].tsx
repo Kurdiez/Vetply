@@ -1,9 +1,14 @@
 "use client";
 
 import { AdminGate } from "@/components/admin/AdminGate";
+import { CatalogueProductDetailPage } from "@/components/admin/catalogue/CatalogueProductDetailPage";
 import { CatalogueViewPage } from "@/components/admin/catalogue/CatalogueViewPage";
 import { ImportSupplierPricesForm } from "@/components/admin/ImportSupplierPricesForm";
-import { isValidAdminPath, routes } from "@/constants/routes";
+import {
+  isValidAdminPath,
+  parseCatalogueProductDetailId,
+  routes,
+} from "@/constants/routes";
 import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
@@ -32,6 +37,11 @@ function AdminMain() {
 
   if (path === routes.admin.catalogue.importSupplierPrices) {
     return <ImportSupplierPricesForm />;
+  }
+
+  const catalogueProductId = parseCatalogueProductDetailId(path);
+  if (catalogueProductId) {
+    return <CatalogueProductDetailPage productId={catalogueProductId} />;
   }
 
   if (path === routes.admin.catalogue.view) {

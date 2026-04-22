@@ -1,13 +1,17 @@
 "use client";
 
+import { SidebarNavButton } from "@/components/ui/SidebarNavButton";
+import {
+  isUnderAdminCatalogue,
+  parseCatalogueProductDetailId,
+  routes,
+} from "@/constants/routes";
+import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
 import { RectangleStackIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
-import { isUnderAdminCatalogue, routes } from "@/constants/routes";
-import { SidebarNavButton } from "@/components/ui/SidebarNavButton";
-import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
 
 function classNames(...classes: (string | false | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -95,7 +99,10 @@ export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
             <li>
               <NavLink
                 href={routes.admin.catalogue.view}
-                active={path === routes.admin.catalogue.view}
+                active={
+                  path === routes.admin.catalogue.view ||
+                  parseCatalogueProductDetailId(path) !== null
+                }
                 onNavigate={onNavigate}
               >
                 View Catalogue

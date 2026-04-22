@@ -3,11 +3,11 @@
 import { routes } from "@/constants/routes";
 import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
 import { isNextRouterAsPathInSyncWithBrowser } from "@/utils/next-router-location";
+import { fetchCatalogueProducts } from "@/utils/vetply-api/catalogue-api";
 import {
   CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE,
   type CatalogueProductListItem,
 } from "@vetply/shared";
-import { fetchCatalogueProducts } from "@/utils/vetply-api/catalogue-api";
 import { useRouter } from "next/router";
 import {
   createContext,
@@ -22,14 +22,10 @@ import {
   type SetStateAction,
 } from "react";
 import { toast } from "sonner";
-import {
-  buildCatalogueListDynamicRouteNavigation,
-  buildCatalogueListUrl,
-  catalogueListStateEquals,
-  parseCatalogueListFromQuery,
-  type CatalogueListUrlState,
-} from "./catalogue-list-url";
-import type { AppliedFilter, CatalogueSortFieldId } from "./catalogue-filter-model";
+import type {
+  AppliedFilter,
+  CatalogueSortFieldId,
+} from "./catalogue-filter-model";
 import {
   appliedFiltersToApiPayload,
   logCatalogueListRequestPayload,
@@ -39,6 +35,14 @@ import {
   validateDraftAndBuildFilter,
   type CatalogueFilterDraft,
 } from "./catalogue-filter-validation";
+import {
+  buildCatalogueListDynamicRouteNavigation,
+  buildCatalogueListUrl,
+  buildCatalogueProductDetailNavigation,
+  catalogueListStateEquals,
+  parseCatalogueListFromQuery,
+  type CatalogueListUrlState,
+} from "./catalogue-list-url";
 import type { CatalogueSortState } from "./catalogue-sort";
 import { nextSortState } from "./catalogue-sort";
 
@@ -63,6 +67,7 @@ type CatalogueViewContextValue = {
   /** Controlled input for product name search (debounced to URL and API). */
   searchInput: string;
   setSearchInput: Dispatch<SetStateAction<string>>;
+  navigateToProduct: (productId: string) => void;
 };
 
 const CatalogueViewContext = createContext<CatalogueViewContextValue | null>(
@@ -178,6 +183,14 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       } else {
         void router.push(url, undefined, { shallow: true });
       }
+    },
+    [router],
+  );
+
+  const navigateToProduct = useCallback(
+    (productId: string) => {
+      const nav = buildCatalogueProductDetailNavigation(productId);
+      void router.push(nav.url, nav.as, { shallow: true });
     },
     [router],
   );
@@ -311,7 +324,16 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
         sort,
       });
     }
-  }, [status, totalCount, pageSize, page, pushListUrl, appliedFilters, sort, nameSearch]);
+  }, [
+    status,
+    totalCount,
+    pageSize,
+    page,
+    pushListUrl,
+    appliedFilters,
+    sort,
+    nameSearch,
+  ]);
 
   useEffect(() => {
     if (!hydratedFromUrl) {
@@ -348,7 +370,15 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [page, pageSize, fetchTick, appliedFilters, sort, nameSearch, hydratedFromUrl]);
+  }, [
+    page,
+    pageSize,
+    fetchTick,
+    appliedFilters,
+    sort,
+    nameSearch,
+    hydratedFromUrl,
+  ]);
 
   const value = useMemo<CatalogueViewContextValue>(
     () => ({
@@ -369,6 +399,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       removeFilter,
       searchInput,
       setSearchInput,
+      navigateToProduct,
     }),
     [
       page,
@@ -386,6 +417,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       addFilter,
       removeFilter,
       searchInput,
+      navigateToProduct,
     ],
   );
 
@@ -399,7 +431,9 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
 export function useCatalogueView(): CatalogueViewContextValue {
   const ctx = useContext(CatalogueViewContext);
   if (!ctx) {
-    throw new Error("useCatalogueView must be used within CatalogueViewProvider");
+    throw new Error(
+      "useCatalogueView must be used within CatalogueViewProvider",
+    );
   }
   return ctx;
 }

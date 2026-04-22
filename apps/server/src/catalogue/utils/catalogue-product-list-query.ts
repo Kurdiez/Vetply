@@ -17,6 +17,14 @@ type CatalogueProductSupplierFilter = {
   value: string | string[];
 };
 
+type CatalogueProductBestSupplierFilter = {
+  id?: string;
+  kind: 'string';
+  fieldId: typeof CatalogueFilterFieldId.BestSupplier;
+  operator: CatalogueFilterOperator;
+  value: string | string[];
+};
+
 function createParamCounter(): NextParam {
   let i = 0;
   return () => `f${i++}`;
@@ -31,6 +39,22 @@ function supplierListingExists(conditionSql: string): string {
     SELECT 1 FROM catalogue_product_supplier_listings sup_l
     INNER JOIN catalogue_suppliers sup_s ON sup_s.id = sup_l.supplier_id
     WHERE sup_l.product_id = product.id AND (${conditionSql})
+  )`;
+}
+
+/** Listing(s) at the product's minimum non-null `listed_price`; `conditionSql` uses `bss` / `bsl`. */
+function bestPriceSupplierListingExists(conditionSql: string): string {
+  return `EXISTS (
+    SELECT 1 FROM catalogue_product_supplier_listings bsl
+    INNER JOIN catalogue_suppliers bss ON bss.id = bsl.supplier_id
+    WHERE bsl.product_id = product.id
+      AND bsl.listed_price IS NOT NULL
+      AND bsl.listed_price = (
+        SELECT MIN(bsl2.listed_price)
+        FROM catalogue_product_supplier_listings bsl2
+        WHERE bsl2.product_id = product.id AND bsl2.listed_price IS NOT NULL
+      )
+      AND (${conditionSql})
   )`;
 }
 
@@ -101,6 +125,79 @@ function applySupplierFilter(
       const k = next();
       qb.andWhere(
         `NOT (${supplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`)})`,
+        { [k]: t },
+      );
+    }
+  }
+}
+
+function applyBestSupplierFilter(
+  qb: SelectQueryBuilder<CatalogueProductEntity>,
+  filter: CatalogueProductBestSupplierFilter,
+  next: NextParam,
+): void {
+  const op = filter.operator;
+  const value = filter.value;
+  const singleToken = (v: string | string[]): string =>
+    Array.isArray(v) ? v[0] : v;
+  const nameTrimLower = `LOWER(TRIM(bss.name::text))`;
+  const nameLower = `LOWER(bss.name::text)`;
+
+  if (op === CatalogueFilterOperator.IsExactly) {
+    const k = next();
+    qb.andWhere(
+      bestPriceSupplierListingExists(`${nameTrimLower} = LOWER(TRIM(:${k}))`),
+      { [k]: singleToken(value) },
+    );
+    return;
+  }
+  if (op === CatalogueFilterOperator.IsDistinctFrom) {
+    const k = next();
+    qb.andWhere(
+      `NOT (${bestPriceSupplierListingExists(`${nameTrimLower} = LOWER(TRIM(:${k}))`)})`,
+      { [k]: singleToken(value) },
+    );
+    return;
+  }
+  if (op === CatalogueFilterOperator.Contains) {
+    const k = next();
+    qb.andWhere(
+      bestPriceSupplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`),
+      { [k]: singleToken(value) },
+    );
+    return;
+  }
+  if (op === CatalogueFilterOperator.DoesNotContain) {
+    const k = next();
+    qb.andWhere(
+      `NOT (${bestPriceSupplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`)})`,
+      { [k]: singleToken(value) },
+    );
+    return;
+  }
+  if (op === CatalogueFilterOperator.ContainsAnyOf) {
+    const tokens = Array.isArray(value) ? value : [value];
+    qb.andWhere(
+      new Brackets((outer) => {
+        for (const t of tokens) {
+          const k = next();
+          outer.orWhere(
+            bestPriceSupplierListingExists(
+              `STRPOS(${nameLower}, LOWER(:${k})) > 0`,
+            ),
+            { [k]: t },
+          );
+        }
+      }),
+    );
+    return;
+  }
+  if (op === CatalogueFilterOperator.DoesNotContainAnyOf) {
+    const tokens = Array.isArray(value) ? value : [value];
+    for (const t of tokens) {
+      const k = next();
+      qb.andWhere(
+        `NOT (${bestPriceSupplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`)})`,
         { [k]: t },
       );
     }
@@ -288,6 +385,12 @@ export function applyCatalogueProductFilters(
     if (filter.kind === 'string') {
       if (filter.fieldId === CatalogueFilterFieldId.Supplier) {
         applySupplierFilter(qb, filter as CatalogueProductSupplierFilter, next);
+      } else if (filter.fieldId === CatalogueFilterFieldId.BestSupplier) {
+        applyBestSupplierFilter(
+          qb,
+          filter as CatalogueProductBestSupplierFilter,
+          next,
+        );
       } else {
         applyStringFilter(
           qb,
@@ -334,6 +437,7 @@ export function applyCatalogueProductSort(
       qb.orderBy('product.pom', dir);
       break;
     case CatalogueFilterFieldId.Supplier:
+    case CatalogueFilterFieldId.BestSupplier:
       qb.orderBy('product.updatedAt', 'DESC');
       break;
     default:

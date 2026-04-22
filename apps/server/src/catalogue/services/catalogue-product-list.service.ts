@@ -8,7 +8,6 @@ import {
 } from '@vetply/shared';
 import { Repository } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
-import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import {
   ceilPriceToTwoDecimalPlaces,
@@ -45,43 +44,56 @@ export class CatalogueProductListService {
       .getManyAndCount();
 
     const ids = entities.map((p) => p.id);
-    const listingRepo = this.productRepository.manager.getRepository(
-      CatalogueProductSupplierListingEntity,
-    );
 
-    const lowestPriceByProductId = new Map<string, string | null>();
+    const bestByProductId = new Map<
+      string,
+      { bestSupplierName: string; bestPrice: string | null }
+    >();
     if (ids.length > 0) {
-      const minRows = await listingRepo
-        .createQueryBuilder('l')
-        .select('l.product_id', 'productId')
-        .addSelect('MIN(l.listed_price)', 'lowestPrice')
-        .where('l.product_id IN (:...ids)', { ids })
-        .groupBy('l.product_id')
-        .getRawMany<{ productId: string; lowestPrice: string | null }>();
+      const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
+      const bestRows = await this.productRepository.manager.query<
+        {
+          productId: string;
+          bestSupplierName: string;
+          listedPrice: string;
+        }[]
+      >(
+        `SELECT DISTINCT ON (l.product_id)
+           l.product_id AS "productId",
+           s.name AS "bestSupplierName",
+           l.listed_price AS "listedPrice"
+         FROM catalogue_product_supplier_listings l
+         INNER JOIN catalogue_suppliers s ON s.id = l.supplier_id
+         WHERE l.product_id IN (${placeholders})
+           AND l.listed_price IS NOT NULL
+         ORDER BY l.product_id, l.listed_price ASC, s.name ASC, l.variant_ref ASC, l.id ASC`,
+        ids,
+      );
 
-      for (const row of minRows) {
-        const v = row.lowestPrice;
-        lowestPriceByProductId.set(
-          row.productId,
-          ceilPriceToTwoDecimalPlaces(
-            v === null || v === undefined ? null : String(v),
-          ),
-        );
+      for (const row of bestRows) {
+        bestByProductId.set(row.productId, {
+          bestSupplierName: row.bestSupplierName,
+          bestPrice: ceilPriceToTwoDecimalPlaces(String(row.listedPrice)),
+        });
       }
     }
 
-    const items: CatalogueProductListItem[] = entities.map((p) => ({
-      id: p.id,
-      name: p.name,
-      image: p.image ?? null,
-      manufacturerName: p.manufacturer?.name ?? null,
-      salesCategory: p.salesCategory,
-      legalCategory: p.legalCategory,
-      pom: p.pom,
-      unitType: p.unitType,
-      unitQuantity: formatUnitQuantityAsWholeNumber(p.unitQuantity),
-      lowestPrice: lowestPriceByProductId.get(p.id) ?? null,
-    }));
+    const items: CatalogueProductListItem[] = entities.map((p) => {
+      const best = bestByProductId.get(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        image: p.image ?? null,
+        manufacturerName: p.manufacturer?.name ?? null,
+        salesCategory: p.salesCategory,
+        legalCategory: p.legalCategory,
+        pom: p.pom,
+        unitType: p.unitType,
+        unitQuantity: formatUnitQuantityAsWholeNumber(p.unitQuantity),
+        bestSupplierName: best?.bestSupplierName ?? null,
+        bestPrice: best?.bestPrice ?? null,
+      };
+    });
 
     const payload: CatalogueProductsListRes = {
       items,

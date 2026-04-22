@@ -2,6 +2,8 @@ export const CatalogueFilterFieldId = {
   Name: 'name',
   ManufacturerName: 'manufacturerName',
   Supplier: 'supplier',
+  /** Supplier on a listing that achieves the minimum listed price (ties: any match). */
+  BestSupplier: 'bestSupplier',
   SalesCategory: 'salesCategory',
   LegalCategory: 'legalCategory',
   Pom: 'pom',
@@ -25,6 +27,7 @@ export type CatalogueFilterOperator =
 export const CATALOGUE_FILTER_STRING_FIELDS = [
   CatalogueFilterFieldId.ManufacturerName,
   CatalogueFilterFieldId.Supplier,
+  CatalogueFilterFieldId.BestSupplier,
 ] as const satisfies readonly CatalogueFilterFieldId[];
 
 export const CATALOGUE_FILTER_STRING_OPERATORS = [

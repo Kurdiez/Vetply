@@ -1,6 +1,8 @@
 import {
+  catalogueProductDetailSchema,
   catalogueProductsListQueryInputSchema,
   catalogueProductsListResSchema,
+  type CatalogueProductDetail,
   type CatalogueProductsListQueryInput,
   type CatalogueProductsListRes,
 } from "@vetply/shared";
@@ -28,4 +30,13 @@ export async function fetchCatalogueProducts(
     { params },
   );
   return catalogueProductsListResSchema.parse(data);
+}
+
+export async function fetchCatalogueProductDetail(
+  productId: string,
+): Promise<CatalogueProductDetail> {
+  const { data } = await vetplyApiClient.get<unknown>(
+    `/admin/catalogue/products/${productId}`,
+  );
+  return catalogueProductDetailSchema.parse(data);
 }

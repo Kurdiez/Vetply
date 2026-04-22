@@ -469,7 +469,7 @@ describe('CatalogueProductListService', () => {
     expect(res.items[0].id).toBe(productNvs.id);
   });
 
-  it('returns lowestPrice as minimum listed_price across listings for a product', async () => {
+  it('returns bestPrice and bestSupplierName from lowest-priced listing (tie-break)', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const listingRepo = getTestRepository(
       dbContext,
@@ -524,7 +524,90 @@ describe('CatalogueProductListService', () => {
     const res = await service.listProducts({ page: 1, pageSize: 50 });
     const row = res.items.find((i) => i.id === product.id);
     expect(row).toBeDefined();
-    expect(row!.lowestPrice).toBe('5.50');
+    expect(row!.bestPrice).toBe('5.50');
+    expect(row!.bestSupplierName).toBe(Supplier.VEENAK);
+  });
+
+  it('filters bestSupplier isExactly — matches only when that supplier has a min-price listing', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvsSupplier = await supplierRepo.findOne({
+      where: { name: Supplier.NVS },
+    });
+    if (!nvsSupplier) {
+      nvsSupplier = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+    let veenakSupplier = await supplierRepo.findOne({
+      where: { name: Supplier.VEENAK },
+    });
+    if (!veenakSupplier) {
+      veenakSupplier = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.VEENAK }),
+      );
+    }
+
+    const alpha = await saveCatalogueManufacturer(manufacturerRepo, 'Mfg BS');
+    const product = await saveCatalogueProduct(productRepo, {
+      manufacturerId: alpha.id,
+      name: 'Dual list',
+      salesCategory: SalesCategory.Misc,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: nvsSupplier.id,
+        variantRef: 'HI',
+        name: 'Dual list',
+        listedPrice: '100.0000',
+      }),
+    );
+    await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: veenakSupplier.id,
+        variantRef: 'LO',
+        name: 'Dual list',
+        listedPrice: '1.0000',
+      }),
+    );
+
+    const matchVeenak = await service.listProducts({
+      page: 1,
+      pageSize: 50,
+      filters: [
+        {
+          kind: 'string',
+          fieldId: CatalogueFilterFieldId.BestSupplier,
+          operator: CatalogueFilterOperator.IsExactly,
+          value: Supplier.VEENAK,
+        },
+      ],
+    });
+    expect(matchVeenak.totalCount).toBe(1);
+    expect(matchVeenak.items[0].id).toBe(product.id);
+
+    const matchNvs = await service.listProducts({
+      page: 1,
+      pageSize: 50,
+      filters: [
+        {
+          kind: 'string',
+          fieldId: CatalogueFilterFieldId.BestSupplier,
+          operator: CatalogueFilterOperator.IsExactly,
+          value: Supplier.NVS,
+        },
+      ],
+    });
+    expect(matchNvs.totalCount).toBe(0);
   });
 });
 

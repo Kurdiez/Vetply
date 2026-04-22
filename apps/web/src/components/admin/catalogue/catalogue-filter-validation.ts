@@ -86,7 +86,10 @@ export function validateDraftAndBuildFilter(
   }
 
   if (kind === "string") {
-    if (fieldId === CatalogueFilterFieldId.Supplier) {
+    if (
+      fieldId === CatalogueFilterFieldId.Supplier ||
+      fieldId === CatalogueFilterFieldId.BestSupplier
+    ) {
       if (isStringMultiOperator(op)) {
         const tags = draft.supplierTags;
         if (tags.length === 0) {
@@ -100,7 +103,7 @@ export function validateDraftAndBuildFilter(
           filter: {
             id: newId(),
             kind: "string",
-            fieldId: CatalogueFilterFieldId.Supplier,
+            fieldId,
             operator: op,
             value: tags,
           },
@@ -114,7 +117,7 @@ export function validateDraftAndBuildFilter(
         filter: {
           id: newId(),
           kind: "string",
-          fieldId: CatalogueFilterFieldId.Supplier,
+          fieldId,
           operator: op,
           value: draft.supplierSingle,
         },

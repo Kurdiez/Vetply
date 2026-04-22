@@ -62,7 +62,8 @@ export type AppliedFilter =
       kind: "string";
       fieldId:
         | typeof CatalogueFilterFieldId.ManufacturerName
-        | typeof CatalogueFilterFieldId.Supplier;
+        | typeof CatalogueFilterFieldId.Supplier
+        | typeof CatalogueFilterFieldId.BestSupplier;
       operator: CatalogueFilterOperator;
       value: string | string[];
     }
@@ -123,6 +124,7 @@ const FIELD_LABELS: Record<CatalogueFilterFieldId, string> = {
   [CatalogueFilterFieldId.Name]: "Name",
   [CatalogueFilterFieldId.ManufacturerName]: "Manufacturer",
   [CatalogueFilterFieldId.Supplier]: "Supplier",
+  [CatalogueFilterFieldId.BestSupplier]: "Best supplier",
   [CatalogueFilterFieldId.SalesCategory]: "Sales category",
   [CatalogueFilterFieldId.LegalCategory]: "Legal category",
   [CatalogueFilterFieldId.Pom]: "POM",

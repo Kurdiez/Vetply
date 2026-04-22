@@ -3,19 +3,22 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ZodError } from 'zod';
 import {
   ImportSupplierPricesBatchReq,
   catalogueProductsListQuerySchema,
   importSupplierPricesBatchReqSchema,
 } from '@vetply/shared';
+import { ZodError } from 'zod';
 import { ZodValidationPipe } from '~/commons/validations';
 import { SuperUserGuard } from '../guards/super-user.guard';
 import { CatalogueImportService } from '../services/catalogue-import.service';
+import { CatalogueProductDetailService } from '../services/catalogue-product-detail.service';
 import { CatalogueProductListService } from '../services/catalogue-product-list.service';
 
 @Controller('admin/catalogue')
@@ -24,7 +27,13 @@ export class CatalogueController {
   constructor(
     private readonly catalogueImportService: CatalogueImportService,
     private readonly catalogueProductListService: CatalogueProductListService,
+    private readonly catalogueProductDetailService: CatalogueProductDetailService,
   ) {}
+
+  @Get('products/:id')
+  getProduct(@Param('id', ParseUUIDPipe) id: string) {
+    return this.catalogueProductDetailService.getProductDetail(id);
+  }
 
   @Get('products')
   listProducts(@Query() rawQuery: Record<string, unknown>) {
