@@ -5,16 +5,21 @@ import {
   type DataTableColumn,
 } from "@/components/ui/data-table/DataTable";
 import { Button } from "@/components/ui/Button";
-import { CATALOGUE_RETURN_URL_STORAGE_KEY } from "@/constants/catalogue-session";
-import { routes } from "@/constants/routes";
 import {
   CatalogueFilterFieldId,
   type CatalogueProductListItem,
 } from "@vetply/shared";
-import { useRouter } from "next/router";
 import type { CatalogueSortFieldId } from "./catalogue-filter-model";
-import { buildCatalogueListUrl } from "./catalogue-list-url";
 import { useCatalogueView } from "./CatalogueViewContext";
+
+const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
+  CatalogueFilterFieldId.Name,
+  CatalogueFilterFieldId.ManufacturerName,
+  CatalogueFilterFieldId.SalesCategory,
+  CatalogueFilterFieldId.LegalCategory,
+  CatalogueFilterFieldId.Pom,
+  CatalogueFilterFieldId.Supplier,
+];
 
 const COLUMNS: DataTableColumn[] = [
   { id: CatalogueFilterFieldId.Name, header: "Name" },
@@ -31,19 +36,17 @@ const COLUMNS: DataTableColumn[] = [
     header: "Legal category",
   },
   { id: CatalogueFilterFieldId.Pom, header: "POM" },
+  { id: "unit", header: "Unit" },
+  { id: "lowestPrice", header: "Lowest price" },
 ];
 
 export function CatalogueProductsTable() {
-  const router = useRouter();
   const {
     items,
     status,
     refetch,
     sort,
     toggleSortColumn,
-    page,
-    pageSize,
-    appliedFilters,
   } = useCatalogueView();
 
   if (status === "loading" && items.length === 0) {
@@ -78,28 +81,23 @@ export function CatalogueProductsTable() {
       className="mt-6 flow-root"
       columns={COLUMNS}
       rows={items}
-      sortableColumnIds={COLUMNS.map((c) => c.id)}
+      sortableColumnIds={SORTABLE_COLUMN_IDS}
       sortColumnId={sort?.fieldId ?? null}
       sortDirection={sort?.direction ?? null}
       onSortColumnClick={(columnId) =>
         toggleSortColumn(columnId as CatalogueSortFieldId)
       }
       getRowKey={(row) => row.id}
-      onRowClick={(row) => {
-        const returnUrl = buildCatalogueListUrl(routes.admin.catalogue.view, {
-          page,
-          pageSize,
-          appliedFilters,
-          sort,
-        });
-        try {
-          sessionStorage.setItem(CATALOGUE_RETURN_URL_STORAGE_KEY, returnUrl);
-        } catch {
-          /* ignore quota / private mode */
-        }
-        void router.push(routes.admin.catalogue.productDetail(row.id));
-      }}
       renderCell={(row, columnId) => {
+        if (columnId === "unit") {
+          return `${row.unitQuantity} ${row.unitType}`;
+        }
+        if (columnId === "lowestPrice") {
+          if (row.lowestPrice === null) {
+            return "—";
+          }
+          return row.lowestPrice;
+        }
         if (columnId === CatalogueFilterFieldId.Pom) {
           if (row.pom === null) {
             return "—";

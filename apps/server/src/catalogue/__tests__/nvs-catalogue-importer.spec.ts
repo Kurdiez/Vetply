@@ -1,0 +1,133 @@
+import type { NvsImportRow } from '@vetply/shared';
+import { CatalogUnitType, LegalCategory, SalesCategory, Supplier } from '@vetply/shared';
+import { TestingModule } from '@nestjs/testing';
+import { DataSource } from 'typeorm';
+import {
+  cleanupAllTestResources,
+  createTestDbContext,
+  createTestingModule,
+  getTestRepository,
+  setupTestDatabase,
+  type TestDbContext,
+} from '~/commons/test/utils/jest-test-utils';
+import { importNvsCatalogueRow } from '../importers/nvs-catalogue-importer';
+import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
+import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
+import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
+import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
+
+function validRow(overrides: Partial<NvsImportRow> = {}): NvsImportRow {
+  return {
+    salesGroup: 'Anaesthetics',
+    partNo: 'PART-1',
+    description: 'Test product',
+    uom: 'EA',
+    vpp: '£10.00',
+    pom: 'No',
+    manufacturer: 'Acme Vet',
+    legalLabel: 'POM-V',
+    ...overrides,
+  };
+}
+
+describe('importNvsCatalogueRow', () => {
+  let dataSource: DataSource;
+  let dbContext: TestDbContext;
+  let testModule: TestingModule;
+
+  beforeEach(async () => {
+    dataSource = await setupTestDatabase();
+    dbContext = await createTestDbContext(dataSource);
+    testModule = await createTestingModule(dataSource, {});
+  });
+
+  afterEach(async () => {
+    await cleanupAllTestResources(dbContext, testModule);
+  });
+
+  it('creates manufacturer, product, and listing for a new part number', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const nvs = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.NVS }),
+    );
+
+    const r = await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow(),
+      nvs.id,
+    );
+    expect(r).toBe('imported');
+
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+    const manufacturerRepo = getTestRepository(
+      dbContext,
+      CatalogueManufacturerEntity,
+    );
+
+    const products = await productRepo.find();
+    expect(products).toHaveLength(1);
+    expect(products[0].name).toBe('Test product');
+    expect(products[0].unitType).toBe(CatalogUnitType.EA);
+    expect(products[0].salesCategory).toBe(SalesCategory.Anaesthetics);
+    expect(products[0].legalCategory).toBe(LegalCategory.POM_V);
+    expect(products[0].pom).toBe(false);
+
+    const mfg = await manufacturerRepo.findOne({
+      where: { id: products[0].manufacturerId! },
+    });
+    expect(mfg?.name).toBe('Acme Vet');
+
+    const listings = await listingRepo.find();
+    expect(listings).toHaveLength(1);
+    expect(listings[0].variantRef).toBe('PART-1');
+    expect(listings[0].listedPrice).toBe('10.0000');
+    expect(listings[0].productId).toBe(products[0].id);
+  });
+
+  it('updates product and listing when part number already exists', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const nvs = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.NVS }),
+    );
+
+    await importNvsCatalogueRow(dbContext.manager, validRow(), nvs.id);
+
+    const r = await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({
+        description: 'Updated name',
+        uom: '250ML',
+        vpp: '£20.50',
+        pom: 'Yes',
+        salesGroup: 'Dental',
+        legalLabel: 'GSL (General Sales List)',
+        manufacturer: 'Other Mfg',
+      }),
+      nvs.id,
+    );
+    expect(r).toBe('imported');
+
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+    const products = await productRepo.find();
+    expect(products).toHaveLength(1);
+    expect(products[0].name).toBe('Updated name');
+    expect(products[0].unitType).toBe(CatalogUnitType.ML);
+    expect(products[0].unitQuantity).toBe('250.000000');
+    expect(products[0].pom).toBe(true);
+    expect(products[0].salesCategory).toBe(SalesCategory.Dental);
+    expect(products[0].legalCategory).toBe(LegalCategory.GSL_GeneralSalesList);
+
+    const listings = await listingRepo.find();
+    expect(listings).toHaveLength(1);
+    expect(listings[0].listedPrice).toBe('20.5000');
+    expect(listings[0].name).toBe('Updated name');
+  });
+});

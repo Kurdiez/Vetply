@@ -1,4 +1,4 @@
-import { LegalCategory, SalesCategory } from '@vetply/shared';
+import { CatalogUnitType, LegalCategory, SalesCategory } from '@vetply/shared';
 import {
   Column,
   CreateDateColumn,
@@ -11,7 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { CatalogueManufacturerEntity } from './catalogue-manufacturer.entity';
-import { CatalogueProductVariantEntity } from './catalogue-product-variant.entity';
+import { CatalogueProductSupplierListingEntity } from './catalogue-product-supplier-listing.entity';
 
 @Entity('catalogue_products')
 @Index('IDX_catalogue_products_name', ['name'])
@@ -64,8 +64,24 @@ export class CatalogueProductEntity {
   @Column({ type: 'boolean', name: 'pom', nullable: true })
   pom!: boolean | null;
 
-  @OneToMany(() => CatalogueProductVariantEntity, (v) => v.product)
-  variants!: CatalogueProductVariantEntity[];
+  @Column({
+    name: 'unit_type',
+    type: 'enum',
+    enum: CatalogUnitType,
+    enumName: 'catalog_unit_type_enum',
+  })
+  unitType!: CatalogUnitType;
+
+  @Column({
+    name: 'unit_quantity',
+    type: 'decimal',
+    precision: 18,
+    scale: 6,
+  })
+  unitQuantity!: string;
+
+  @OneToMany(() => CatalogueProductSupplierListingEntity, (l) => l.product)
+  listings!: CatalogueProductSupplierListingEntity[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

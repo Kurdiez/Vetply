@@ -61,7 +61,6 @@ export type AppliedFilter =
       id: string;
       kind: "string";
       fieldId:
-        | typeof CatalogueFilterFieldId.Name
         | typeof CatalogueFilterFieldId.ManufacturerName
         | typeof CatalogueFilterFieldId.Supplier;
       operator: CatalogueFilterOperator;

@@ -3,9 +3,21 @@ import {
   catalogueProductFilterSchema,
   catalogueSortSchema,
 } from "./catalogue-list-filters.schemas";
-import { LegalCategory, SalesCategory } from "./enums";
+import { CatalogUnitType, LegalCategory, SalesCategory } from "./enums";
 
 export const CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE = 50;
+
+const MAX_NAME_SEARCH_LEN = 512;
+
+/** Optional `q` query param: trimmed ILIKE search on product name. */
+const optionalNameSearchQuery = z.preprocess((val: unknown) => {
+  if (val === undefined || val === null || val === "") {
+    return undefined;
+  }
+  const s = Array.isArray(val) ? val[0] : String(val);
+  const t = s.trim();
+  return t === "" ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
+}, z.string().max(MAX_NAME_SEARCH_LEN).optional());
 
 function optionalQueryJson<T extends z.ZodTypeAny>(
   schema: T,
@@ -50,6 +62,7 @@ export const catalogueProductsListQuerySchema = z.object({
     .min(1)
     .max(100)
     .default(CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE),
+  q: optionalNameSearchQuery,
   filters: optionalQueryJson(
     z.array(catalogueProductFilterSchema),
     "filters",
@@ -69,6 +82,17 @@ export const catalogueProductsListQueryInputSchema = z.object({
     .min(1)
     .max(100)
     .default(CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE),
+  q: z
+    .string()
+    .max(MAX_NAME_SEARCH_LEN)
+    .optional()
+    .transform((s) => {
+      if (s === undefined) {
+        return undefined;
+      }
+      const t = s.trim();
+      return t === "" ? undefined : t;
+    }),
   filters: z.array(catalogueProductFilterSchema).optional(),
   sort: catalogueSortSchema.optional(),
 });
@@ -84,6 +108,10 @@ export const catalogueProductListItemSchema = z.object({
   salesCategory: z.nativeEnum(SalesCategory).nullable(),
   legalCategory: z.nativeEnum(LegalCategory).nullable(),
   pom: z.boolean().nullable(),
+  unitType: z.nativeEnum(CatalogUnitType),
+  unitQuantity: z.string(),
+  /** Minimum `listed_price` across all supplier listings for this product. */
+  lowestPrice: z.string().nullable(),
 });
 
 export type CatalogueProductListItem = z.infer<

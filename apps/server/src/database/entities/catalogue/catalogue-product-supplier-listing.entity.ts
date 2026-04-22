@@ -8,30 +8,30 @@ import {
   Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import { CatalogueProductVariantEntity } from './catalogue-product-variant.entity';
+import { CatalogueProductEntity } from './catalogue-product.entity';
 import { CatalogueSupplierEntity } from './catalogue-supplier.entity';
 
-@Entity('catalogue_variant_supplier_listings')
-@Unique('UQ_catalogue_variant_supplier_listings_supplier_variant_ref', [
+@Entity('catalogue_product_supplier_listings')
+@Unique('UQ_catalogue_product_supplier_listings_supplier_variant_ref', [
   'supplierId',
   'variantRef',
 ])
-@Unique('UQ_catalogue_variant_supplier_listings_variant_supplier', [
-  'variantId',
+@Unique('UQ_catalogue_product_supplier_listings_product_supplier', [
+  'productId',
   'supplierId',
 ])
-export class CatalogueVariantSupplierListingEntity {
+export class CatalogueProductSupplierListingEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
-  @Column({ name: 'variant_id', type: 'uuid' })
-  variantId!: string;
+  @Column({ name: 'product_id', type: 'uuid' })
+  productId!: string;
 
-  @ManyToOne(() => CatalogueProductVariantEntity, (v) => v.listings, {
+  @ManyToOne(() => CatalogueProductEntity, (p) => p.listings, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'variant_id' })
-  variant!: CatalogueProductVariantEntity;
+  @JoinColumn({ name: 'product_id' })
+  product!: CatalogueProductEntity;
 
   @Column({ name: 'supplier_id', type: 'uuid' })
   supplierId!: string;

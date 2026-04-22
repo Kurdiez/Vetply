@@ -23,7 +23,6 @@ export type CatalogueFilterOperator =
   (typeof CatalogueFilterOperator)[keyof typeof CatalogueFilterOperator];
 
 export const CATALOGUE_FILTER_STRING_FIELDS = [
-  CatalogueFilterFieldId.Name,
   CatalogueFilterFieldId.ManufacturerName,
   CatalogueFilterFieldId.Supplier,
 ] as const satisfies readonly CatalogueFilterFieldId[];

@@ -1,9 +1,8 @@
 import { NvsImportRow } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
-import { CatalogueProductVariantEntity } from '~/database/entities/catalogue/catalogue-product-variant.entity';
+import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
-import { CatalogueVariantSupplierListingEntity } from '~/database/entities/catalogue/catalogue-variant-supplier-listing.entity';
 import {
   parseNvsUom,
   parseNvsVpp,
@@ -18,7 +17,7 @@ export async function importNvsCatalogueRow(
   supplierId: string,
 ): Promise<'imported' | string> {
   const listingRepo = manager.getRepository(
-    CatalogueVariantSupplierListingEntity,
+    CatalogueProductSupplierListingEntity,
   );
 
   const partNo = row.partNo.trim();
@@ -57,9 +56,30 @@ export async function importNvsCatalogueRow(
 
   const existingListing = await listingRepo.findOne({
     where: { supplierId, variantRef: partNo },
+    relations: ['product'],
   });
 
-  if (existingListing) {
+  if (existingListing?.product) {
+    const manufacturerRepo = manager.getRepository(CatalogueManufacturerEntity);
+    let manufacturer = await manufacturerRepo.findOne({
+      where: { name: manufacturerName },
+    });
+    if (!manufacturer) {
+      manufacturer = manufacturerRepo.create({ name: manufacturerName });
+      manufacturer = await manufacturerRepo.save(manufacturer);
+    }
+
+    const productRepo = manager.getRepository(CatalogueProductEntity);
+    const product = existingListing.product;
+    product.manufacturerId = manufacturer.id;
+    product.name = description;
+    product.salesCategory = salesCategory;
+    product.legalCategory = legalCategory;
+    product.pom = pom;
+    product.unitType = uom.unitType;
+    product.unitQuantity = uom.unitQuantity;
+    await productRepo.save(product);
+
     existingListing.name = description;
     existingListing.listedPrice = listedPrice;
     await listingRepo.save(existingListing);
@@ -76,39 +96,19 @@ export async function importNvsCatalogueRow(
   }
 
   const productRepo = manager.getRepository(CatalogueProductEntity);
-  let product = await productRepo.findOne({
-    where: {
-      manufacturerId: manufacturer.id,
-      name: description,
-      salesCategory,
-      legalCategory,
-      pom,
-    },
-  });
-  if (!product) {
-    product = productRepo.create({
-      manufacturerId: manufacturer.id,
-      name: description,
-      salesCategory,
-      legalCategory,
-      pom,
-    });
-    product = await productRepo.save(product);
-  }
-
-  const variantName = `${description} (${partNo})`;
-  const variantRepo = manager.getRepository(CatalogueProductVariantEntity);
-
-  const variant = variantRepo.create({
-    productId: product.id,
-    name: variantName,
+  const product = productRepo.create({
+    manufacturerId: manufacturer.id,
+    name: description,
+    salesCategory,
+    legalCategory,
+    pom,
     unitType: uom.unitType,
     unitQuantity: uom.unitQuantity,
   });
-  const savedVariant = await variantRepo.save(variant);
+  const savedProduct = await productRepo.save(product);
 
   const listing = listingRepo.create({
-    variantId: savedVariant.id,
+    productId: savedProduct.id,
     supplierId,
     variantRef: partNo,
     name: description,

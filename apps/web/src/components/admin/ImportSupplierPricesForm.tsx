@@ -2,22 +2,16 @@
 
 import { Button } from "@/components/ui/Button";
 import { FileInput } from "@/components/ui/FileInput";
-import { Select } from "@/components/ui/Select";
 import { vetplyApiClient } from "@/utils/vetply-api/http-client";
 import {
   countValidNvsDataRows,
   runNvsCsvBatchedImport,
 } from "@/utils/nvs-csv-batched-import";
 import {
-  countValidVeenakDataRows,
-  runVeenakCsvBatchedImport,
-} from "@/utils/veenak-csv-batched-import";
-import {
   importSupplierPricesBatchResSchema,
   type ImportSupplierPricesBatchReq,
   NVS_IMPORT_BATCH_MAX,
   Supplier,
-  VEENAK_IMPORT_BATCH_MAX,
 } from "@vetply/shared";
 import { useRouter } from "next/router";
 import { useCallback, useState } from "react";
@@ -28,7 +22,6 @@ const BATCH_ENDPOINT = "/admin/catalogue/import-supplier-prices/batch";
 
 export function ImportSupplierPricesForm() {
   const router = useRouter();
-  const [supplier, setSupplier] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [progressPct, setProgressPct] = useState<number | null>(null);
@@ -37,14 +30,6 @@ export function ImportSupplierPricesForm() {
   const onSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!supplier) {
-        toast.error("Select a supplier.");
-        return;
-      }
-      if (supplier !== Supplier.NVS && supplier !== Supplier.VEENAK) {
-        toast.error("Unsupported supplier.");
-        return;
-      }
       if (!file) {
         toast.error("Choose a CSV file.");
         return;
@@ -60,12 +45,7 @@ export function ImportSupplierPricesForm() {
           return importSupplierPricesBatchResSchema.parse(data);
         };
 
-        let totalDataRows: number;
-        if (supplier === Supplier.NVS) {
-          totalDataRows = await countValidNvsDataRows(file);
-        } else {
-          totalDataRows = await countValidVeenakDataRows(file);
-        }
+        const totalDataRows = await countValidNvsDataRows(file);
 
         if (totalDataRows === 0) {
           throw new Error("NO_DATA_ROWS");
@@ -75,38 +55,21 @@ export function ImportSupplierPricesForm() {
           `Processed 0 / ${totalDataRows.toLocaleString()} rows`,
         );
 
-        const { totalImported, totalSkipped } =
-          supplier === Supplier.NVS
-            ? await runNvsCsvBatchedImport(
-                file,
-                postBatch,
-                ({ rowsPosted, totalDataRows: total }) => {
-                  const pct = Math.min(
-                    100,
-                    Math.round((rowsPosted / total) * 100),
-                  );
-                  setProgressPct(pct);
-                  setProgressLabel(
-                    `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
-                  );
-                },
-                { totalDataRows },
-              )
-            : await runVeenakCsvBatchedImport(
-                file,
-                postBatch,
-                ({ rowsPosted, totalDataRows: total }) => {
-                  const pct = Math.min(
-                    100,
-                    Math.round((rowsPosted / total) * 100),
-                  );
-                  setProgressPct(pct);
-                  setProgressLabel(
-                    `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
-                  );
-                },
-                { totalDataRows },
-              );
+        const { totalImported, totalSkipped } = await runNvsCsvBatchedImport(
+          file,
+          postBatch,
+          ({ rowsPosted, totalDataRows: total }) => {
+            const pct = Math.min(
+              100,
+              Math.round((rowsPosted / total) * 100),
+            );
+            setProgressPct(pct);
+            setProgressLabel(
+              `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
+            );
+          },
+          { totalDataRows },
+        );
 
         setProgressPct(100);
         setProgressLabel(
@@ -131,47 +94,25 @@ export function ImportSupplierPricesForm() {
         setProgressLabel("");
       }
     },
-    [file, supplier],
+    [file],
   );
 
   if (!router.isReady) {
     return null;
   }
 
-  const batchMaxLabel =
-    supplier === Supplier.VEENAK
-      ? VEENAK_IMPORT_BATCH_MAX.toLocaleString()
-      : NVS_IMPORT_BATCH_MAX.toLocaleString();
+  const batchMaxLabel = NVS_IMPORT_BATCH_MAX.toLocaleString();
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-lg font-semibold text-white">Import supplier prices</h1>
       <p className="mt-2 text-sm text-gray-400">
-        Upload a supplier price CSV. Only fields that map to the catalogue schema
-        are imported. Large files are sent in batches of {batchMaxLabel} rows.
+        Upload an NVS supplier price CSV. Only fields that map to the catalogue
+        schema are imported. Large files are sent in batches of {batchMaxLabel}{" "}
+        rows.
       </p>
       <form className="mt-8 space-y-6" onSubmit={onSubmit}>
-        <div>
-          <label
-            htmlFor="import-supplier-prices-supplier"
-            className="block text-sm font-medium text-gray-200"
-          >
-            Supplier
-          </label>
-          <Select
-            id="import-supplier-prices-supplier"
-            name="supplier"
-            className="mt-2"
-            required
-            value={supplier}
-            onChange={(ev) => setSupplier(ev.target.value)}
-            disabled={submitting}
-          >
-            <option value="">Select a supplier</option>
-            <option value={Supplier.NVS}>NVS</option>
-            <option value={Supplier.VEENAK}>Veenak</option>
-          </Select>
-        </div>
+        <input type="hidden" name="supplier" value={Supplier.NVS} />
         <div>
           <label
             htmlFor="import-supplier-prices-file"
@@ -215,7 +156,7 @@ export function ImportSupplierPricesForm() {
           type="submit"
           variant="primary"
           fullWidth
-          disabled={submitting || !supplier || !file}
+          disabled={submitting || !file}
         >
           {submitting ? "Importing…" : "Import"}
         </Button>

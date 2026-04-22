@@ -21,7 +21,6 @@ import { createEmptyDraft } from "./catalogue-filter-validation";
 import { useCatalogueView } from "./CatalogueViewContext";
 
 const FIELD_OPTIONS: FilterSelectOption[] = [
-  { value: CatalogueFilterFieldId.Name, label: "Name" },
   {
     value: CatalogueFilterFieldId.ManufacturerName,
     label: "Manufacturer",

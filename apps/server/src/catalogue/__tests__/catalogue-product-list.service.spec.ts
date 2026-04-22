@@ -1,6 +1,5 @@
 import { TestingModule } from '@nestjs/testing';
 import {
-  CatalogUnitType,
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
   LegalCategory,
@@ -22,10 +21,9 @@ import {
   saveCatalogueProduct,
 } from '~/commons/test/mockers/catalogue-product.mocker';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
-import { CatalogueProductVariantEntity } from '~/database/entities/catalogue/catalogue-product-variant.entity';
+import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
-import { CatalogueVariantSupplierListingEntity } from '~/database/entities/catalogue/catalogue-variant-supplier-listing.entity';
 import { CatalogueProductListService } from '../services/catalogue-product-list.service';
 
 describe('CatalogueProductListService', () => {
@@ -133,37 +131,23 @@ describe('CatalogueProductListService', () => {
     expect(row!.pom).toBeNull();
   });
 
-  it('filters name isExactly — positive match', async () => {
+  it('name search q matches product.name as ILIKE substring', async () => {
     const { p1 } = await seedThreeProducts();
     const res = await service.listProducts({
       page: 1,
       pageSize: 50,
-      filters: [
-        {
-          kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
-          operator: CatalogueFilterOperator.IsExactly,
-          value: 'Dog Vaccine',
-        },
-      ],
+      q: 'Dog Vaccine',
     });
     expect(res.totalCount).toBe(1);
     expect(res.items[0].id).toBe(p1.id);
   });
 
-  it('filters name isExactly — negative (no false positives)', async () => {
+  it('name search q — negative when no substring match', async () => {
     await seedThreeProducts();
     const res = await service.listProducts({
       page: 1,
       pageSize: 50,
-      filters: [
-        {
-          kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
-          operator: CatalogueFilterOperator.IsExactly,
-          value: 'Nonexistent Product',
-        },
-      ],
+      q: 'Nonexistent Product',
     });
     expect(res.totalCount).toBe(0);
     expect(res.items).toHaveLength(0);
@@ -206,18 +190,13 @@ describe('CatalogueProductListService', () => {
     expect(ids).toEqual([p1.id, p2.id].sort());
   });
 
-  it('combines AND across filters — name + pom', async () => {
+  it('combines AND across filters — name search q + pom', async () => {
     const { p2 } = await seedThreeProducts();
     const res = await service.listProducts({
       page: 1,
       pageSize: 50,
+      q: 'Vaccine',
       filters: [
-        {
-          kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
-          operator: CatalogueFilterOperator.Contains,
-          value: 'Vaccine',
-        },
         {
           kind: 'boolean',
           fieldId: CatalogueFilterFieldId.Pom,
@@ -235,13 +214,8 @@ describe('CatalogueProductListService', () => {
     const res = await service.listProducts({
       page: 1,
       pageSize: 50,
+      q: 'Dog Vaccine',
       filters: [
-        {
-          kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
-          operator: CatalogueFilterOperator.IsExactly,
-          value: 'Dog Vaccine',
-        },
         {
           kind: 'string',
           fieldId: CatalogueFilterFieldId.ManufacturerName,
@@ -346,26 +320,26 @@ describe('CatalogueProductListService', () => {
     expect(res.items[0].id).toBe(p2.id);
   });
 
-  it('filters string containsAnyOf — OR semantics', async () => {
-    const { p1, p3 } = await seedThreeProducts();
+  it('filters manufacturerName containsAnyOf — OR semantics', async () => {
+    const { p1, p2, p3 } = await seedThreeProducts();
     const res = await service.listProducts({
       page: 1,
       pageSize: 50,
       filters: [
         {
           kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
+          fieldId: CatalogueFilterFieldId.ManufacturerName,
           operator: CatalogueFilterOperator.ContainsAnyOf,
-          value: ['Horse', 'Dog'],
+          value: ['Beta', 'Alpha'],
         },
       ],
     });
-    expect(res.totalCount).toBe(2);
+    expect(res.totalCount).toBe(3);
     const ids = res.items.map((i) => i.id).sort();
-    expect(ids).toEqual([p1.id, p3.id].sort());
+    expect(ids).toEqual([p1.id, p2.id, p3.id].sort());
   });
 
-  it('filters string doesNotContainAnyOf — AND of exclusions', async () => {
+  it('filters manufacturerName doesNotContainAnyOf — AND of exclusions', async () => {
     const { p3 } = await seedThreeProducts();
     const res = await service.listProducts({
       page: 1,
@@ -373,9 +347,9 @@ describe('CatalogueProductListService', () => {
       filters: [
         {
           kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
+          fieldId: CatalogueFilterFieldId.ManufacturerName,
           operator: CatalogueFilterOperator.DoesNotContainAnyOf,
-          value: ['Dog', 'Cat'],
+          value: ['Alpha', 'Cat'],
         },
       ],
     });
@@ -405,26 +379,12 @@ describe('CatalogueProductListService', () => {
     const page1 = await service.listProducts({
       page: 1,
       pageSize: 2,
-      filters: [
-        {
-          kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
-          operator: CatalogueFilterOperator.Contains,
-          value: 'e',
-        },
-      ],
+      q: 'e',
     });
     const page2 = await service.listProducts({
       page: 2,
       pageSize: 2,
-      filters: [
-        {
-          kind: 'string',
-          fieldId: CatalogueFilterFieldId.Name,
-          operator: CatalogueFilterOperator.Contains,
-          value: 'e',
-        },
-      ],
+      q: 'e',
     });
     expect(page1.totalCount).toBe(3);
     expect(page1.items).toHaveLength(2);
@@ -435,13 +395,9 @@ describe('CatalogueProductListService', () => {
 
   it('filters supplier isExactly — NVS listing only', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const variantRepo = getTestRepository(
-      dbContext,
-      CatalogueProductVariantEntity,
-    );
     const listingRepo = getTestRepository(
       dbContext,
-      CatalogueVariantSupplierListingEntity,
+      CatalogueProductSupplierListingEntity,
     );
 
     let nvsSupplier = await supplierRepo.findOne({
@@ -477,26 +433,9 @@ describe('CatalogueProductListService', () => {
       pom: false,
     });
 
-    const variantNvs = await variantRepo.save(
-      variantRepo.create({
-        productId: productNvs.id,
-        name: 'Listed NVS only (ref1)',
-        unitType: CatalogUnitType.EA,
-        unitQuantity: '1.000000',
-      }),
-    );
-    const variantVeenak = await variantRepo.save(
-      variantRepo.create({
-        productId: productVeenak.id,
-        name: 'Listed Veenak only (ref2)',
-        unitType: CatalogUnitType.EA,
-        unitQuantity: '1.000000',
-      }),
-    );
-
     await listingRepo.save(
       listingRepo.create({
-        variantId: variantNvs.id,
+        productId: productNvs.id,
         supplierId: nvsSupplier.id,
         variantRef: 'NVS-REF-1',
         name: 'Listed NVS only',
@@ -505,7 +444,7 @@ describe('CatalogueProductListService', () => {
     );
     await listingRepo.save(
       listingRepo.create({
-        variantId: variantVeenak.id,
+        productId: productVeenak.id,
         supplierId: veenakSupplier.id,
         variantRef: 'VEE-REF-1',
         name: 'Listed Veenak only',
@@ -529,6 +468,64 @@ describe('CatalogueProductListService', () => {
     expect(res.totalCount).toBe(1);
     expect(res.items[0].id).toBe(productNvs.id);
   });
+
+  it('returns lowestPrice as minimum listed_price across listings for a product', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvsSupplier = await supplierRepo.findOne({
+      where: { name: Supplier.NVS },
+    });
+    if (!nvsSupplier) {
+      nvsSupplier = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+    let veenakSupplier = await supplierRepo.findOne({
+      where: { name: Supplier.VEENAK },
+    });
+    if (!veenakSupplier) {
+      veenakSupplier = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.VEENAK }),
+      );
+    }
+
+    const alpha = await saveCatalogueManufacturer(manufacturerRepo, 'Mfg Multi');
+    const product = await saveCatalogueProduct(productRepo, {
+      manufacturerId: alpha.id,
+      name: 'Multi-supplier product',
+      salesCategory: SalesCategory.Misc,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: nvsSupplier.id,
+        variantRef: 'REF-HIGH',
+        name: 'Multi-supplier product',
+        listedPrice: '99.0000',
+      }),
+    );
+    await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: veenakSupplier.id,
+        variantRef: 'REF-LOW',
+        name: 'Multi-supplier product',
+        listedPrice: '5.5000',
+      }),
+    );
+
+    const res = await service.listProducts({ page: 1, pageSize: 50 });
+    const row = res.items.find((i) => i.id === product.id);
+    expect(row).toBeDefined();
+    expect(row!.lowestPrice).toBe('5.50');
+  });
 });
 
 describe('catalogueProductsListQuerySchema (filters/sort)', () => {
@@ -545,7 +542,7 @@ describe('catalogueProductsListQuerySchema (filters/sort)', () => {
     const filters = [
       {
         kind: 'string',
-        fieldId: CatalogueFilterFieldId.Name,
+        fieldId: CatalogueFilterFieldId.ManufacturerName,
         operator: CatalogueFilterOperator.Contains,
         value: 'x',
       },

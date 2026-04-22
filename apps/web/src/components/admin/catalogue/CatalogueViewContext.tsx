@@ -60,6 +60,9 @@ type CatalogueViewContextValue = {
   setFilterDraft: Dispatch<SetStateAction<CatalogueFilterDraft>>;
   addFilter: () => boolean;
   removeFilter: (id: string) => void;
+  /** Controlled input for product name search (debounced to URL and API). */
+  searchInput: string;
+  setSearchInput: Dispatch<SetStateAction<string>>;
 };
 
 const CatalogueViewContext = createContext<CatalogueViewContextValue | null>(
@@ -69,10 +72,11 @@ const CatalogueViewContext = createContext<CatalogueViewContextValue | null>(
 function toListState(
   page: number,
   pageSize: number,
+  nameSearch: string,
   appliedFilters: AppliedFilter[],
   sort: CatalogueSortState,
 ): CatalogueListUrlState {
-  return { page, pageSize, appliedFilters, sort };
+  return { page, pageSize, nameSearch, appliedFilters, sort };
 }
 
 export function CatalogueViewProvider({ children }: { children: ReactNode }) {
@@ -93,13 +97,22 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
   const [filterDraft, setFilterDraft] = useState<CatalogueFilterDraft>(() =>
     createEmptyDraft(),
   );
+  const [searchInput, setSearchInput] = useState("");
+  const [nameSearch, setNameSearch] = useState("");
+  const searchCommitRef = useRef("");
 
   const stateRef = useRef(
-    toListState(1, CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE, [], null),
+    toListState(1, CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE, "", [], null),
   );
   useEffect(() => {
-    stateRef.current = toListState(page, pageSize, appliedFilters, sort);
-  }, [page, pageSize, appliedFilters, sort]);
+    stateRef.current = toListState(
+      page,
+      pageSize,
+      nameSearch,
+      appliedFilters,
+      sort,
+    );
+  }, [page, pageSize, nameSearch, appliedFilters, sort]);
 
   /**
    * Hydration: URL → state.
@@ -124,6 +137,9 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       setPageSizeState(CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE);
       setAppliedFilters([]);
       setSort(null);
+      searchCommitRef.current = "";
+      setSearchInput("");
+      setNameSearch("");
       setHydratedFromUrl(true);
       return;
     }
@@ -138,6 +154,10 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     setPageSizeState(next.pageSize);
     setAppliedFilters(next.appliedFilters);
     setSort(next.sort);
+    const q = next.nameSearch;
+    searchCommitRef.current = q;
+    setSearchInput(q);
+    setNameSearch(q);
     setHydratedFromUrl(true);
   }, [router.isReady, router.asPath]);
 
@@ -162,35 +182,73 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     [router],
   );
 
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = searchInput.trim();
+      if (next === searchCommitRef.current) {
+        return;
+      }
+      searchCommitRef.current = next;
+      setNameSearch(next);
+      setPageState(1);
+      pushListUrl({
+        page: 1,
+        pageSize,
+        appliedFilters,
+        sort,
+        nameSearch: next,
+      });
+    }, 300);
+    return () => window.clearTimeout(t);
+  }, [searchInput, pageSize, appliedFilters, sort, pushListUrl]);
+
   const setPage = useCallback(
     (nextPage: number) => {
       const n = Math.max(1, nextPage);
       setPageState(n);
-      pushListUrl({ page: n, pageSize, appliedFilters, sort });
+      pushListUrl({
+        page: n,
+        pageSize,
+        nameSearch,
+        appliedFilters,
+        sort,
+      });
     },
-    [pushListUrl, pageSize, appliedFilters, sort],
+    [pushListUrl, pageSize, nameSearch, appliedFilters, sort],
   );
 
   const setPageSize = useCallback(
     (size: number) => {
       setPageSizeState(size);
       setPageState(1);
-      pushListUrl({ page: 1, pageSize: size, appliedFilters, sort });
+      pushListUrl({
+        page: 1,
+        pageSize: size,
+        nameSearch,
+        appliedFilters,
+        sort,
+      });
     },
-    [pushListUrl, appliedFilters, sort],
+    [pushListUrl, nameSearch, appliedFilters, sort],
   );
 
   const refetch = useCallback(() => {
-    setFetchTick((t) => t + 1);
+    setFetchTick((tick) => tick + 1);
   }, []);
 
   const toggleSortColumn = useCallback(
     (fieldId: CatalogueSortFieldId) => {
       const newSort = nextSortState(sort, fieldId);
       setSort(newSort);
-      pushListUrl({ page, pageSize, appliedFilters, sort: newSort });
+      pushListUrl({
+        page,
+        pageSize,
+        nameSearch,
+        appliedFilters,
+        sort: newSort,
+      });
     },
-    [pushListUrl, sort, page, pageSize, appliedFilters],
+    [pushListUrl, sort, page, pageSize, nameSearch, appliedFilters],
   );
 
   const addFilter = useCallback((): boolean => {
@@ -211,18 +269,30 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     setAppliedFilters(newFilters);
     setPageState(1);
     setFilterDraft(createEmptyDraft());
-    pushListUrl({ page: 1, pageSize, appliedFilters: newFilters, sort });
+    pushListUrl({
+      page: 1,
+      pageSize,
+      nameSearch,
+      appliedFilters: newFilters,
+      sort,
+    });
     return true;
-  }, [filterDraft, pageSize, sort, appliedFilters, pushListUrl]);
+  }, [filterDraft, pageSize, sort, appliedFilters, nameSearch, pushListUrl]);
 
   const removeFilter = useCallback(
     (id: string) => {
       const newFilters = appliedFilters.filter((f) => f.id !== id);
       setAppliedFilters(newFilters);
       setPageState(1);
-      pushListUrl({ page: 1, pageSize, appliedFilters: newFilters, sort });
+      pushListUrl({
+        page: 1,
+        pageSize,
+        nameSearch,
+        appliedFilters: newFilters,
+        sort,
+      });
     },
-    [appliedFilters, pageSize, sort, pushListUrl],
+    [appliedFilters, pageSize, sort, nameSearch, pushListUrl],
   );
 
   useEffect(() => {
@@ -233,9 +303,15 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     if (page > maxPage) {
       const clamped = maxPage;
       setPageState(clamped);
-      pushListUrl({ page: clamped, pageSize, appliedFilters, sort });
+      pushListUrl({
+        page: clamped,
+        pageSize,
+        nameSearch,
+        appliedFilters,
+        sort,
+      });
     }
-  }, [status, totalCount, pageSize, page, pushListUrl, appliedFilters, sort]);
+  }, [status, totalCount, pageSize, page, pushListUrl, appliedFilters, sort, nameSearch]);
 
   useEffect(() => {
     if (!hydratedFromUrl) {
@@ -249,6 +325,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
         const res = await fetchCatalogueProducts({
           page,
           pageSize,
+          q: nameSearch || undefined,
           filters: appliedFiltersToApiPayload(appliedFilters),
           sort: sort ?? undefined,
         });
@@ -271,7 +348,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [page, pageSize, fetchTick, appliedFilters, sort, hydratedFromUrl]);
+  }, [page, pageSize, fetchTick, appliedFilters, sort, nameSearch, hydratedFromUrl]);
 
   const value = useMemo<CatalogueViewContextValue>(
     () => ({
@@ -290,6 +367,8 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       setFilterDraft,
       addFilter,
       removeFilter,
+      searchInput,
+      setSearchInput,
     }),
     [
       page,
@@ -306,6 +385,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       filterDraft,
       addFilter,
       removeFilter,
+      searchInput,
     ],
   );
 

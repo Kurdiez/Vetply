@@ -20,10 +20,6 @@ export function CatalogueFiltersSection() {
                     <h2 className="text-base font-semibold text-white">
                       Applied filters
                     </h2>
-                    <p className="mt-1 text-sm text-gray-400">
-                      All conditions are combined with AND. Multiple values in a
-                      single filter use OR.
-                    </p>
                   </div>
                   <Button
                     type="button"

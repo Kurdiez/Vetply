@@ -27,7 +27,6 @@ export const catalogueProductFilterStringSchema = z
     id: z.string().optional(),
     kind: z.literal("string"),
     fieldId: z.union([
-      z.literal(CatalogueFilterFieldId.Name),
       z.literal(CatalogueFilterFieldId.ManufacturerName),
       z.literal(CatalogueFilterFieldId.Supplier),
     ]),

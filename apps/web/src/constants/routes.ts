@@ -8,32 +8,16 @@ export const routes = {
     catalogue: {
       view: "/admin/catalogue",
       importSupplierPrices: "/admin/catalogue/import-supplier-prices",
-      productDetail: (productId: string) =>
-        `/admin/catalogue/product/${productId}`,
     },
   },
 } as const;
 
-const ADMIN_CATALOGUE_PRODUCT_DETAIL_PATH =
-  /^\/admin\/catalogue\/product\/[^/]+$/;
-
 export function isValidAdminPath(path: string): boolean {
-  if (
+  return (
     path === routes.admin.root ||
     path === routes.admin.catalogue.view ||
     path === routes.admin.catalogue.importSupplierPrices
-  ) {
-    return true;
-  }
-  return ADMIN_CATALOGUE_PRODUCT_DETAIL_PATH.test(path);
-}
-
-/** UUID segment after `/admin/catalogue/product/`, or null if path does not match. */
-export function parseAdminCatalogueProductDetailId(
-  path: string,
-): string | null {
-  const m = /^\/admin\/catalogue\/product\/([^/]+)$/.exec(path);
-  return m?.[1] ?? null;
+  );
 }
 
 export function isAppRoutePath(pathname: string): boolean {

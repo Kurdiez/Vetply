@@ -13,6 +13,8 @@ import type { CatalogueSortState } from "./catalogue-sort";
 export type CatalogueListUrlState = {
   page: number;
   pageSize: number;
+  /** Trimmed product name search (`q` query param); empty means no search. */
+  nameSearch: string;
   appliedFilters: AppliedFilter[];
   sort: CatalogueSortState;
 };
@@ -46,6 +48,7 @@ export function parseCatalogueListFromQuery(
   const raw = {
     page: firstQueryParam(query.page),
     pageSize: firstQueryParam(query.pageSize),
+    q: firstQueryParam(query.q),
     filters: firstQueryParam(query.filters),
     sort: firstQueryParam(query.sort),
   };
@@ -59,6 +62,7 @@ export function parseCatalogueListFromQuery(
     data: {
       page: d.page,
       pageSize: d.pageSize,
+      nameSearch: d.q ?? "",
       appliedFilters: d.filters?.length
         ? apiFiltersToAppliedFilters(d.filters)
         : [],
@@ -78,6 +82,9 @@ export function buildCatalogueListUrl(
   if (state.pageSize !== CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE) {
     params.set("pageSize", String(state.pageSize));
   }
+  if (state.nameSearch.trim() !== "") {
+    params.set("q", state.nameSearch.trim());
+  }
   const payloadFilters = appliedFiltersToApiPayload(state.appliedFilters);
   if (payloadFilters.length > 0) {
     params.set("filters", JSON.stringify(payloadFilters));
@@ -94,6 +101,9 @@ export function catalogueListStateEquals(
   b: CatalogueListUrlState,
 ): boolean {
   if (a.page !== b.page || a.pageSize !== b.pageSize) {
+    return false;
+  }
+  if (a.nameSearch.trim() !== b.nameSearch.trim()) {
     return false;
   }
   if (JSON.stringify(a.sort ?? null) !== JSON.stringify(b.sort ?? null)) {

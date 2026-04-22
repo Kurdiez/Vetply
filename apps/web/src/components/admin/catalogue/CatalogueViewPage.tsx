@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/Button";
 import { routes } from "@/constants/routes";
+import { CatalogueNameSearch } from "./CatalogueNameSearch";
 import { CatalogueFiltersSection } from "./CatalogueFiltersSection";
 import { CatalogueProductsPagination } from "./CatalogueProductsPagination";
 import { CatalogueProductsTable } from "./CatalogueProductsTable";
@@ -29,6 +30,7 @@ export function CatalogueViewPage() {
           </div>
         </div>
         <div className="mt-8 space-y-6">
+          <CatalogueNameSearch />
           <CatalogueFiltersSection />
           <CatalogueProductsTable />
           <CatalogueProductsPagination />

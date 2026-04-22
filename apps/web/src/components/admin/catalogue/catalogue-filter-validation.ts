@@ -134,10 +134,7 @@ export function validateDraftAndBuildFilter(
         filter: {
           id: newId(),
           kind: "string",
-          fieldId:
-            fieldId === CatalogueFilterFieldId.Name
-              ? CatalogueFilterFieldId.Name
-              : CatalogueFilterFieldId.ManufacturerName,
+          fieldId: CatalogueFilterFieldId.ManufacturerName,
           operator: op,
           value: tags,
         },
@@ -152,10 +149,7 @@ export function validateDraftAndBuildFilter(
       filter: {
         id: newId(),
         kind: "string",
-        fieldId:
-          fieldId === CatalogueFilterFieldId.Name
-            ? CatalogueFilterFieldId.Name
-            : CatalogueFilterFieldId.ManufacturerName,
+        fieldId: CatalogueFilterFieldId.ManufacturerName,
         operator: op,
         value: trimmed,
       },

@@ -22,22 +22,15 @@ function createParamCounter(): NextParam {
   return () => `f${i++}`;
 }
 
-function stringColumnSql(
-  fieldId:
-    | typeof CatalogueFilterFieldId.Name
-    | typeof CatalogueFilterFieldId.ManufacturerName,
-): string {
-  return fieldId === CatalogueFilterFieldId.Name
-    ? 'product.name'
-    : 'manufacturer.name';
+function manufacturerNameColumnSql(): string {
+  return 'manufacturer.name';
 }
 
 function supplierListingExists(conditionSql: string): string {
   return `EXISTS (
-    SELECT 1 FROM catalogue_product_variants sup_v
-    INNER JOIN catalogue_variant_supplier_listings sup_l ON sup_l.variant_id = sup_v.id
+    SELECT 1 FROM catalogue_product_supplier_listings sup_l
     INNER JOIN catalogue_suppliers sup_s ON sup_s.id = sup_l.supplier_id
-    WHERE sup_v.product_id = product.id AND (${conditionSql})
+    WHERE sup_l.product_id = product.id AND (${conditionSql})
   )`;
 }
 
@@ -117,13 +110,11 @@ function applySupplierFilter(
 function applyStringFilter(
   qb: SelectQueryBuilder<CatalogueProductEntity>,
   filter: Extract<CatalogueProductFilter, { kind: 'string' }> & {
-    fieldId:
-      | typeof CatalogueFilterFieldId.Name
-      | typeof CatalogueFilterFieldId.ManufacturerName;
+    fieldId: typeof CatalogueFilterFieldId.ManufacturerName;
   },
   next: NextParam,
 ): void {
-  const col = stringColumnSql(filter.fieldId);
+  const col = manufacturerNameColumnSql();
   const op = filter.operator;
   const value = filter.value;
 
@@ -262,6 +253,29 @@ function applyPomFilter(
   qb.andWhere(`product.pom = :${k}`, { [k]: filter.value });
 }
 
+/** Escape `%`, `_`, and `\\` for use in ILIKE ... ESCAPE '\\'. */
+function escapeIlikePattern(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
+/**
+ * AND with other filters: case-insensitive substring match on `product.name`.
+ */
+export function applyCatalogueProductNameSearch(
+  qb: SelectQueryBuilder<CatalogueProductEntity>,
+  nameSearch: string | undefined,
+): void {
+  const trimmed = nameSearch?.trim();
+  if (!trimmed) {
+    return;
+  }
+  const k = 'nameSearchPat';
+  const escaped = escapeIlikePattern(trimmed);
+  qb.andWhere(`product.name ILIKE :${k} ESCAPE '\\'`, {
+    [k]: `%${escaped}%`,
+  });
+}
+
 export function applyCatalogueProductFilters(
   qb: SelectQueryBuilder<CatalogueProductEntity>,
   filters: CatalogueProductFilter[] | undefined,
@@ -278,9 +292,7 @@ export function applyCatalogueProductFilters(
         applyStringFilter(
           qb,
           filter as Extract<CatalogueProductFilter, { kind: 'string' }> & {
-            fieldId:
-              | typeof CatalogueFilterFieldId.Name
-              | typeof CatalogueFilterFieldId.ManufacturerName;
+            fieldId: typeof CatalogueFilterFieldId.ManufacturerName;
           },
           next,
         );
