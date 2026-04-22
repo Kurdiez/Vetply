@@ -15,6 +15,7 @@ export async function saveCatalogueProduct(
   input: {
     manufacturerId?: string | null;
     name: string;
+    image?: string | null;
     salesCategory?: SalesCategory | null;
     legalCategory?: LegalCategory | null;
     pom?: boolean | null;

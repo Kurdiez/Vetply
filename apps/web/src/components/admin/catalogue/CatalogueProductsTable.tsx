@@ -10,6 +10,7 @@ import {
   type CatalogueProductListItem,
 } from "@vetply/shared";
 import type { CatalogueSortFieldId } from "./catalogue-filter-model";
+import { CatalogueProductThumbnail } from "./CatalogueProductThumbnail";
 import { useCatalogueView } from "./CatalogueViewContext";
 
 const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
@@ -22,6 +23,7 @@ const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
 ];
 
 const COLUMNS: DataTableColumn[] = [
+  { id: "image", header: "" },
   { id: CatalogueFilterFieldId.Name, header: "Name" },
   {
     id: CatalogueFilterFieldId.ManufacturerName,
@@ -89,6 +91,14 @@ export function CatalogueProductsTable() {
       }
       getRowKey={(row) => row.id}
       renderCell={(row, columnId) => {
+        if (columnId === "image") {
+          return (
+            <CatalogueProductThumbnail
+              imageUrl={row.image}
+              productName={row.name}
+            />
+          );
+        }
         if (columnId === "unit") {
           return `${row.unitQuantity} ${row.unitType}`;
         }

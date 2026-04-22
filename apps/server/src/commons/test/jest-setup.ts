@@ -21,6 +21,10 @@ async function applyMigrationsToTestDbOnce() {
   });
   await ds.initialize();
   await ds.runMigrations();
+  // Keep in sync with CatalogueProductEntity until a tracked migration adds it.
+  await ds.query(
+    `ALTER TABLE "catalogue_products" ADD COLUMN IF NOT EXISTS "image" character varying(2048)`,
+  );
   await ds.destroy();
 }
 

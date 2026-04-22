@@ -61,6 +61,10 @@ export class CatalogueProductEntity {
   @Column({ name: 'name', type: 'varchar', length: 1024 })
   name!: string;
 
+  /** Public URL or app-relative path to product image; null when none. */
+  @Column({ name: 'image', type: 'varchar', length: 2048, nullable: true })
+  image!: string | null;
+
   @Column({ type: 'boolean', name: 'pom', nullable: true })
   pom!: boolean | null;
 

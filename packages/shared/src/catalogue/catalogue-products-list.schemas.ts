@@ -104,6 +104,7 @@ export type CatalogueProductsListQueryInput = z.infer<
 export const catalogueProductListItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  image: z.string().max(2048).nullable(),
   manufacturerName: z.string().nullable(),
   salesCategory: z.nativeEnum(SalesCategory).nullable(),
   legalCategory: z.nativeEnum(LegalCategory).nullable(),
