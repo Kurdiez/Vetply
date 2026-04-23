@@ -3,7 +3,7 @@
 import { AdminGate } from "@/components/admin/AdminGate";
 import { CatalogueProductDetailPage } from "@/components/admin/catalogue/CatalogueProductDetailPage";
 import { CatalogueViewPage } from "@/components/admin/catalogue/CatalogueViewPage";
-import { ImportSupplierPricesForm } from "@/components/admin/ImportSupplierPricesForm";
+import { ImportSupplierPricesPage } from "@/components/admin/catalogue/ImportSupplierPricesPage";
 import {
   isValidAdminPath,
   parseCatalogueProductDetailId,
@@ -36,7 +36,7 @@ function AdminMain() {
   }
 
   if (path === routes.admin.catalogue.importSupplierPrices) {
-    return <ImportSupplierPricesForm />;
+    return <ImportSupplierPricesPage />;
   }
 
   const catalogueProductId = parseCatalogueProductDetailId(path);

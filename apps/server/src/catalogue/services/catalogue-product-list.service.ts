@@ -66,7 +66,7 @@ export class CatalogueProductListService {
          INNER JOIN catalogue_suppliers s ON s.id = l.supplier_id
          WHERE l.product_id IN (${placeholders})
            AND l.listed_price IS NOT NULL
-         ORDER BY l.product_id, l.listed_price ASC, s.name ASC, l.variant_ref ASC, l.id ASC`,
+         ORDER BY l.product_id, l.listed_price ASC, s.name ASC, l.supplier_product_id ASC, l.id ASC`,
         ids,
       );
 

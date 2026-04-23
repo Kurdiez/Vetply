@@ -6,4 +6,6 @@ export * from "./catalogue-product-update.schemas";
 export * from "./catalogue-products-list.schemas";
 export * from "./enums";
 export * from "./import-supplier-prices.schemas";
+export * from "./nvs-all-products-line";
+export * from "./nvs-supplier-product-id";
 export * from "./supplier";

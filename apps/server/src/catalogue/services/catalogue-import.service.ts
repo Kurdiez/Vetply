@@ -9,6 +9,7 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
+import { importNvsAllProductsRow } from '../importers/nvs-all-products-importer';
 import { importNvsCatalogueRow } from '../importers/nvs-catalogue-importer';
 import { importVeenakCatalogueRow } from '../importers/veenak-catalogue-importer';
 
@@ -35,16 +36,31 @@ export class CatalogueImportService {
     await this.dataSource.transaction(async (manager) => {
       const supplierEntity = await this.ensureSupplier(manager, body.supplier);
       if (body.supplier === Supplier.NVS) {
-        for (const row of body.rows) {
-          const result = await importNvsCatalogueRow(
-            manager,
-            row,
-            supplierEntity.id,
-          );
-          if (result === 'imported') {
-            rowsImported += 1;
-          } else {
-            pushSkip(result);
+        if (body.nvsFormat === 'non_pom_csv') {
+          for (const row of body.rows) {
+            const result = await importNvsCatalogueRow(
+              manager,
+              row,
+              supplierEntity.id,
+            );
+            if (result === 'imported') {
+              rowsImported += 1;
+            } else {
+              pushSkip(result);
+            }
+          }
+        } else {
+          for (const row of body.rows) {
+            const result = await importNvsAllProductsRow(
+              manager,
+              row,
+              supplierEntity.id,
+            );
+            if (result === 'imported') {
+              rowsImported += 1;
+            } else {
+              pushSkip(result);
+            }
           }
         }
         return;

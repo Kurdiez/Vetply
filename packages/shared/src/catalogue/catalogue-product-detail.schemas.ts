@@ -4,7 +4,7 @@ import { CatalogUnitType, LegalCategory, SalesCategory } from "./enums";
 export const catalogueProductDetailListingSchema = z.object({
   id: z.string().uuid(),
   supplierName: z.string(),
-  variantRef: z.string(),
+  supplierProductId: z.string(),
   name: z.string(),
   listedPrice: z.string().nullable(),
 });

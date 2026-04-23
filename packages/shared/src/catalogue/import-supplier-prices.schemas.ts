@@ -4,6 +4,9 @@ import { Supplier } from './supplier';
 export const NVS_IMPORT_BATCH_MAX = 500;
 export const VEENAK_IMPORT_BATCH_MAX = 500;
 
+export const nvsImportFormatEnum = z.enum(['non_pom_csv', 'all_products']);
+export type NvsImportFormat = z.infer<typeof nvsImportFormatEnum>;
+
 export const nvsImportRowSchema = z.object({
   salesGroup: z.string(),
   partNo: z.string(),
@@ -17,6 +20,17 @@ export const nvsImportRowSchema = z.object({
 
 export type NvsImportRow = z.infer<typeof nvsImportRowSchema>;
 
+export const nvsAllProductsImportRowSchema = z.object({
+  supplierProductId: z.string(),
+  name: z.string(),
+  pack: z.string(),
+  listedPrice: z.string(),
+});
+
+export type NvsAllProductsImportRow = z.infer<
+  typeof nvsAllProductsImportRowSchema
+>;
+
 export const veenakImportRowSchema = z.object({
   productName: z.string(),
   packSize: z.string(),
@@ -27,25 +41,39 @@ export const veenakImportRowSchema = z.object({
 
 export type VeenakImportRow = z.infer<typeof veenakImportRowSchema>;
 
-const importSupplierPricesNvsBatchSchema = z.object({
-  supplier: z.literal(Supplier.NVS),
+const batchIndexFields = {
   batchIndex: z.number().int().nonnegative(),
   totalBatches: z.number().int().positive(),
   totalDataRows: z.number().int().nonnegative(),
+};
+
+const importSupplierPricesNvsNonPomBatchSchema = z.object({
+  supplier: z.literal(Supplier.NVS),
+  nvsFormat: z.literal('non_pom_csv'),
+  ...batchIndexFields,
   rows: z.array(nvsImportRowSchema).min(1).max(NVS_IMPORT_BATCH_MAX),
+});
+
+const importSupplierPricesNvsAllProductsBatchSchema = z.object({
+  supplier: z.literal(Supplier.NVS),
+  nvsFormat: z.literal('all_products'),
+  ...batchIndexFields,
+  rows: z
+    .array(nvsAllProductsImportRowSchema)
+    .min(1)
+    .max(NVS_IMPORT_BATCH_MAX),
 });
 
 const importSupplierPricesVeenakBatchSchema = z.object({
   supplier: z.literal(Supplier.VEENAK),
-  batchIndex: z.number().int().nonnegative(),
-  totalBatches: z.number().int().positive(),
-  totalDataRows: z.number().int().nonnegative(),
+  ...batchIndexFields,
   rows: z.array(veenakImportRowSchema).min(1).max(VEENAK_IMPORT_BATCH_MAX),
 });
 
 export const importSupplierPricesBatchReqSchema = z
-  .discriminatedUnion('supplier', [
-    importSupplierPricesNvsBatchSchema,
+  .union([
+    importSupplierPricesNvsNonPomBatchSchema,
+    importSupplierPricesNvsAllProductsBatchSchema,
     importSupplierPricesVeenakBatchSchema,
   ])
   .refine((d) => d.batchIndex < d.totalBatches, {

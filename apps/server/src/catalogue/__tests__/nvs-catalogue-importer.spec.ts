@@ -83,7 +83,7 @@ describe('importNvsCatalogueRow', () => {
 
     const listings = await listingRepo.find();
     expect(listings).toHaveLength(1);
-    expect(listings[0].variantRef).toBe('PART-1');
+    expect(listings[0].supplierProductId).toBe('PART-1');
     expect(listings[0].listedPrice).toBe('10.0000');
     expect(listings[0].productId).toBe(products[0].id);
   });
@@ -129,5 +129,39 @@ describe('importNvsCatalogueRow', () => {
     expect(listings).toHaveLength(1);
     expect(listings[0].listedPrice).toBe('20.5000');
     expect(listings[0].name).toBe('Updated name');
+  });
+
+  it('stores numeric Part No with leading zeros so it matches all-products ids', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const nvs = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.NVS }),
+    );
+
+    await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({ partNo: '719870' }),
+      nvs.id,
+    );
+
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+    const first = await listingRepo.find();
+    expect(first[0].supplierProductId).toBe('00719870');
+
+    const r = await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({
+        partNo: '00719870',
+        description: 'Same line different padding',
+      }),
+      nvs.id,
+    );
+    expect(r).toBe('imported');
+    const after = await listingRepo.find();
+    expect(after).toHaveLength(1);
+    expect(after[0].supplierProductId).toBe('00719870');
+    expect(after[0].name).toBe('Same line different padding');
   });
 });

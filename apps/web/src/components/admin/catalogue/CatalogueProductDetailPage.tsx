@@ -126,7 +126,7 @@ function DetailBody() {
                       {row.supplierName}
                     </td>
                     <td className="whitespace-nowrap px-3 py-3 font-mono text-xs">
-                      {row.variantRef}
+                      {row.supplierProductId}
                     </td>
                     <td className="min-w-0 break-words px-3 py-3">{row.name}</td>
                     <td className="whitespace-nowrap px-3 py-3">

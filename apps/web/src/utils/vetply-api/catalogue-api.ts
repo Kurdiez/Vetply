@@ -3,11 +3,14 @@ import {
   catalogueProductDetailSchema,
   catalogueProductsListQueryInputSchema,
   catalogueProductsListResSchema,
+  importSupplierPricesBatchResSchema,
   type CatalogueManufacturerOption,
   type CatalogueProductDetail,
   type CatalogueProductUpdateBody,
   type CatalogueProductsListQueryInput,
   type CatalogueProductsListRes,
+  type ImportSupplierPricesBatchReq,
+  type ImportSupplierPricesBatchRes,
 } from "@vetply/shared";
 import { vetplyApiClient } from "./http-client";
 
@@ -62,4 +65,14 @@ export async function patchCatalogueProduct(
     body,
   );
   return catalogueProductDetailSchema.parse(data);
+}
+
+export async function postCatalogueImportSupplierPricesBatch(
+  body: ImportSupplierPricesBatchReq,
+): Promise<ImportSupplierPricesBatchRes> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    "/admin/catalogue/import-supplier-prices/batch",
+    body,
+  );
+  return importSupplierPricesBatchResSchema.parse(data);
 }

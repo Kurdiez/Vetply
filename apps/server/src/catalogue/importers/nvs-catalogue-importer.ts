@@ -1,4 +1,4 @@
-import { NvsImportRow } from '@vetply/shared';
+import { canonicalizeNvsSupplierProductId, NvsImportRow } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
@@ -20,7 +20,7 @@ export async function importNvsCatalogueRow(
     CatalogueProductSupplierListingEntity,
   );
 
-  const partNo = row.partNo.trim();
+  const partNo = canonicalizeNvsSupplierProductId(row.partNo);
   const description = row.description.trim();
   const manufacturerName = row.manufacturer.trim();
 
@@ -55,7 +55,7 @@ export async function importNvsCatalogueRow(
   const listedPrice = parseNvsVpp(row.vpp);
 
   const existingListing = await listingRepo.findOne({
-    where: { supplierId, variantRef: partNo },
+    where: { supplierId, supplierProductId: partNo },
     relations: ['product'],
   });
 
@@ -110,7 +110,7 @@ export async function importNvsCatalogueRow(
   const listing = listingRepo.create({
     productId: savedProduct.id,
     supplierId,
-    variantRef: partNo,
+    supplierProductId: partNo,
     name: description,
     listedPrice,
   });

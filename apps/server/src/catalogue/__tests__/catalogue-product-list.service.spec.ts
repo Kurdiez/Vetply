@@ -437,7 +437,7 @@ describe('CatalogueProductListService', () => {
       listingRepo.create({
         productId: productNvs.id,
         supplierId: nvsSupplier.id,
-        variantRef: 'NVS-REF-1',
+        supplierProductId: 'NVS-REF-1',
         name: 'Listed NVS only',
         listedPrice: '10.0000',
       }),
@@ -446,7 +446,7 @@ describe('CatalogueProductListService', () => {
       listingRepo.create({
         productId: productVeenak.id,
         supplierId: veenakSupplier.id,
-        variantRef: 'VEE-REF-1',
+        supplierProductId: 'VEE-REF-1',
         name: 'Listed Veenak only',
         listedPrice: '20.0000',
       }),
@@ -506,7 +506,7 @@ describe('CatalogueProductListService', () => {
       listingRepo.create({
         productId: product.id,
         supplierId: nvsSupplier.id,
-        variantRef: 'REF-HIGH',
+        supplierProductId: 'REF-HIGH',
         name: 'Multi-supplier product',
         listedPrice: '99.0000',
       }),
@@ -515,7 +515,7 @@ describe('CatalogueProductListService', () => {
       listingRepo.create({
         productId: product.id,
         supplierId: veenakSupplier.id,
-        variantRef: 'REF-LOW',
+        supplierProductId: 'REF-LOW',
         name: 'Multi-supplier product',
         listedPrice: '5.5000',
       }),
@@ -565,7 +565,7 @@ describe('CatalogueProductListService', () => {
       listingRepo.create({
         productId: product.id,
         supplierId: nvsSupplier.id,
-        variantRef: 'HI',
+        supplierProductId: 'HI',
         name: 'Dual list',
         listedPrice: '100.0000',
       }),
@@ -574,7 +574,7 @@ describe('CatalogueProductListService', () => {
       listingRepo.create({
         productId: product.id,
         supplierId: veenakSupplier.id,
-        variantRef: 'LO',
+        supplierProductId: 'LO',
         name: 'Dual list',
         listedPrice: '1.0000',
       }),

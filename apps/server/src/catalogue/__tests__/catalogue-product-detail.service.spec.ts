@@ -83,7 +83,7 @@ describe('CatalogueProductDetailService', () => {
       listingRepo.create({
         productId: product.id,
         supplierId: nvs.id,
-        variantRef: 'SKU-1',
+        supplierProductId: 'SKU-1',
         name: 'Widget NVS',
         listedPrice: '12.3400',
       }),
@@ -97,7 +97,7 @@ describe('CatalogueProductDetailService', () => {
     expect(res.manufacturerName).toBe('Acme');
     expect(res.listings).toHaveLength(1);
     expect(res.listings[0].supplierName).toBe(Supplier.NVS);
-    expect(res.listings[0].variantRef).toBe('SKU-1');
+    expect(res.listings[0].supplierProductId).toBe('SKU-1');
     expect(res.listings[0].listedPrice).toBe('12.34');
   });
 

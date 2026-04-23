@@ -108,6 +108,7 @@ export async function runNvsCsvBatchedImport(
     const flush = async (rows: NvsImportRow[], index: number) => {
       const res = await postBatch({
         supplier: Supplier.NVS,
+        nvsFormat: "non_pom_csv",
         batchIndex: index,
         totalBatches,
         totalDataRows,

@@ -14,7 +14,7 @@ import { CatalogueSupplierEntity } from './catalogue-supplier.entity';
 @Entity('catalogue_product_supplier_listings')
 @Unique('UQ_catalogue_product_supplier_listings_supplier_variant_ref', [
   'supplierId',
-  'variantRef',
+  'supplierProductId',
 ])
 @Unique('UQ_catalogue_product_supplier_listings_product_supplier', [
   'productId',
@@ -42,8 +42,8 @@ export class CatalogueProductSupplierListingEntity {
   @JoinColumn({ name: 'supplier_id' })
   supplier!: CatalogueSupplierEntity;
 
-  @Column({ name: 'variant_ref', type: 'varchar', length: 128 })
-  variantRef!: string;
+  @Column({ name: 'supplier_product_id', type: 'varchar', length: 128 })
+  supplierProductId!: string;
 
   @Column({ name: 'name', type: 'varchar', length: 2048 })
   name!: string;

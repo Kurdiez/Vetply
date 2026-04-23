@@ -48,7 +48,7 @@ export class CatalogueProductDetailService {
       if (c !== 0) {
         return c;
       }
-      return a.variantRef.localeCompare(b.variantRef, undefined, {
+      return a.supplierProductId.localeCompare(b.supplierProductId, undefined, {
         sensitivity: 'base',
       });
     });
@@ -69,7 +69,7 @@ export class CatalogueProductDetailService {
       listings: listings.map((l) => ({
         id: l.id,
         supplierName: l.supplier?.name ?? 'Unknown supplier',
-        variantRef: l.variantRef,
+        supplierProductId: l.supplierProductId,
         name: l.name,
         listedPrice: ceilPriceToTwoDecimalPlaces(
           l.listedPrice === null || l.listedPrice === undefined
