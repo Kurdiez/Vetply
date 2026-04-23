@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseModule } from '~/database/database.module';
+import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { UserEntity } from '~/database/entities/user.entity';
 import { CatalogueController } from './controllers/catalogue.controller';
@@ -12,7 +13,11 @@ import { CatalogueProductListService } from './services/catalogue-product-list.s
 @Module({
   imports: [
     DatabaseModule,
-    TypeOrmModule.forFeature([UserEntity, CatalogueProductEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      CatalogueProductEntity,
+      CatalogueManufacturerEntity,
+    ]),
   ],
   controllers: [CatalogueController],
   providers: [

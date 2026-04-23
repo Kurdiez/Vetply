@@ -1,7 +1,13 @@
 "use client";
 
-import { fetchCatalogueProductDetail } from "@/utils/vetply-api/catalogue-api";
-import type { CatalogueProductDetail } from "@vetply/shared";
+import {
+  fetchCatalogueProductDetail,
+  patchCatalogueProduct,
+} from "@/utils/vetply-api/catalogue-api";
+import type {
+  CatalogueProductDetail,
+  CatalogueProductUpdateBody,
+} from "@vetply/shared";
 import { useRouter } from "next/router";
 import {
   createContext,
@@ -22,6 +28,10 @@ type CatalogueProductDetailContextValue = {
   status: CatalogueProductDetailStatus;
   refetch: () => void;
   goBack: () => void;
+  editModalOpen: boolean;
+  openEditModal: () => void;
+  closeEditModal: () => void;
+  saveProduct: (body: CatalogueProductUpdateBody) => Promise<void>;
 };
 
 const CatalogueProductDetailContext =
@@ -39,6 +49,7 @@ export function CatalogueProductDetailProvider({
   const [status, setStatus] =
     useState<CatalogueProductDetailStatus>("idle");
   const [fetchTick, setFetchTick] = useState(0);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const refetch = useCallback(() => {
     setFetchTick((t) => t + 1);
@@ -47,6 +58,29 @@ export function CatalogueProductDetailProvider({
   const goBack = useCallback(() => {
     router.back();
   }, [router]);
+
+  const openEditModal = useCallback(() => {
+    setEditModalOpen(true);
+  }, []);
+
+  const closeEditModal = useCallback(() => {
+    setEditModalOpen(false);
+  }, []);
+
+  const saveProduct = useCallback(
+    async (body: CatalogueProductUpdateBody) => {
+      try {
+        const updated = await patchCatalogueProduct(productId, body);
+        setDetail(updated);
+        setEditModalOpen(false);
+        toast.success("Product updated.");
+      } catch {
+        toast.error("Could not save product.");
+        throw new Error("save failed");
+      }
+    },
+    [productId],
+  );
 
   useEffect(() => {
     if (!productId) {
@@ -86,8 +120,22 @@ export function CatalogueProductDetailProvider({
       status,
       refetch,
       goBack,
+      editModalOpen,
+      openEditModal,
+      closeEditModal,
+      saveProduct,
     }),
-    [productId, detail, status, refetch, goBack],
+    [
+      productId,
+      detail,
+      status,
+      refetch,
+      goBack,
+      editModalOpen,
+      openEditModal,
+      closeEditModal,
+      saveProduct,
+    ],
   );
 
   return (

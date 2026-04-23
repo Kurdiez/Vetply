@@ -6,18 +6,8 @@ import {
   CatalogueProductDetailProvider,
   useCatalogueProductDetail,
 } from "./CatalogueProductDetailContext";
+import { CatalogueProductEditModal } from "./CatalogueProductEditModal";
 import { CatalogueProductThumbnail } from "./CatalogueProductThumbnail";
-
-function formatDateTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return iso;
-  }
-  return d.toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
-}
 
 function DetailBody() {
   const { detail, status } = useCatalogueProductDetail();
@@ -78,18 +68,6 @@ function DetailBody() {
               <dt className="text-xs font-medium text-gray-500">Unit</dt>
               <dd className="mt-1 text-sm text-gray-200">
                 {detail.unitQuantity} {detail.unitType}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-gray-500">Created</dt>
-              <dd className="mt-1 text-sm text-gray-200">
-                {formatDateTime(detail.createdAt)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-gray-500">Updated</dt>
-              <dd className="mt-1 text-sm text-gray-200">
-                {formatDateTime(detail.updatedAt)}
               </dd>
             </div>
           </dl>
@@ -166,11 +144,11 @@ function DetailBody() {
 }
 
 function DetailChrome() {
-  const { goBack } = useCatalogueProductDetail();
+  const { goBack, status, detail, openEditModal } = useCatalogueProductDetail();
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <Button
           type="button"
           variant="secondary"
@@ -180,8 +158,14 @@ function DetailChrome() {
           <ArrowLeftIcon className="size-4 shrink-0" aria-hidden />
           Back
         </Button>
+        {status === "ready" && detail ? (
+          <Button type="button" onClick={openEditModal}>
+            Edit
+          </Button>
+        ) : null}
       </div>
       <DetailBody />
+      <CatalogueProductEditModal />
     </div>
   );
 }

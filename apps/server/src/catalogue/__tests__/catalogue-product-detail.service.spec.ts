@@ -40,6 +40,7 @@ describe('CatalogueProductDetailService', () => {
           useFactory: () =>
             new CatalogueProductDetailService(
               getTestRepository(dbContext, CatalogueProductEntity),
+              getTestRepository(dbContext, CatalogueManufacturerEntity),
             ),
         },
       ],
@@ -92,6 +93,7 @@ describe('CatalogueProductDetailService', () => {
     expect(res.id).toBe(product.id);
     expect(res.name).toBe('Widget');
     expect(res.image).toBeNull();
+    expect(res.manufacturerId).toBe(mfg.id);
     expect(res.manufacturerName).toBe('Acme');
     expect(res.listings).toHaveLength(1);
     expect(res.listings[0].supplierName).toBe(Supplier.NVS);

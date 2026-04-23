@@ -5,14 +5,17 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import {
   ImportSupplierPricesBatchReq,
+  catalogueProductUpdateBodySchema,
   catalogueProductsListQuerySchema,
   importSupplierPricesBatchReqSchema,
+  type CatalogueProductUpdateBody,
 } from '@vetply/shared';
 import { ZodError } from 'zod';
 import { ZodValidationPipe } from '~/commons/validations';
@@ -35,6 +38,11 @@ export class CatalogueController {
     return this.catalogueProductDetailService.getProductDetail(id);
   }
 
+  @Get('manufacturers')
+  listManufacturers() {
+    return this.catalogueProductDetailService.listManufacturers();
+  }
+
   @Get('products')
   listProducts(@Query() rawQuery: Record<string, unknown>) {
     const parsed = catalogueProductsListQuerySchema.safeParse(rawQuery);
@@ -51,6 +59,15 @@ export class CatalogueController {
       );
     }
     return this.catalogueProductListService.listProducts(parsed.data);
+  }
+
+  @Patch('products/:id')
+  patchProduct(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(catalogueProductUpdateBodySchema))
+    body: CatalogueProductUpdateBody,
+  ) {
+    return this.catalogueProductDetailService.updateProduct(id, body);
   }
 
   @Post('import-supplier-prices/batch')

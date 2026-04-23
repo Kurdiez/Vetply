@@ -17,6 +17,7 @@ export const catalogueProductDetailSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
   image: z.string().max(2048).nullable(),
+  manufacturerId: z.string().uuid().nullable(),
   manufacturerName: z.string().nullable(),
   salesCategory: z.nativeEnum(SalesCategory).nullable(),
   legalCategory: z.nativeEnum(LegalCategory).nullable(),
