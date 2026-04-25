@@ -3,8 +3,7 @@
 import { Button } from "@/components/ui/Button";
 import { FileInput } from "@/components/ui/FileInput";
 import { Select } from "@/components/ui/Select";
-import type { NvsImportFormat } from "@vetply/shared";
-import { Supplier } from "@vetply/shared";
+import type { CatalogueSupplierImportUploadKind } from "@vetply/shared";
 import {
   ImportSupplierPricesProvider,
   useImportSupplierPrices,
@@ -32,8 +31,8 @@ function ImportSupplierPricesFormBody() {
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-lg font-semibold text-white">Import supplier prices</h1>
       <p className="mt-2 text-sm text-gray-400">
-        Pick the NVS file type, then choose your file. Only fields that map to
-        the catalogue schema are imported. Large files are sent in batches of{" "}
+        Choose the supplier file type, then select your file. Only fields that map
+        to the catalogue schema are imported. Large files are sent in batches of{" "}
         {batchMaxLabel} rows.
       </p>
       <form
@@ -43,26 +42,28 @@ function ImportSupplierPricesFormBody() {
           void submitImport();
         }}
       >
-        <input type="hidden" name="supplier" value={Supplier.NVS} />
         <div>
           <label
-            htmlFor="nvs-import-kind"
+            htmlFor="catalogue-import-kind"
             className="block text-sm font-medium text-gray-200"
           >
-            NVS file type
+            File type
           </label>
           <Select
-            id="nvs-import-kind"
-            name="nvsImportKind"
+            id="catalogue-import-kind"
+            name="catalogueImportKind"
             className="mt-2"
             value={uploadKind}
             disabled={submitting}
             onChange={(ev) => {
-              changeUploadKind(ev.target.value as NvsImportFormat);
+              changeUploadKind(
+                ev.target.value as CatalogueSupplierImportUploadKind,
+              );
             }}
           >
-            <option value="non_pom_csv">NVS - Non-POM Products CSV</option>
-            <option value="all_products">NVS - All Products</option>
+            <option value="nvs_non_pom_csv">NVS - Non-POM Products CSV</option>
+            <option value="nvs_all_products">NVS - All Products</option>
+            <option value="veenak_csv">Veenak - Full price list CSV</option>
           </Select>
         </div>
         <div>

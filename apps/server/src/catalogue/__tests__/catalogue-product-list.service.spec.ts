@@ -493,7 +493,10 @@ describe('CatalogueProductListService', () => {
       );
     }
 
-    const alpha = await saveCatalogueManufacturer(manufacturerRepo, 'Mfg Multi');
+    const alpha = await saveCatalogueManufacturer(
+      manufacturerRepo,
+      'Mfg Multi',
+    );
     const product = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Multi-supplier product',

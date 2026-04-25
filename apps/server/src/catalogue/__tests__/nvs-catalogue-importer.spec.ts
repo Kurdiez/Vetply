@@ -1,5 +1,10 @@
 import type { NvsImportRow } from '@vetply/shared';
-import { CatalogUnitType, LegalCategory, SalesCategory, Supplier } from '@vetply/shared';
+import {
+  CatalogUnitType,
+  LegalCategory,
+  SalesCategory,
+  Supplier,
+} from '@vetply/shared';
 import { TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import {
@@ -118,7 +123,7 @@ describe('importNvsCatalogueRow', () => {
     );
     const products = await productRepo.find();
     expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('Updated name');
+    expect(products[0].name).toBe('Test product');
     expect(products[0].unitType).toBe(CatalogUnitType.ML);
     expect(products[0].unitQuantity).toBe('250.000000');
     expect(products[0].pom).toBe(true);

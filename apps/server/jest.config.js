@@ -1,7 +1,7 @@
 module.exports = {
   maxWorkers: process.env.CI ? 2 : 8,
 
-  collectCoverageFrom: ['**/*.(t|j)s'],
+  collectCoverageFrom: ['**/*.ts'],
   coverageDirectory: '../coverage',
   moduleFileExtensions: ['js', 'json', 'ts'],
   moduleNameMapper: {
@@ -12,7 +12,7 @@ module.exports = {
   testEnvironment: 'node',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.(t|j)s$': [
+    '^.+\\.ts$': [
       'ts-jest',
       {
         tsconfig: {

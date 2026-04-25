@@ -66,7 +66,9 @@ describe('CatalogueProductDetailService', () => {
 
     let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
     if (!nvs) {
-      nvs = await supplierRepo.save(supplierRepo.create({ name: Supplier.NVS }));
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
     }
 
     const mfg = await saveCatalogueManufacturer(manufacturerRepo, 'Acme');

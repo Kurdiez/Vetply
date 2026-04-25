@@ -9,8 +9,12 @@ import {
   countValidNvsDataRows,
   runNvsCsvBatchedImport,
 } from "@/utils/nvs-csv-batched-import";
-import type { NvsImportFormat } from "@vetply/shared";
-import { NVS_IMPORT_BATCH_MAX } from "@vetply/shared";
+import { countValidVeenakDataRows, runVeenakCsvBatchedImport } from "@/utils/veenak-csv-batched-import";
+import type { CatalogueSupplierImportUploadKind } from "@vetply/shared";
+import {
+  NVS_IMPORT_BATCH_MAX,
+  VEENAK_IMPORT_BATCH_MAX,
+} from "@vetply/shared";
 import { isAxiosError } from "axios";
 import { useRouter } from "next/router";
 import {
@@ -25,8 +29,8 @@ import { toast } from "sonner";
 
 export type ImportSupplierPricesContextValue = {
   routerReady: boolean;
-  uploadKind: NvsImportFormat;
-  changeUploadKind: (kind: NvsImportFormat) => void;
+  uploadKind: CatalogueSupplierImportUploadKind;
+  changeUploadKind: (kind: CatalogueSupplierImportUploadKind) => void;
   file: File | null;
   selectFile: (file: File | null) => void;
   submitting: boolean;
@@ -45,13 +49,14 @@ export function ImportSupplierPricesProvider({
   children: ReactNode;
 }) {
   const router = useRouter();
-  const [uploadKind, setUploadKind] = useState<NvsImportFormat>("non_pom_csv");
+  const [uploadKind, setUploadKind] =
+    useState<CatalogueSupplierImportUploadKind>("nvs_non_pom_csv");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [progressPct, setProgressPct] = useState<number | null>(null);
   const [progressLabel, setProgressLabel] = useState("");
 
-  const changeUploadKind = useCallback((kind: NvsImportFormat) => {
+  const changeUploadKind = useCallback((kind: CatalogueSupplierImportUploadKind) => {
     setUploadKind(kind);
     setFile(null);
   }, []);
@@ -71,7 +76,7 @@ export function ImportSupplierPricesProvider({
     setProgressLabel("Scanning file…");
 
     try {
-      if (uploadKind === "non_pom_csv") {
+      if (uploadKind === "nvs_non_pom_csv") {
         const totalDataRows = await countValidNvsDataRows(file);
         if (totalDataRows === 0) {
           throw new Error("NO_DATA_ROWS");
@@ -101,7 +106,7 @@ export function ImportSupplierPricesProvider({
         toast.success(
           `Imported ${totalImported.toLocaleString()} rows. Skipped ${totalSkipped.toLocaleString()}.`,
         );
-      } else {
+      } else if (uploadKind === "nvs_all_products") {
         const totalDataRows = await countValidNvsAllProductsDataRows(file);
         if (totalDataRows === 0) {
           throw new Error("NO_DATA_ROWS");
@@ -132,6 +137,36 @@ export function ImportSupplierPricesProvider({
         toast.success(
           `Imported ${totalImported.toLocaleString()} rows. Skipped ${totalSkipped.toLocaleString()}.`,
         );
+      } else {
+        const totalDataRows = await countValidVeenakDataRows(file);
+        if (totalDataRows === 0) {
+          throw new Error("NO_DATA_ROWS");
+        }
+        setProgressLabel(
+          `Processed 0 / ${totalDataRows.toLocaleString()} rows`,
+        );
+        const { totalImported, totalSkipped } = await runVeenakCsvBatchedImport(
+          file,
+          postCatalogueImportSupplierPricesBatch,
+          ({ rowsPosted, totalDataRows: total }) => {
+            const pct = Math.min(
+              100,
+              Math.round((rowsPosted / total) * 100),
+            );
+            setProgressPct(pct);
+            setProgressLabel(
+              `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
+            );
+          },
+          { totalDataRows },
+        );
+        setProgressPct(100);
+        setProgressLabel(
+          `Processed ${totalDataRows.toLocaleString()} / ${totalDataRows.toLocaleString()} rows`,
+        );
+        toast.success(
+          `Imported ${totalImported.toLocaleString()} rows. Skipped ${totalSkipped.toLocaleString()}.`,
+        );
       }
     } catch (err) {
       if (err instanceof Error && err.message === "NO_DATA_ROWS") {
@@ -150,7 +185,10 @@ export function ImportSupplierPricesProvider({
     }
   }, [file, uploadKind]);
 
-  const batchMaxLabel = NVS_IMPORT_BATCH_MAX.toLocaleString();
+  const batchMaxLabel =
+    uploadKind === "veenak_csv"
+      ? VEENAK_IMPORT_BATCH_MAX.toLocaleString()
+      : NVS_IMPORT_BATCH_MAX.toLocaleString();
 
   const value = useMemo<ImportSupplierPricesContextValue>(
     () => ({

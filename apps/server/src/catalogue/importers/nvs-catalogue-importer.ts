@@ -3,6 +3,7 @@ import { EntityManager } from 'typeorm';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
+import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
 import {
   parseNvsUom,
   parseNvsVpp,
@@ -72,7 +73,6 @@ export async function importNvsCatalogueRow(
     const productRepo = manager.getRepository(CatalogueProductEntity);
     const product = existingListing.product;
     product.manufacturerId = manufacturer.id;
-    product.name = description;
     product.salesCategory = salesCategory;
     product.legalCategory = legalCategory;
     product.pom = pom;
@@ -83,6 +83,23 @@ export async function importNvsCatalogueRow(
     existingListing.name = description;
     existingListing.listedPrice = listedPrice;
     await listingRepo.save(existingListing);
+    return 'imported';
+  }
+
+  const matchedProductId =
+    await findExistingCatalogueProductIdForSupplierImport(manager, {
+      supplierId,
+      candidateName: description,
+    });
+  if (matchedProductId) {
+    const listing = listingRepo.create({
+      productId: matchedProductId,
+      supplierId,
+      supplierProductId: partNo,
+      name: description,
+      listedPrice,
+    });
+    await listingRepo.save(listing);
     return 'imported';
   }
 

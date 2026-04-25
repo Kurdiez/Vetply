@@ -1,7 +1,9 @@
 /**
  * Rounds a catalogue price up to exactly two decimal places (ceiling).
  */
-export function ceilPriceToTwoDecimalPlaces(value: string | null): string | null {
+export function ceilPriceToTwoDecimalPlaces(
+  value: string | null,
+): string | null {
   if (value === null || value === undefined) {
     return null;
   }

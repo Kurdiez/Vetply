@@ -7,6 +7,16 @@ export const VEENAK_IMPORT_BATCH_MAX = 500;
 export const nvsImportFormatEnum = z.enum(['non_pom_csv', 'all_products']);
 export type NvsImportFormat = z.infer<typeof nvsImportFormatEnum>;
 
+/** Admin import page: which file pipeline is selected. */
+export const catalogueSupplierImportUploadKindEnum = z.enum([
+  'nvs_non_pom_csv',
+  'nvs_all_products',
+  'veenak_csv',
+]);
+export type CatalogueSupplierImportUploadKind = z.infer<
+  typeof catalogueSupplierImportUploadKindEnum
+>;
+
 export const nvsImportRowSchema = z.object({
   salesGroup: z.string(),
   partNo: z.string(),

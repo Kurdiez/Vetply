@@ -79,9 +79,7 @@ export class CatalogueProductDetailService {
       })),
     };
 
-    return (
-      zodResTransform(payload, catalogueProductDetailSchema) ?? payload
-    );
+    return zodResTransform(payload, catalogueProductDetailSchema) ?? payload;
   }
 
   async listManufacturers(): Promise<CatalogueManufacturerOption[]> {

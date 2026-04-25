@@ -15,7 +15,9 @@ import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import { importNvsAllProductsRow } from '../importers/nvs-all-products-importer';
 
-function row(overrides: Partial<NvsAllProductsImportRow> = {}): NvsAllProductsImportRow {
+function row(
+  overrides: Partial<NvsAllProductsImportRow> = {},
+): NvsAllProductsImportRow {
   return {
     supplierProductId: '00009999',
     name: 'Test widget',
@@ -106,8 +108,15 @@ describe('importNvsAllProductsRow', () => {
 
     products = await productRepo.find();
     expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('Second');
+    expect(products[0].name).toBe('First');
     expect(products[0].salesCategory).toBe(SalesCategory.Anaesthetics);
     expect(products[0].unitType).toBe(CatalogUnitType.PK);
+
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+    const listings = await listingRepo.find();
+    expect(listings[0].name).toBe('Second');
   });
 });
