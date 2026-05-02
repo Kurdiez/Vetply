@@ -26,3 +26,5 @@ service-account-staging.json
 *.log
 apps/test-results/
 .claudeignore
+.scrape-traces
+.scrape-debugs

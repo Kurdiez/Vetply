@@ -48,13 +48,15 @@ describe('parseNvsUom', () => {
 });
 
 describe('resolveSalesCategory', () => {
-  it('accepts exact NVS label', () => {
-    expect(resolveSalesCategory('Anaesthetics')).toBe(
-      SalesCategory.Anaesthetics,
+  it('accepts canonical six sales category labels', () => {
+    expect(resolveSalesCategory('Consumables')).toBe(SalesCategory.Consumables);
+    expect(resolveSalesCategory('Pharmaceutical')).toBe(
+      SalesCategory.Pharmaceutical,
     );
   });
 
   it('rejects unknown', () => {
+    expect(resolveSalesCategory('Anaesthetics')).toBeNull();
     expect(resolveSalesCategory('Not a category')).toBeNull();
   });
 });

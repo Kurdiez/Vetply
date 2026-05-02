@@ -1,22 +1,33 @@
 import { canonicalizeNvsSupplierProductId, NvsImportRow } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
+import { canonicalCatalogueImportProductName } from '../utils/catalogue-product-name-aliases';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
+import { resolveNvsSalesCategory } from '../utils/nvs-sales-group-to-sales-category';
 import {
   parseNvsUom,
   parseNvsVpp,
   parsePom,
   resolveLegalCategory,
-  resolveSalesCategory,
 } from '../utils/nvs-csv-parsers';
+
+export type NvsCatalogueImportRowResult =
+  | {
+      ok: true;
+      outcome:
+        | 'updated_existing_listing'
+        | 'new_listing_matched_product'
+        | 'new_product_and_listing';
+    }
+  | { ok: false; reason: string };
 
 export async function importNvsCatalogueRow(
   manager: EntityManager,
   row: NvsImportRow,
   supplierId: string,
-): Promise<'imported' | string> {
+): Promise<NvsCatalogueImportRowResult> {
   const listingRepo = manager.getRepository(
     CatalogueProductSupplierListingEntity,
   );
@@ -26,31 +37,40 @@ export async function importNvsCatalogueRow(
   const manufacturerName = row.manufacturer.trim();
 
   if (partNo === '' || description === '' || manufacturerName === '') {
-    return 'Missing Part No, Description, or Manufacturer';
+    return {
+      ok: false,
+      reason: 'Missing Part No, Description, or Manufacturer',
+    };
   }
 
   if (partNo.length > 128) {
-    return 'Part No exceeds 128 characters';
+    return { ok: false, reason: 'Part No exceeds 128 characters' };
   }
 
-  const salesCategory = resolveSalesCategory(row.salesGroup);
+  const salesCategory = resolveNvsSalesCategory(row.salesGroup);
   if (!salesCategory) {
-    return `Unknown Sales Group: ${row.salesGroup.trim()}`;
+    return {
+      ok: false,
+      reason: `Unknown Sales Group: ${row.salesGroup.trim()}`,
+    };
   }
 
   const legalCategory = resolveLegalCategory(row.legalLabel);
   if (!legalCategory) {
-    return `Unknown legal label: ${row.legalLabel.trim()}`;
+    return {
+      ok: false,
+      reason: `Unknown legal label: ${row.legalLabel.trim()}`,
+    };
   }
 
   const pom = parsePom(row.pom);
   if (pom === null) {
-    return `Invalid POM: ${row.pom.trim()}`;
+    return { ok: false, reason: `Invalid POM: ${row.pom.trim()}` };
   }
 
   const uom = parseNvsUom(row.uom);
   if (!uom) {
-    return `Invalid UoM: ${row.uom.trim()}`;
+    return { ok: false, reason: `Invalid UoM: ${row.uom.trim()}` };
   }
 
   const listedPrice = parseNvsVpp(row.vpp);
@@ -78,12 +98,13 @@ export async function importNvsCatalogueRow(
     product.pom = pom;
     product.unitType = uom.unitType;
     product.unitQuantity = uom.unitQuantity;
+    product.name = canonicalCatalogueImportProductName(description);
     await productRepo.save(product);
 
     existingListing.name = description;
     existingListing.listedPrice = listedPrice;
     await listingRepo.save(existingListing);
-    return 'imported';
+    return { ok: true, outcome: 'updated_existing_listing' };
   }
 
   const matchedProductId =
@@ -100,7 +121,7 @@ export async function importNvsCatalogueRow(
       listedPrice,
     });
     await listingRepo.save(listing);
-    return 'imported';
+    return { ok: true, outcome: 'new_listing_matched_product' };
   }
 
   const manufacturerRepo = manager.getRepository(CatalogueManufacturerEntity);
@@ -115,7 +136,7 @@ export async function importNvsCatalogueRow(
   const productRepo = manager.getRepository(CatalogueProductEntity);
   const product = productRepo.create({
     manufacturerId: manufacturer.id,
-    name: description,
+    name: canonicalCatalogueImportProductName(description),
     salesCategory,
     legalCategory,
     pom,
@@ -133,5 +154,5 @@ export async function importNvsCatalogueRow(
   });
   await listingRepo.save(listing);
 
-  return 'imported';
+  return { ok: true, outcome: 'new_product_and_listing' };
 }

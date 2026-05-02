@@ -3,6 +3,10 @@ import { TestingModule } from '@nestjs/testing';
 import { LegalCategory, SalesCategory, Supplier } from '@vetply/shared';
 import { DataSource } from 'typeorm';
 import {
+  saveCatalogueManufacturer,
+  saveCatalogueProduct,
+} from '~/commons/test/mockers/catalogue-product.mocker';
+import {
   cleanupAllTestResources,
   createTestDbContext,
   createTestingModule,
@@ -10,10 +14,6 @@ import {
   setupTestDatabase,
   type TestDbContext,
 } from '~/commons/test/utils/jest-test-utils';
-import {
-  saveCatalogueManufacturer,
-  saveCatalogueProduct,
-} from '~/commons/test/mockers/catalogue-product.mocker';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
@@ -76,7 +76,7 @@ describe('CatalogueProductDetailService', () => {
       manufacturerId: mfg.id,
       name: 'Widget',
       image: null,
-      salesCategory: SalesCategory.Misc,
+      salesCategory: SalesCategory.Consumables,
       legalCategory: LegalCategory.Consumables,
       pom: false,
     });

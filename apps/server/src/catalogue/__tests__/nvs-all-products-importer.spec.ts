@@ -1,6 +1,6 @@
+import { TestingModule } from '@nestjs/testing';
 import type { NvsAllProductsImportRow } from '@vetply/shared';
 import { CatalogUnitType, SalesCategory, Supplier } from '@vetply/shared';
-import { TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import {
   cleanupAllTestResources,
@@ -91,7 +91,7 @@ describe('importNvsAllProductsRow', () => {
     const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
     let products = await productRepo.find();
     const p0 = products[0];
-    p0.salesCategory = SalesCategory.Anaesthetics;
+    p0.salesCategory = SalesCategory.Consumables;
     await productRepo.save(p0);
 
     const r = await importNvsAllProductsRow(
@@ -108,8 +108,8 @@ describe('importNvsAllProductsRow', () => {
 
     products = await productRepo.find();
     expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('First');
-    expect(products[0].salesCategory).toBe(SalesCategory.Anaesthetics);
+    expect(products[0].name).toBe('Second');
+    expect(products[0].salesCategory).toBe(SalesCategory.Consumables);
     expect(products[0].unitType).toBe(CatalogUnitType.PK);
 
     const listingRepo = getTestRepository(

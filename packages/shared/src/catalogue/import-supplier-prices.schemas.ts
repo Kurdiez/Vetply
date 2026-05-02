@@ -94,11 +94,23 @@ export type ImportSupplierPricesBatchReq = z.infer<
   typeof importSupplierPricesBatchReqSchema
 >;
 
+/** Present only for NVS Non-POM CSV batches (`nvsFormat: non_pom_csv`). */
+export const nvsNonPomBatchBreakdownSchema = z.object({
+  updatedExistingListing: z.number().int().nonnegative(),
+  newListingOnMatchedProduct: z.number().int().nonnegative(),
+  newProductWithListing: z.number().int().nonnegative(),
+});
+
+export type NvsNonPomBatchBreakdown = z.infer<
+  typeof nvsNonPomBatchBreakdownSchema
+>;
+
 export const importSupplierPricesBatchResSchema = z.object({
   batchIndex: z.number().int().nonnegative(),
   rowsImported: z.number().int().nonnegative(),
   rowsSkipped: z.number().int().nonnegative(),
   skipReasonsSample: z.array(z.string()).max(50),
+  nvsNonPomBreakdown: nvsNonPomBatchBreakdownSchema.optional(),
 });
 
 export type ImportSupplierPricesBatchRes = z.infer<

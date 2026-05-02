@@ -9,6 +9,10 @@ import {
 } from '@vetply/shared';
 import { DataSource } from 'typeorm';
 import {
+  saveCatalogueManufacturer,
+  saveCatalogueProduct,
+} from '~/commons/test/mockers/catalogue-product.mocker';
+import {
   cleanupAllTestResources,
   createTestDbContext,
   createTestingModule,
@@ -16,10 +20,6 @@ import {
   setupTestDatabase,
   type TestDbContext,
 } from '~/commons/test/utils/jest-test-utils';
-import {
-  saveCatalogueManufacturer,
-  saveCatalogueProduct,
-} from '~/commons/test/mockers/catalogue-product.mocker';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
@@ -78,7 +78,7 @@ describe('CatalogueProductListService', () => {
     const p1 = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Dog Vaccine',
-      salesCategory: SalesCategory.Dental,
+      salesCategory: SalesCategory.Pharmaceutical,
       legalCategory: LegalCategory.GSL_GeneralSalesList,
       pom: false,
     });
@@ -86,7 +86,7 @@ describe('CatalogueProductListService', () => {
     const p2 = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Cat Vaccine',
-      salesCategory: SalesCategory.VaccinesSA,
+      salesCategory: SalesCategory.Retail,
       legalCategory: LegalCategory.POM_V,
       pom: true,
     });
@@ -94,7 +94,7 @@ describe('CatalogueProductListService', () => {
     const p3 = await saveCatalogueProduct(productRepo, {
       manufacturerId: beta.id,
       name: 'Horse wormer',
-      salesCategory: SalesCategory.EctosEquine,
+      salesCategory: SalesCategory.Petfood,
       legalCategory: LegalCategory.NFA_VPS,
       pom: false,
     });
@@ -237,7 +237,7 @@ describe('CatalogueProductListService', () => {
           kind: 'enum',
           fieldId: CatalogueFilterFieldId.SalesCategory,
           operator: CatalogueFilterOperator.IsExactly,
-          value: SalesCategory.Dental,
+          value: SalesCategory.Pharmaceutical,
         },
       ],
     });
@@ -255,7 +255,7 @@ describe('CatalogueProductListService', () => {
           kind: 'enum',
           fieldId: CatalogueFilterFieldId.SalesCategory,
           operator: CatalogueFilterOperator.ContainsAnyOf,
-          value: [SalesCategory.Dental, SalesCategory.EctosEquine],
+          value: [SalesCategory.Pharmaceutical, SalesCategory.Petfood],
         },
       ],
     });
@@ -274,7 +274,7 @@ describe('CatalogueProductListService', () => {
           kind: 'enum',
           fieldId: CatalogueFilterFieldId.SalesCategory,
           operator: CatalogueFilterOperator.DoesNotContainAnyOf,
-          value: [SalesCategory.Dental],
+          value: [SalesCategory.Pharmaceutical],
         },
       ],
     });
@@ -421,14 +421,14 @@ describe('CatalogueProductListService', () => {
     const productNvs = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Listed NVS only',
-      salesCategory: SalesCategory.Misc,
+      salesCategory: SalesCategory.Consumables,
       legalCategory: LegalCategory.Consumables,
       pom: false,
     });
     const productVeenak = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Listed Veenak only',
-      salesCategory: SalesCategory.Misc,
+      salesCategory: SalesCategory.Consumables,
       legalCategory: LegalCategory.Consumables,
       pom: false,
     });
@@ -500,7 +500,7 @@ describe('CatalogueProductListService', () => {
     const product = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Multi-supplier product',
-      salesCategory: SalesCategory.Misc,
+      salesCategory: SalesCategory.Consumables,
       legalCategory: LegalCategory.Consumables,
       pom: false,
     });
@@ -559,7 +559,7 @@ describe('CatalogueProductListService', () => {
     const product = await saveCatalogueProduct(productRepo, {
       manufacturerId: alpha.id,
       name: 'Dual list',
-      salesCategory: SalesCategory.Misc,
+      salesCategory: SalesCategory.Consumables,
       legalCategory: LegalCategory.Consumables,
       pom: false,
     });

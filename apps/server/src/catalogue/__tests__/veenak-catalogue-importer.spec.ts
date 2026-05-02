@@ -1,3 +1,4 @@
+import { TestingModule } from '@nestjs/testing';
 import type { VeenakImportRow } from '@vetply/shared';
 import {
   CatalogUnitType,
@@ -5,8 +6,8 @@ import {
   SalesCategory,
   Supplier,
 } from '@vetply/shared';
-import { TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
+import { saveCatalogueProduct } from '~/commons/test/mockers/catalogue-product.mocker';
 import {
   cleanupAllTestResources,
   createTestDbContext,
@@ -15,7 +16,6 @@ import {
   setupTestDatabase,
   type TestDbContext,
 } from '~/commons/test/utils/jest-test-utils';
-import { saveCatalogueProduct } from '~/commons/test/mockers/catalogue-product.mocker';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
@@ -91,7 +91,7 @@ describe('importVeenakCatalogueRow', () => {
     const product = await saveCatalogueProduct(productRepo, {
       name: 'Aciclovir 200mg Tablets',
       manufacturerId: null,
-      salesCategory: SalesCategory.Anaesthetics,
+      salesCategory: SalesCategory.Consumables,
       legalCategory: LegalCategory.POM_V,
       pom: true,
       unitType: CatalogUnitType.EA,

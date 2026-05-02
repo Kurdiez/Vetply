@@ -6,8 +6,9 @@ import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { config } from 'dotenv';
 import { ConfigModule, ConfigService } from '~/config';
 import { Environment, ServerType } from '~/config/types';
-import { QUEUES } from './const';
-import { ExampleQueueConsumer } from './consumers/example-queue.consumer';
+import { CovetrusScrapeConsumer } from './consumers/covetrus-scrape.consumer';
+import { CovetrusModule } from './covetrus/covetrus.module';
+import { PRODUCER_OPTIONS, QUEUES } from './const';
 import basicAuth = require('express-basic-auth');
 
 config();
@@ -30,7 +31,7 @@ function getBullMQImports(): DynamicModule[] {
           family: 0,
         },
         defaultJobOptions: {
-          removeOnComplete: false,
+          ...PRODUCER_OPTIONS,
         },
       }),
       inject: [ConfigService],
@@ -86,15 +87,16 @@ function getBullBoardImports(): DynamicModule[] {
 
 function getConsumers(): Provider[] {
   if (process.env.SERVER_TYPE === ServerType.WORKER) {
-    return [ExampleQueueConsumer];
+    return [CovetrusScrapeConsumer];
   }
   return [];
 }
 
 @Module({
-  imports: [...getBullMQImports(), ...getBullBoardImports()],
+  imports: [...getBullMQImports(), ...getBullBoardImports(), CovetrusModule],
   providers: [...getConsumers()],
   exports: [
+    CovetrusModule,
     ...QUEUE_CONFIGS.map((queueConfig) =>
       BullModule.registerQueue(queueConfig),
     ),

@@ -1,3 +1,4 @@
+import { TestingModule } from '@nestjs/testing';
 import type { NvsImportRow } from '@vetply/shared';
 import {
   CatalogUnitType,
@@ -5,7 +6,6 @@ import {
   SalesCategory,
   Supplier,
 } from '@vetply/shared';
-import { TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import {
   cleanupAllTestResources,
@@ -15,15 +15,15 @@ import {
   setupTestDatabase,
   type TestDbContext,
 } from '~/commons/test/utils/jest-test-utils';
-import { importNvsCatalogueRow } from '../importers/nvs-catalogue-importer';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
+import { importNvsCatalogueRow } from '../importers/nvs-catalogue-importer';
 
 function validRow(overrides: Partial<NvsImportRow> = {}): NvsImportRow {
   return {
-    salesGroup: 'Anaesthetics',
+    salesGroup: 'Consumables',
     partNo: 'PART-1',
     description: 'Test product',
     uom: 'EA',
@@ -61,7 +61,10 @@ describe('importNvsCatalogueRow', () => {
       validRow(),
       nvs.id,
     );
-    expect(r).toBe('imported');
+    expect(r).toEqual({
+      ok: true,
+      outcome: 'new_product_and_listing',
+    });
 
     const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
     const listingRepo = getTestRepository(
@@ -77,7 +80,7 @@ describe('importNvsCatalogueRow', () => {
     expect(products).toHaveLength(1);
     expect(products[0].name).toBe('Test product');
     expect(products[0].unitType).toBe(CatalogUnitType.EA);
-    expect(products[0].salesCategory).toBe(SalesCategory.Anaesthetics);
+    expect(products[0].salesCategory).toBe(SalesCategory.Consumables);
     expect(products[0].legalCategory).toBe(LegalCategory.POM_V);
     expect(products[0].pom).toBe(false);
 
@@ -108,13 +111,15 @@ describe('importNvsCatalogueRow', () => {
         uom: '250ML',
         vpp: '£20.50',
         pom: 'Yes',
-        salesGroup: 'Dental',
         legalLabel: 'GSL (General Sales List)',
         manufacturer: 'Other Mfg',
       }),
       nvs.id,
     );
-    expect(r).toBe('imported');
+    expect(r).toEqual({
+      ok: true,
+      outcome: 'updated_existing_listing',
+    });
 
     const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
     const listingRepo = getTestRepository(
@@ -123,11 +128,11 @@ describe('importNvsCatalogueRow', () => {
     );
     const products = await productRepo.find();
     expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('Test product');
+    expect(products[0].name).toBe('Updated name');
     expect(products[0].unitType).toBe(CatalogUnitType.ML);
     expect(products[0].unitQuantity).toBe('250.000000');
     expect(products[0].pom).toBe(true);
-    expect(products[0].salesCategory).toBe(SalesCategory.Dental);
+    expect(products[0].salesCategory).toBe(SalesCategory.Consumables);
     expect(products[0].legalCategory).toBe(LegalCategory.GSL_GeneralSalesList);
 
     const listings = await listingRepo.find();
@@ -163,7 +168,10 @@ describe('importNvsCatalogueRow', () => {
       }),
       nvs.id,
     );
-    expect(r).toBe('imported');
+    expect(r).toEqual({
+      ok: true,
+      outcome: 'updated_existing_listing',
+    });
     const after = await listingRepo.find();
     expect(after).toHaveLength(1);
     expect(after[0].supplierProductId).toBe('00719870');

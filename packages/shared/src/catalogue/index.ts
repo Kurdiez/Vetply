@@ -8,4 +8,5 @@ export * from "./enums";
 export * from "./import-supplier-prices.schemas";
 export * from "./nvs-all-products-line";
 export * from "./nvs-supplier-product-id";
+export * from "./strip-trailing-unit-quantity-from-product-name";
 export * from "./supplier";

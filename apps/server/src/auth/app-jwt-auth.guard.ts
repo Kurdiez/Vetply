@@ -1,6 +1,8 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import type { Request } from 'express';
+
 import { IS_PUBLIC_KEY } from './public.decorator';
 
 @Injectable()
@@ -17,6 +19,12 @@ export class AppJwtAuthGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
+
+    const request = context.switchToHttp().getRequest<Request>();
+    if (request.path?.startsWith('/system')) {
+      return true;
+    }
+
     return super.canActivate(context);
   }
 }

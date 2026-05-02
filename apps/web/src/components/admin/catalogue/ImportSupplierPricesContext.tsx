@@ -1,6 +1,5 @@
 "use client";
 
-import { postCatalogueImportSupplierPricesBatch } from "@/utils/vetply-api/catalogue-api";
 import {
   countValidNvsAllProductsDataRows,
   runNvsAllProductsBatchedImport,
@@ -9,12 +8,13 @@ import {
   countValidNvsDataRows,
   runNvsCsvBatchedImport,
 } from "@/utils/nvs-csv-batched-import";
-import { countValidVeenakDataRows, runVeenakCsvBatchedImport } from "@/utils/veenak-csv-batched-import";
-import type { CatalogueSupplierImportUploadKind } from "@vetply/shared";
 import {
-  NVS_IMPORT_BATCH_MAX,
-  VEENAK_IMPORT_BATCH_MAX,
-} from "@vetply/shared";
+  countValidVeenakDataRows,
+  runVeenakCsvBatchedImport,
+} from "@/utils/veenak-csv-batched-import";
+import { postCatalogueImportSupplierPricesBatch } from "@/utils/vetply-api/catalogue-api";
+import type { CatalogueSupplierImportUploadKind } from "@vetply/shared";
+import { NVS_IMPORT_BATCH_MAX, VEENAK_IMPORT_BATCH_MAX } from "@vetply/shared";
 import { isAxiosError } from "axios";
 import { useRouter } from "next/router";
 import {
@@ -56,10 +56,13 @@ export function ImportSupplierPricesProvider({
   const [progressPct, setProgressPct] = useState<number | null>(null);
   const [progressLabel, setProgressLabel] = useState("");
 
-  const changeUploadKind = useCallback((kind: CatalogueSupplierImportUploadKind) => {
-    setUploadKind(kind);
-    setFile(null);
-  }, []);
+  const changeUploadKind = useCallback(
+    (kind: CatalogueSupplierImportUploadKind) => {
+      setUploadKind(kind);
+      setFile(null);
+    },
+    [],
+  );
 
   const selectFile = useCallback((f: File | null) => {
     setFile(f);
@@ -84,27 +87,28 @@ export function ImportSupplierPricesProvider({
         setProgressLabel(
           `Processed 0 / ${totalDataRows.toLocaleString()} rows`,
         );
-        const { totalImported, totalSkipped } = await runNvsCsvBatchedImport(
-          file,
-          postCatalogueImportSupplierPricesBatch,
-          ({ rowsPosted, totalDataRows: total }) => {
-            const pct = Math.min(
-              100,
-              Math.round((rowsPosted / total) * 100),
-            );
-            setProgressPct(pct);
-            setProgressLabel(
-              `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
-            );
-          },
-          { totalDataRows },
-        );
+        const { totalImported, totalSkipped, nvsNonPomTotals } =
+          await runNvsCsvBatchedImport(
+            file,
+            postCatalogueImportSupplierPricesBatch,
+            ({ rowsPosted, totalDataRows: total }) => {
+              const pct = Math.min(100, Math.round((rowsPosted / total) * 100));
+              setProgressPct(pct);
+              setProgressLabel(
+                `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
+              );
+            },
+            { totalDataRows },
+          );
         setProgressPct(100);
         setProgressLabel(
           `Processed ${totalDataRows.toLocaleString()} / ${totalDataRows.toLocaleString()} rows`,
         );
+        const netNewListings =
+          (nvsNonPomTotals?.newListingOnMatchedProduct ?? 0) +
+          (nvsNonPomTotals?.newProductWithListing ?? 0);
         toast.success(
-          `Imported ${totalImported.toLocaleString()} rows. Skipped ${totalSkipped.toLocaleString()}.`,
+          `Imported ${totalImported.toLocaleString()} rows (${netNewListings.toLocaleString()} new NVS listings, ${(nvsNonPomTotals?.updatedExistingListing ?? 0).toLocaleString()} updates on existing NVS SKUs). Skipped ${totalSkipped.toLocaleString()}.`,
         );
       } else if (uploadKind === "nvs_all_products") {
         const totalDataRows = await countValidNvsAllProductsDataRows(file);
@@ -119,10 +123,7 @@ export function ImportSupplierPricesProvider({
             file,
             postCatalogueImportSupplierPricesBatch,
             ({ rowsPosted, totalDataRows: total }) => {
-              const pct = Math.min(
-                100,
-                Math.round((rowsPosted / total) * 100),
-              );
+              const pct = Math.min(100, Math.round((rowsPosted / total) * 100));
               setProgressPct(pct);
               setProgressLabel(
                 `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,
@@ -149,10 +150,7 @@ export function ImportSupplierPricesProvider({
           file,
           postCatalogueImportSupplierPricesBatch,
           ({ rowsPosted, totalDataRows: total }) => {
-            const pct = Math.min(
-              100,
-              Math.round((rowsPosted / total) * 100),
-            );
+            const pct = Math.min(100, Math.round((rowsPosted / total) * 100));
             setProgressPct(pct);
             setProgressLabel(
               `Processed ${rowsPosted.toLocaleString()} / ${total.toLocaleString()} rows`,

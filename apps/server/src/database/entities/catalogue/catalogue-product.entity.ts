@@ -1,5 +1,12 @@
-import { CatalogUnitType, LegalCategory, SalesCategory } from '@vetply/shared';
 import {
+  CatalogUnitType,
+  LegalCategory,
+  SalesCategory,
+  stripTrailingCatalogUnitQuantityFromProductName,
+} from '@vetply/shared';
+import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
@@ -60,6 +67,12 @@ export class CatalogueProductEntity {
 
   @Column({ name: 'name', type: 'varchar', length: 1024 })
   name!: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  stripTrailingUnitQuantityFromStoredName(): void {
+    this.name = stripTrailingCatalogUnitQuantityFromProductName(this.name);
+  }
 
   /** Public URL or app-relative path to product image; null when none. */
   @Column({ name: 'image', type: 'varchar', length: 2048, nullable: true })

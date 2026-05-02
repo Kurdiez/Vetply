@@ -3,6 +3,7 @@ import {
   CatalogUnitType,
   LegalCategory,
   SalesCategory,
+  stripTrailingCatalogUnitQuantityFromProductName,
   Supplier,
 } from '@vetply/shared';
 import { DataSource } from 'typeorm';
@@ -19,6 +20,7 @@ import { CatalogueProductSupplierListingEntity } from '~/database/entities/catal
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import {
+  CATALOGUE_PRODUCT_IMPORT_DICE_THRESHOLD,
   diceBigramScore,
   findExistingCatalogueProductIdForSupplierImport,
   normalizeCatalogueProductNameForMatch,
@@ -26,6 +28,34 @@ import {
 } from '../utils/catalogue-product-import-match';
 
 describe('catalogue-product-import-match', () => {
+  describe('stripTrailingCatalogUnitQuantityFromProductName', () => {
+    it('removes trailing decimal quantity and spaced ML unit', () => {
+      expect(
+        stripTrailingCatalogUnitQuantityFromProductName('Paracetamol 100 ML'),
+      ).toBe('Paracetamol');
+    });
+
+    it('removes glued quantity and unit at end', () => {
+      expect(
+        stripTrailingCatalogUnitQuantityFromProductName('Paracetamol 100ml'),
+      ).toBe('Paracetamol');
+    });
+
+    it('strips repeated tails from the right', () => {
+      expect(
+        stripTrailingCatalogUnitQuantityFromProductName('X 500 MG 28 TAB'),
+      ).toBe('X');
+    });
+
+    it('does not strip strength tokens not at the tail', () => {
+      expect(
+        stripTrailingCatalogUnitQuantityFromProductName(
+          'PARACETAMOL SUSP 120MG/5ML SF',
+        ),
+      ).toBe('PARACETAMOL SUSP 120MG/5ML SF');
+    });
+  });
+
   describe('normalizeCatalogueProductNameForMatch', () => {
     it('trims, lowercases, and collapses whitespace', () => {
       expect(
@@ -38,6 +68,30 @@ describe('catalogue-product-import-match', () => {
     it('drops punctuation and collapses to alphanumeric tokens', () => {
       expect(slugForCatalogueProductMatch('Aciclovir (200mg) — Tabs')).toBe(
         'aciclovir 200mg tabs',
+      );
+    });
+
+    it('aligns sugar-base NVS, Covetrus-style titles to the same slug', () => {
+      const covetrusStyle = 'Paracetamol Susp 120mg/5ml 100ml';
+      const nvsSugarGlued = 'PARACETAMOL SUSP 120MG/5ML (SU100ML';
+      expect(slugForCatalogueProductMatch(covetrusStyle)).toBe(
+        slugForCatalogueProductMatch(nvsSugarGlued),
+      );
+    });
+
+    it('aligns sugar-free NVS SF and Veenak-style title when pack volume is in the name', () => {
+      const nvsSf = 'PARACETAMOL SUSP 120MG/5ML SF 100ML';
+      const veenakSf = 'Paracetamol Susp 120mg/5ml (Sugar free) 100ML';
+      expect(slugForCatalogueProductMatch(nvsSf)).toBe(
+        slugForCatalogueProductMatch(veenakSf),
+      );
+    });
+
+    it('does not treat plain Covetrus title as sugar-free slug', () => {
+      const covetrusStyle = 'Paracetamol Susp 120mg/5ml 100ml';
+      const nvsSf = 'PARACETAMOL SUSP 120MG/5ML SF 100ML';
+      expect(slugForCatalogueProductMatch(covetrusStyle)).not.toBe(
+        slugForCatalogueProductMatch(nvsSf),
       );
     });
   });
@@ -92,7 +146,7 @@ describe('catalogue-product-import-match', () => {
       const product = await saveCatalogueProduct(productRepo, {
         name: 'Aciclovir 200mg Tablets',
         manufacturerId: null,
-        salesCategory: SalesCategory.Anaesthetics,
+        salesCategory: SalesCategory.Consumables,
         legalCategory: LegalCategory.POM_V,
         pom: true,
       });
@@ -115,6 +169,117 @@ describe('catalogue-product-import-match', () => {
         },
       );
       expect(found).toBe(product.id);
+    });
+
+    it('Paracetamol Covetrus listing vs plain vs SF — fuzzy Dice debug logs', async () => {
+      const supplierRepo = getTestRepository(
+        dbContext,
+        CatalogueSupplierEntity,
+      );
+      const covetrus = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.COVETRUS }),
+      );
+
+      const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+
+      const plainProduct = await productRepo.save(
+        productRepo.create({
+          id: '00000000-0000-4000-8000-000000000001',
+          manufacturerId: null,
+          name: 'PARACETAMOL SUSP 120MG/5ML',
+          salesCategory: SalesCategory.Pharmaceutical,
+          legalCategory: LegalCategory.POM_V,
+          pom: true,
+          unitType: CatalogUnitType.ML,
+          unitQuantity: '100.000000',
+        }),
+      );
+
+      const sfProduct = await productRepo.save(
+        productRepo.create({
+          id: '00000000-0000-4000-8000-000000000002',
+          manufacturerId: null,
+          name: 'PARACETAMOL SUSP 120MG/5ML SF',
+          salesCategory: SalesCategory.Pharmaceutical,
+          legalCategory: LegalCategory.POM_V,
+          pom: true,
+          unitType: CatalogUnitType.ML,
+          unitQuantity: '100.000000',
+        }),
+      );
+
+      const covetrusListingTitle = 'Paracetamol Susp 120mg/5ml 100ml';
+
+      const slugCand = slugForCatalogueProductMatch(covetrusListingTitle);
+      const slugPlain = slugForCatalogueProductMatch(plainProduct.name);
+      const slugSf = slugForCatalogueProductMatch(sfProduct.name);
+
+      const parts = slugCand.split(' ').filter(Boolean);
+      const longEnough = parts.filter((t) => t.length >= 4);
+      longEnough.sort((x, y) => y.length - x.length);
+      const sqlPrefilterToken =
+        longEnough.length > 0
+          ? (longEnough[0] ?? null)
+          : slugCand.length >= 4
+            ? slugCand
+            : null;
+
+      const scorePlain = diceBigramScore(slugCand, slugPlain);
+      const scoreSf = diceBigramScore(slugCand, slugSf);
+
+      /* eslint-disable no-console -- jest-setup-env stubs console.log; debug still prints */
+      console.debug(
+        '[paracetamol fuzzy debug] Covetrus listing title:',
+        covetrusListingTitle,
+      );
+      console.debug('[paracetamol fuzzy debug] slugCand:', slugCand);
+      console.debug(
+        '[paracetamol fuzzy debug] SQL position token (longest token ≥4):',
+        sqlPrefilterToken,
+      );
+      console.debug(
+        '[paracetamol fuzzy debug] slugPlain:',
+        slugPlain,
+        'score:',
+        scorePlain,
+      );
+      console.debug(
+        '[paracetamol fuzzy debug] slugSf:',
+        slugSf,
+        'score:',
+        scoreSf,
+      );
+      console.debug(
+        '[paracetamol fuzzy debug] threshold:',
+        CATALOGUE_PRODUCT_IMPORT_DICE_THRESHOLD,
+      );
+
+      const found = await findExistingCatalogueProductIdForSupplierImport(
+        dbContext.manager,
+        {
+          supplierId: covetrus.id,
+          candidateName: covetrusListingTitle,
+        },
+      );
+
+      const winnerLabel =
+        found === sfProduct.id
+          ? 'SF row'
+          : found === plainProduct.id
+            ? 'plain row'
+            : found === null
+              ? '(null)'
+              : 'unexpected id';
+
+      console.debug(
+        '[paracetamol fuzzy debug] winner:',
+        winnerLabel,
+        'id:',
+        found,
+      );
+      /* eslint-enable no-console */
+
+      expect(found).toBe(plainProduct.id);
     });
 
     it('returns null when product already has a listing for that supplier', async () => {
@@ -193,7 +358,7 @@ describe('catalogue-product-import-match', () => {
       const product = await saveCatalogueProduct(productRepo, {
         name: 'Aciclovir (200mg) Tablets',
         manufacturerId: null,
-        salesCategory: SalesCategory.Anaesthetics,
+        salesCategory: SalesCategory.Consumables,
         legalCategory: LegalCategory.POM_V,
         pom: true,
       });

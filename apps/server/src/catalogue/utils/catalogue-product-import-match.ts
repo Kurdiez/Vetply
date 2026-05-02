@@ -1,10 +1,13 @@
+import { stripTrailingCatalogUnitQuantityFromProductName } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
+
+import { canonicalCatalogueImportProductName } from './catalogue-product-name-aliases';
 
 /** Minimum bigram Dice score to accept a fuzzy match (light fuzz; ~0.83 for typical pack suffix). */
 export const CATALOGUE_PRODUCT_IMPORT_DICE_THRESHOLD = 0.82;
 
-/** Max rows to pull from DB for in-memory fuzzy scoring. */
-const FUZZY_CANDIDATE_LIMIT = 80;
+/** Max rows to pull from DB for exact + fuzzy scoring (exact slug uses same pool). */
+const FUZZY_CANDIDATE_LIMIT = 250;
 
 /** Minimum token length used for the cheap SQL prefilter (`position`). */
 const FUZZY_PREFILTER_TOKEN_MIN_LEN = 4;
@@ -19,10 +22,14 @@ export function normalizeCatalogueProductNameForMatch(raw: string): string {
 
 /**
  * Punctuation-insensitive "slug": lowercased letters/digits only, single spaces.
- * Must stay aligned with the SQL expression in `findExistingCatalogueProductIdForSupplierImport`.
+ * Strips trailing `{qty} {catalog unit}` from the canonical title, then applies
+ * aliases so NVS / Veenak / Covetrus sugar wording lines up.
  */
 export function slugForCatalogueProductMatch(raw: string): string {
-  const n = normalizeCatalogueProductNameForMatch(raw);
+  const canonical = canonicalCatalogueImportProductName(raw);
+  const withoutUnitTail =
+    stripTrailingCatalogUnitQuantityFromProductName(canonical);
+  const n = normalizeCatalogueProductNameForMatch(withoutUnitTail);
   return n
     .replace(/[^a-z0-9]+/gi, ' ')
     .replace(/\s+/g, ' ')
@@ -87,9 +94,8 @@ export type FindExistingCatalogueProductIdParams = {
 
 /**
  * Finds an existing catalogue product for import linking:
- * 1) Exact match on punctuation-insensitive slug (same as before, stricter on punctuation).
- * 2) If none: cheap SQL prefilter (product name contains the longest alphanumeric token from
- *    the candidate slug), then pick best Sørensen–Dice bigram score on slugs if >= threshold.
+ * 1) Exact match on punctuation-insensitive slug (aliases applied in TS; checked on candidate pool).
+ * 2) If none: pick best Sørensen–Dice bigram score on slugs if >= threshold (same pool).
  *
  * Only considers products with no listing for this supplier yet. Deterministic: best score,
  * then lowest `id`.
@@ -101,25 +107,6 @@ export async function findExistingCatalogueProductIdForSupplierImport(
   const slugCand = slugForCatalogueProductMatch(params.candidateName);
   if (slugCand === '') {
     return null;
-  }
-
-  const exactRows = await manager.query<{ id: string }[]>(
-    `SELECT p.id::text AS id
-     FROM catalogue_products p
-     WHERE NOT EXISTS (
-       SELECT 1 FROM catalogue_product_supplier_listings l
-       WHERE l.product_id = p.id AND l.supplier_id = $1::uuid
-     )
-     AND trim(both ' ' FROM regexp_replace(
-           regexp_replace(lower(trim(p.name)), '[^a-z0-9]+', ' ', 'gi'),
-           E'\\s+', ' ', 'g'
-         )) = $2
-     ORDER BY p.id ASC
-     LIMIT 1`,
-    [params.supplierId, slugCand],
-  );
-  if (exactRows[0]?.id) {
-    return exactRows[0].id;
   }
 
   const token = longestSlugToken(slugCand);
@@ -139,6 +126,18 @@ export async function findExistingCatalogueProductIdForSupplierImport(
      LIMIT $3`,
     [params.supplierId, token, FUZZY_CANDIDATE_LIMIT],
   );
+
+  let bestExactId: string | null = null;
+  for (const row of fuzzyRows) {
+    if (slugForCatalogueProductMatch(row.name) === slugCand) {
+      if (!bestExactId || row.id < bestExactId) {
+        bestExactId = row.id;
+      }
+    }
+  }
+  if (bestExactId !== null) {
+    return bestExactId;
+  }
 
   let bestId: string | null = null;
   let bestScore = -1;

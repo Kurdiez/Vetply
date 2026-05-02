@@ -2,6 +2,7 @@ import type {
   ImportSupplierPricesBatchReq,
   ImportSupplierPricesBatchRes,
   NvsImportRow,
+  NvsNonPomBatchBreakdown,
 } from "@vetply/shared";
 import { NVS_IMPORT_BATCH_MAX, Supplier } from "@vetply/shared";
 import Papa from "papaparse";
@@ -65,6 +66,8 @@ export type NvsImportProgress = {
 export type NvsImportTotals = {
   totalImported: number;
   totalSkipped: number;
+  /** Aggregated across all batches for NVS Non-POM only; omit otherwise. */
+  nvsNonPomTotals?: NvsNonPomBatchBreakdown;
 };
 
 export type RunNvsCsvBatchedImportOptions = {
@@ -97,6 +100,11 @@ export async function runNvsCsvBatchedImport(
     let rowsPosted = 0;
     let totalImported = 0;
     let totalSkipped = 0;
+    const nvsTotals: NvsNonPomBatchBreakdown = {
+      updatedExistingListing: 0,
+      newListingOnMatchedProduct: 0,
+      newProductWithListing: 0,
+    };
 
     const schedule = (fn: () => Promise<void>) => {
       chain = chain.then(fn).catch((e: unknown) => {
@@ -116,6 +124,12 @@ export async function runNvsCsvBatchedImport(
       });
       totalImported += res.rowsImported;
       totalSkipped += res.rowsSkipped;
+      const br = res.nvsNonPomBreakdown;
+      if (br) {
+        nvsTotals.updatedExistingListing += br.updatedExistingListing;
+        nvsTotals.newListingOnMatchedProduct += br.newListingOnMatchedProduct;
+        nvsTotals.newProductWithListing += br.newProductWithListing;
+      }
     };
 
     Papa.parse<unknown[]>(file, {
@@ -155,7 +169,11 @@ export async function runNvsCsvBatchedImport(
         });
         chain = chain
           .then(() => {
-            resolve({ totalImported, totalSkipped });
+            resolve({
+              totalImported,
+              totalSkipped,
+              nvsNonPomTotals: nvsTotals,
+            });
           })
           .catch(reject);
       },

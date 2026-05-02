@@ -3,6 +3,7 @@ import {
   type NvsAllProductsImportRow,
 } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
+import { canonicalCatalogueImportProductName } from '../utils/catalogue-product-name-aliases';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
@@ -45,6 +46,7 @@ export async function importNvsAllProductsRow(
     const product = existingListing.product;
     product.unitType = uom.unitType;
     product.unitQuantity = uom.unitQuantity;
+    product.name = canonicalCatalogueImportProductName(name);
     await productRepo.save(product);
 
     existingListing.name = name;
@@ -76,7 +78,7 @@ export async function importNvsAllProductsRow(
     salesCategory: null,
     legalCategory: null,
     pom: null,
-    name,
+    name: canonicalCatalogueImportProductName(name),
     image: null,
     unitType: uom.unitType,
     unitQuantity: uom.unitQuantity,

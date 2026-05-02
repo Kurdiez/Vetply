@@ -2,7 +2,8 @@ import { VeenakImportRow } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
-import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
+import { canonicalCatalogueImportProductName } from '~/catalogue/utils/catalogue-product-name-aliases';
+import { findExistingCatalogueProductIdForSupplierImport } from '~/catalogue/utils/catalogue-product-import-match';
 import { parseNvsUom, parseNvsVpp } from '../utils/nvs-csv-parsers';
 
 export async function importVeenakCatalogueRow(
@@ -66,7 +67,7 @@ export async function importVeenakCatalogueRow(
     salesCategory: null,
     legalCategory: null,
     pom: null,
-    name: productName,
+    name: canonicalCatalogueImportProductName(productName),
     image: null,
     unitType: uom.unitType,
     unitQuantity: uom.unitQuantity,

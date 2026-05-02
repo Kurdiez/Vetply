@@ -21,6 +21,24 @@ export const configSchema = z
       .string()
       .min(1)
       .default('dev-jwt-secret-change-in-production'),
+    COVETRUS_USERNAME: z.string().optional(),
+    COVETRUS_PASSWORD: z.string().optional(),
+    COVETRUS_LOGIN_URL: z.preprocess(
+      (v) =>
+        v === undefined || v === ''
+          ? 'https://connect.covetrus.co.uk/login'
+          : v,
+      z.string().url(),
+    ),
+    COVETRUS_ORDER_DETAIL_URL: z.preprocess(
+      (v) =>
+        v === undefined || v === ''
+          ? 'https://connect.covetrus.co.uk/orders-detail-page/1402746'
+          : v,
+      z.string().url(),
+    ),
+    /** Ignored: scrape workers always use an isolated temp Chromium profile per session. */
+    COVETRUS_CHROME_PROFILE_DIR: z.string().optional(),
   })
   .merge(databaseConfigSchema)
   .refine(
