@@ -1,5 +1,6 @@
 export * from "./catalogue-filter.enums";
 export * from "./catalogue-list-filters.schemas";
+export * from "./catalogue-sort.enums";
 export * from "./catalogue-manufacturers-list.schemas";
 export * from "./catalogue-product-detail.schemas";
 export * from "./catalogue-product-update.schemas";

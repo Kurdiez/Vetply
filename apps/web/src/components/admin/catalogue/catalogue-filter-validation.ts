@@ -1,4 +1,4 @@
-import type { LegalCategory, SalesCategory, Supplier } from "@vetply/shared";
+import type { Supplier } from "@vetply/shared";
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
@@ -6,7 +6,6 @@ import {
 import type { AppliedFilter } from "./catalogue-filter-model";
 import {
   defaultOperatorForField,
-  getFieldKind,
   operatorsForField,
 } from "./catalogue-filter-model";
 
@@ -17,11 +16,6 @@ export type CatalogueFilterDraft = {
   stringTags: string[];
   supplierSingle: Supplier | "";
   supplierTags: Supplier[];
-  salesCategorySingle: SalesCategory | "";
-  salesCategoryTags: SalesCategory[];
-  legalCategorySingle: LegalCategory | "";
-  legalCategoryTags: LegalCategory[];
-  pomValue: boolean | null;
 };
 
 export function createEmptyDraft(): CatalogueFilterDraft {
@@ -32,11 +26,6 @@ export function createEmptyDraft(): CatalogueFilterDraft {
     stringTags: [],
     supplierSingle: "",
     supplierTags: [],
-    salesCategorySingle: "",
-    salesCategoryTags: [],
-    legalCategorySingle: "",
-    legalCategoryTags: [],
-    pomValue: null,
   };
 }
 
@@ -58,13 +47,6 @@ function isStringMultiOperator(op: CatalogueFilterOperator): boolean {
   );
 }
 
-function isEnumMultiOperator(op: CatalogueFilterOperator): boolean {
-  return (
-    op === CatalogueFilterOperator.ContainsAnyOf ||
-    op === CatalogueFilterOperator.DoesNotContainAnyOf
-  );
-}
-
 export function validateDraftAndBuildFilter(
   draft: CatalogueFilterDraft,
   newId: () => string,
@@ -74,7 +56,6 @@ export function validateDraftAndBuildFilter(
   }
 
   const fieldId = draft.fieldId;
-  const kind = getFieldKind(fieldId);
   const allowed = operatorsForField(fieldId);
   const op: CatalogueFilterOperator =
     draft.operator && allowed.includes(draft.operator)
@@ -85,32 +66,14 @@ export function validateDraftAndBuildFilter(
     return { ok: false, message: "Select an operator." };
   }
 
-  if (kind === "string") {
-    if (
-      fieldId === CatalogueFilterFieldId.Supplier ||
-      fieldId === CatalogueFilterFieldId.BestSupplier
-    ) {
-      if (isStringMultiOperator(op)) {
-        const tags = draft.supplierTags;
-        if (tags.length === 0) {
-          return {
-            ok: false,
-            message: "Select at least one supplier.",
-          };
-        }
+  if (fieldId === CatalogueFilterFieldId.Supplier) {
+    if (isStringMultiOperator(op)) {
+      const tags = draft.supplierTags;
+      if (tags.length === 0) {
         return {
-          ok: true,
-          filter: {
-            id: newId(),
-            kind: "string",
-            fieldId,
-            operator: op,
-            value: tags,
-          },
+          ok: false,
+          message: "Select at least one supplier.",
         };
-      }
-      if (draft.supplierSingle === "") {
-        return { ok: false, message: "Select a supplier." };
       }
       return {
         ok: true,
@@ -119,33 +82,32 @@ export function validateDraftAndBuildFilter(
           kind: "string",
           fieldId,
           operator: op,
-          value: draft.supplierSingle,
-        },
-      };
-    }
-
-    if (isStringMultiOperator(op)) {
-      const tags = normalizeTags(draft.stringTags);
-      if (tags.length === 0) {
-        return {
-          ok: false,
-          message: "Add at least one value for this operator.",
-        };
-      }
-      return {
-        ok: true,
-        filter: {
-          id: newId(),
-          kind: "string",
-          fieldId: CatalogueFilterFieldId.ManufacturerName,
-          operator: op,
           value: tags,
         },
       };
     }
-    const trimmed = draft.stringSingle.trim();
-    if (trimmed.length === 0) {
-      return { ok: false, message: "Enter a value." };
+    if (draft.supplierSingle === "") {
+      return { ok: false, message: "Select a supplier." };
+    }
+    return {
+      ok: true,
+      filter: {
+        id: newId(),
+        kind: "string",
+        fieldId,
+        operator: op,
+        value: draft.supplierSingle,
+      },
+    };
+  }
+
+  if (isStringMultiOperator(op)) {
+    const tags = normalizeTags(draft.stringTags);
+    if (tags.length === 0) {
+      return {
+        ok: false,
+        message: "Add at least one value for this operator.",
+      };
     }
     return {
       ok: true,
@@ -154,97 +116,22 @@ export function validateDraftAndBuildFilter(
         kind: "string",
         fieldId: CatalogueFilterFieldId.ManufacturerName,
         operator: op,
-        value: trimmed,
+        value: tags,
       },
     };
   }
-
-  if (kind === "enum") {
-    if (fieldId === CatalogueFilterFieldId.SalesCategory) {
-      if (isEnumMultiOperator(op)) {
-        const tags = draft.salesCategoryTags;
-        if (tags.length === 0) {
-          return {
-            ok: false,
-            message: "Add at least one category value.",
-          };
-        }
-        return {
-          ok: true,
-          filter: {
-            id: newId(),
-            kind: "enum",
-            fieldId: CatalogueFilterFieldId.SalesCategory,
-            operator: op,
-            value: tags,
-          },
-        };
-      }
-      if (draft.salesCategorySingle === "") {
-        return { ok: false, message: "Select a sales category." };
-      }
-      return {
-        ok: true,
-        filter: {
-          id: newId(),
-          kind: "enum",
-          fieldId: CatalogueFilterFieldId.SalesCategory,
-          operator: op,
-          value: draft.salesCategorySingle,
-        },
-      };
-    }
-    if (fieldId === CatalogueFilterFieldId.LegalCategory) {
-      if (isEnumMultiOperator(op)) {
-        const tags = draft.legalCategoryTags;
-        if (tags.length === 0) {
-          return {
-            ok: false,
-            message: "Add at least one legal category value.",
-          };
-        }
-        return {
-          ok: true,
-          filter: {
-            id: newId(),
-            kind: "enum",
-            fieldId: CatalogueFilterFieldId.LegalCategory,
-            operator: op,
-            value: tags,
-          },
-        };
-      }
-      if (draft.legalCategorySingle === "") {
-        return { ok: false, message: "Select a legal category." };
-      }
-      return {
-        ok: true,
-        filter: {
-          id: newId(),
-          kind: "enum",
-          fieldId: CatalogueFilterFieldId.LegalCategory,
-          operator: op,
-          value: draft.legalCategorySingle,
-        },
-      };
-    }
+  const trimmed = draft.stringSingle.trim();
+  if (trimmed.length === 0) {
+    return { ok: false, message: "Enter a value." };
   }
-
-  if (kind === "boolean") {
-    if (draft.pomValue === null) {
-      return { ok: false, message: "Select Yes or No." };
-    }
-    return {
-      ok: true,
-      filter: {
-        id: newId(),
-        kind: "boolean",
-        fieldId: CatalogueFilterFieldId.Pom,
-        operator: op,
-        value: draft.pomValue,
-      },
-    };
-  }
-
-  return { ok: false, message: "Invalid filter." };
+  return {
+    ok: true,
+    filter: {
+      id: newId(),
+      kind: "string",
+      fieldId: CatalogueFilterFieldId.ManufacturerName,
+      operator: op,
+      value: trimmed,
+    },
+  };
 }

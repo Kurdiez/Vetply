@@ -4,6 +4,7 @@ import {
   CatalogueProductListItem,
   CatalogueProductsListQuery,
   CatalogueProductsListRes,
+  Supplier,
   catalogueProductsListResSchema,
 } from '@vetply/shared';
 import { Repository } from 'typeorm';
@@ -45,53 +46,59 @@ export class CatalogueProductListService {
 
     const ids = entities.map((p) => p.id);
 
-    const bestByProductId = new Map<
+    type PriceRow = {
+      productId: string;
+      supplierName: string;
+      listedPrice: string;
+    };
+
+    const pricesByProductId = new Map<
       string,
-      { bestSupplierName: string; bestPrice: string | null }
+      Partial<Record<Supplier, string>>
     >();
     if (ids.length > 0) {
-      const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
-      const bestRows = await this.productRepository.manager.query<
-        {
-          productId: string;
-          bestSupplierName: string;
-          listedPrice: string;
-        }[]
-      >(
-        `SELECT DISTINCT ON (l.product_id)
-           l.product_id AS "productId",
-           s.name AS "bestSupplierName",
-           l.listed_price AS "listedPrice"
+      const n = ids.length;
+      const inPlaceholders = ids.map((_, i) => `$${i + 1}`).join(', ');
+      const priceRows = await this.productRepository.manager.query<PriceRow[]>(
+        `SELECT l.product_id AS "productId",
+                s.name::text AS "supplierName",
+                l.listed_price AS "listedPrice"
          FROM catalogue_product_supplier_listings l
          INNER JOIN catalogue_suppliers s ON s.id = l.supplier_id
-         WHERE l.product_id IN (${placeholders})
-           AND l.listed_price IS NOT NULL
-         ORDER BY l.product_id, l.listed_price ASC, s.name ASC, l.supplier_product_id ASC, l.id ASC`,
-        ids,
+         WHERE l.product_id IN (${inPlaceholders})
+           AND s.name IN ($${n + 1}, $${n + 2}, $${n + 3})
+           AND l.listed_price IS NOT NULL`,
+        [...ids, Supplier.COVETRUS, Supplier.NVS, Supplier.VEENAK],
       );
 
-      for (const row of bestRows) {
-        bestByProductId.set(row.productId, {
-          bestSupplierName: row.bestSupplierName,
-          bestPrice: ceilPriceToTwoDecimalPlaces(String(row.listedPrice)),
-        });
+      for (const row of priceRows) {
+        const supplier = row.supplierName as Supplier;
+        if (
+          supplier !== Supplier.COVETRUS &&
+          supplier !== Supplier.NVS &&
+          supplier !== Supplier.VEENAK
+        ) {
+          continue;
+        }
+        const formatted = ceilPriceToTwoDecimalPlaces(String(row.listedPrice));
+        const m = pricesByProductId.get(row.productId) ?? {};
+        m[supplier] = formatted;
+        pricesByProductId.set(row.productId, m);
       }
     }
 
     const items: CatalogueProductListItem[] = entities.map((p) => {
-      const best = bestByProductId.get(p.id);
+      const m = pricesByProductId.get(p.id);
       return {
         id: p.id,
         name: p.name,
         image: p.image ?? null,
         manufacturerName: p.manufacturer?.name ?? null,
-        salesCategory: p.salesCategory,
-        legalCategory: p.legalCategory,
-        pom: p.pom,
         unitType: p.unitType,
         unitQuantity: formatUnitQuantityAsWholeNumber(p.unitQuantity),
-        bestSupplierName: best?.bestSupplierName ?? null,
-        bestPrice: best?.bestPrice ?? null,
+        covetrusPrice: m?.[Supplier.COVETRUS] ?? null,
+        nvsPrice: m?.[Supplier.NVS] ?? null,
+        veenakPrice: m?.[Supplier.VEENAK] ?? null,
       };
     });
 

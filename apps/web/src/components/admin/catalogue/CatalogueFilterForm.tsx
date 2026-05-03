@@ -10,12 +10,10 @@ import { useCallback, useMemo } from "react";
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
+  SUPPLIER_OPTIONS,
   defaultOperatorForField,
   getFieldKind,
-  LEGAL_CATEGORY_OPTIONS,
   operatorsForField,
-  SALES_CATEGORY_OPTIONS,
-  SUPPLIER_OPTIONS,
 } from "./catalogue-filter-model";
 import { createEmptyDraft } from "./catalogue-filter-validation";
 import { useCatalogueView } from "./CatalogueViewContext";
@@ -29,19 +27,6 @@ const FIELD_OPTIONS: FilterSelectOption[] = [
     value: CatalogueFilterFieldId.Supplier,
     label: "Supplier",
   },
-  {
-    value: CatalogueFilterFieldId.BestSupplier,
-    label: "Best supplier",
-  },
-  {
-    value: CatalogueFilterFieldId.SalesCategory,
-    label: "Sales category",
-  },
-  {
-    value: CatalogueFilterFieldId.LegalCategory,
-    label: "Legal category",
-  },
-  { value: CatalogueFilterFieldId.Pom, label: "POM" },
 ];
 
 const OPERATOR_LABEL: Record<CatalogueFilterOperator, string> = {
@@ -54,13 +39,6 @@ const OPERATOR_LABEL: Record<CatalogueFilterOperator, string> = {
 };
 
 function isStringMultiOp(op: CatalogueFilterOperator | ""): boolean {
-  return (
-    op === CatalogueFilterOperator.ContainsAnyOf ||
-    op === CatalogueFilterOperator.DoesNotContainAnyOf
-  );
-}
-
-function isEnumMultiOp(op: CatalogueFilterOperator | ""): boolean {
   return (
     op === CatalogueFilterOperator.ContainsAnyOf ||
     op === CatalogueFilterOperator.DoesNotContainAnyOf
@@ -93,24 +71,6 @@ export function CatalogueFilterForm() {
         label: OPERATOR_LABEL[op] ?? op,
       })),
     [allowedOps],
-  );
-
-  const salesEnumOptions: FilterSelectOption[] = useMemo(
-    () =>
-      SALES_CATEGORY_OPTIONS.map((v) => ({
-        value: v,
-        label: v,
-      })),
-    [],
-  );
-
-  const legalEnumOptions: FilterSelectOption[] = useMemo(
-    () =>
-      LEGAL_CATEGORY_OPTIONS.map((v) => ({
-        value: v,
-        label: v,
-      })),
-    [],
   );
 
   const supplierEnumOptions: FilterSelectOption[] = useMemo(
@@ -155,287 +115,109 @@ export function CatalogueFilterForm() {
       return null;
     }
 
-    if (kind === "string") {
-      if (
-        fieldId === CatalogueFilterFieldId.Supplier ||
-        fieldId === CatalogueFilterFieldId.BestSupplier
-      ) {
-        const supplierFieldLabel =
-          fieldId === CatalogueFilterFieldId.BestSupplier
-            ? "Best supplier"
-            : "Supplier";
-        if (isStringMultiOp(effectiveOperator)) {
-          return (
-            <FilterEnumTagList
-              id="filter-supplier-hint"
-              label="Suppliers"
-              addControlId="filter-supplier-add"
-              options={supplierEnumOptions}
-              selected={filterDraft.supplierTags}
-              onAdd={(value) => {
-                setFilterDraft((d) =>
-                  d.supplierTags.includes(value as never)
-                    ? d
-                    : {
-                        ...d,
-                        supplierTags: [
-                          ...d.supplierTags,
-                          value as (typeof d.supplierTags)[number],
-                        ],
-                      },
-                );
-              }}
-              onRemove={(index) => {
-                setFilterDraft((d) => ({
-                  ...d,
-                  supplierTags: d.supplierTags.filter((_, i) => i !== index),
-                }));
-              }}
-            />
-          );
-        }
-        return (
-          <div>
-            <label
-              htmlFor="filter-supplier-single"
-              className="block text-sm/6 font-medium text-white"
-            >
-              {supplierFieldLabel}
-            </label>
-            <div className="mt-2">
-              <Select
-                id="filter-supplier-single"
-                value={filterDraft.supplierSingle}
-                onChange={(e) =>
-                  setFilterDraft((d) => ({
-                    ...d,
-                    supplierSingle: e.target.value as never,
-                  }))
-                }
-              >
-                <option value="">Select supplier…</option>
-                {SUPPLIER_OPTIONS.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        );
-      }
-
+    if (fieldId === CatalogueFilterFieldId.Supplier) {
       if (isStringMultiOp(effectiveOperator)) {
         return (
-          <FilterStringTagList
-            id="filter-string-tags"
-            label="Values"
-            tags={filterDraft.stringTags}
-            onAdd={(tag) => {
-              const t = tag.trim();
-              if (t.length === 0) {
-                return;
-              }
+          <FilterEnumTagList
+            id="filter-supplier-hint"
+            label="Suppliers"
+            addControlId="filter-supplier-add"
+            options={supplierEnumOptions}
+            selected={filterDraft.supplierTags}
+            onAdd={(value) => {
               setFilterDraft((d) =>
-                d.stringTags.includes(t)
+                d.supplierTags.includes(value as never)
                   ? d
-                  : { ...d, stringTags: [...d.stringTags, t] },
+                  : {
+                      ...d,
+                      supplierTags: [
+                        ...d.supplierTags,
+                        value as (typeof d.supplierTags)[number],
+                      ],
+                    },
               );
             }}
             onRemove={(index) => {
               setFilterDraft((d) => ({
                 ...d,
-                stringTags: d.stringTags.filter((_, i) => i !== index),
+                supplierTags: d.supplierTags.filter((_, i) => i !== index),
               }));
             }}
           />
         );
       }
       return (
-        <FilterTextInput
-          id="filter-string-single"
-          label="Value"
-          value={filterDraft.stringSingle}
-          onChange={(v) =>
-            setFilterDraft((d) => ({ ...d, stringSingle: v }))
-          }
-        />
-      );
-    }
-
-    if (kind === "enum") {
-      if (fieldId === CatalogueFilterFieldId.SalesCategory) {
-        if (isEnumMultiOp(effectiveOperator)) {
-          return (
-            <FilterEnumTagList
-              id="filter-sales-hint"
-              label="Values"
-              addControlId="filter-sales-add"
-              options={salesEnumOptions}
-              selected={filterDraft.salesCategoryTags}
-              onAdd={(value) => {
-                setFilterDraft((d) =>
-                  d.salesCategoryTags.includes(value as never)
-                    ? d
-                    : {
-                        ...d,
-                        salesCategoryTags: [
-                          ...d.salesCategoryTags,
-                          value as (typeof d.salesCategoryTags)[number],
-                        ],
-                      },
-                );
-              }}
-              onRemove={(index) => {
-                setFilterDraft((d) => ({
-                  ...d,
-                  salesCategoryTags: d.salesCategoryTags.filter(
-                    (_, i) => i !== index,
-                  ),
-                }));
-              }}
-            />
-          );
-        }
-        return (
-          <div>
-            <label
-              htmlFor="filter-sales-single"
-              className="block text-sm/6 font-medium text-white"
-            >
-              Value
-            </label>
-            <div className="mt-2">
-              <Select
-                id="filter-sales-single"
-                value={filterDraft.salesCategorySingle}
-                onChange={(e) =>
-                  setFilterDraft((d) => ({
-                    ...d,
-                    salesCategorySingle: e.target.value as never,
-                  }))
-                }
-              >
-                <option value="">Select value…</option>
-                {SALES_CATEGORY_OPTIONS.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        );
-      }
-      if (fieldId === CatalogueFilterFieldId.LegalCategory) {
-        if (isEnumMultiOp(effectiveOperator)) {
-          return (
-            <FilterEnumTagList
-              id="filter-legal-hint"
-              label="Values"
-              addControlId="filter-legal-add"
-              options={legalEnumOptions}
-              selected={filterDraft.legalCategoryTags}
-              onAdd={(value) => {
-                setFilterDraft((d) =>
-                  d.legalCategoryTags.includes(value as never)
-                    ? d
-                    : {
-                        ...d,
-                        legalCategoryTags: [
-                          ...d.legalCategoryTags,
-                          value as (typeof d.legalCategoryTags)[number],
-                        ],
-                      },
-                );
-              }}
-              onRemove={(index) => {
-                setFilterDraft((d) => ({
-                  ...d,
-                  legalCategoryTags: d.legalCategoryTags.filter(
-                    (_, i) => i !== index,
-                  ),
-                }));
-              }}
-            />
-          );
-        }
-        return (
-          <div>
-            <label
-              htmlFor="filter-legal-single"
-              className="block text-sm/6 font-medium text-white"
-            >
-              Value
-            </label>
-            <div className="mt-2">
-              <Select
-                id="filter-legal-single"
-                value={filterDraft.legalCategorySingle}
-                onChange={(e) =>
-                  setFilterDraft((d) => ({
-                    ...d,
-                    legalCategorySingle: e.target.value as never,
-                  }))
-                }
-              >
-                <option value="">Select value…</option>
-                {LEGAL_CATEGORY_OPTIONS.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        );
-      }
-    }
-
-    if (kind === "boolean") {
-      return (
         <div>
           <label
-            htmlFor="filter-pom"
+            htmlFor="filter-supplier-single"
             className="block text-sm/6 font-medium text-white"
           >
-            Value
+            Supplier
           </label>
           <div className="mt-2">
             <Select
-              id="filter-pom"
-              value={
-                filterDraft.pomValue === null
-                  ? ""
-                  : filterDraft.pomValue
-                    ? "true"
-                    : "false"
-              }
-              onChange={(e) => {
-                const v = e.target.value;
+              id="filter-supplier-single"
+              value={filterDraft.supplierSingle}
+              onChange={(e) =>
                 setFilterDraft((d) => ({
                   ...d,
-                  pomValue: v === "" ? null : v === "true",
-                }));
-              }}
+                  supplierSingle: e.target.value as never,
+                }))
+              }
             >
-              <option value="">Select…</option>
-              <option value="true">Yes</option>
-              <option value="false">No</option>
+              <option value="">Select supplier…</option>
+              {SUPPLIER_OPTIONS.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
             </Select>
           </div>
         </div>
       );
     }
 
-    return null;
+    if (isStringMultiOp(effectiveOperator)) {
+      return (
+        <FilterStringTagList
+          id="filter-string-tags"
+          label="Values"
+          tags={filterDraft.stringTags}
+          onAdd={(tag) => {
+            const t = tag.trim();
+            if (t.length === 0) {
+              return;
+            }
+            setFilterDraft((d) =>
+              d.stringTags.includes(t)
+                ? d
+                : { ...d, stringTags: [...d.stringTags, t] },
+            );
+          }}
+          onRemove={(index) => {
+            setFilterDraft((d) => ({
+              ...d,
+              stringTags: d.stringTags.filter((_, i) => i !== index),
+            }));
+          }}
+        />
+      );
+    }
+    return (
+      <FilterTextInput
+        id="filter-string-single"
+        label="Value"
+        value={filterDraft.stringSingle}
+        onChange={(v) =>
+          setFilterDraft((d) => ({ ...d, stringSingle: v }))
+        }
+      />
+    );
   }, [
     fieldId,
     kind,
     effectiveOperator,
     filterDraft,
-    salesEnumOptions,
-    legalEnumOptions,
     supplierEnumOptions,
     setFilterDraft,
   ]);

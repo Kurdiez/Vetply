@@ -1,8 +1,10 @@
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
+  CatalogueListSortFieldId,
   type CatalogueProductFilter,
   type CatalogueSort,
+  Supplier,
 } from '@vetply/shared';
 import type { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { Brackets, type Repository, type SelectQueryBuilder } from 'typeorm';
@@ -13,14 +15,6 @@ type CatalogueProductSupplierFilter = {
   id?: string;
   kind: 'string';
   fieldId: typeof CatalogueFilterFieldId.Supplier;
-  operator: CatalogueFilterOperator;
-  value: string | string[];
-};
-
-type CatalogueProductBestSupplierFilter = {
-  id?: string;
-  kind: 'string';
-  fieldId: typeof CatalogueFilterFieldId.BestSupplier;
   operator: CatalogueFilterOperator;
   value: string | string[];
 };
@@ -39,22 +33,6 @@ function supplierListingExists(conditionSql: string): string {
     SELECT 1 FROM catalogue_product_supplier_listings sup_l
     INNER JOIN catalogue_suppliers sup_s ON sup_s.id = sup_l.supplier_id
     WHERE sup_l.product_id = product.id AND (${conditionSql})
-  )`;
-}
-
-/** Listing(s) at the product's minimum non-null `listed_price`; `conditionSql` uses `bss` / `bsl`. */
-function bestPriceSupplierListingExists(conditionSql: string): string {
-  return `EXISTS (
-    SELECT 1 FROM catalogue_product_supplier_listings bsl
-    INNER JOIN catalogue_suppliers bss ON bss.id = bsl.supplier_id
-    WHERE bsl.product_id = product.id
-      AND bsl.listed_price IS NOT NULL
-      AND bsl.listed_price = (
-        SELECT MIN(bsl2.listed_price)
-        FROM catalogue_product_supplier_listings bsl2
-        WHERE bsl2.product_id = product.id AND bsl2.listed_price IS NOT NULL
-      )
-      AND (${conditionSql})
   )`;
 }
 
@@ -131,79 +109,6 @@ function applySupplierFilter(
   }
 }
 
-function applyBestSupplierFilter(
-  qb: SelectQueryBuilder<CatalogueProductEntity>,
-  filter: CatalogueProductBestSupplierFilter,
-  next: NextParam,
-): void {
-  const op = filter.operator;
-  const value = filter.value;
-  const singleToken = (v: string | string[]): string =>
-    Array.isArray(v) ? v[0] : v;
-  const nameTrimLower = `LOWER(TRIM(bss.name::text))`;
-  const nameLower = `LOWER(bss.name::text)`;
-
-  if (op === CatalogueFilterOperator.IsExactly) {
-    const k = next();
-    qb.andWhere(
-      bestPriceSupplierListingExists(`${nameTrimLower} = LOWER(TRIM(:${k}))`),
-      { [k]: singleToken(value) },
-    );
-    return;
-  }
-  if (op === CatalogueFilterOperator.IsDistinctFrom) {
-    const k = next();
-    qb.andWhere(
-      `NOT (${bestPriceSupplierListingExists(`${nameTrimLower} = LOWER(TRIM(:${k}))`)})`,
-      { [k]: singleToken(value) },
-    );
-    return;
-  }
-  if (op === CatalogueFilterOperator.Contains) {
-    const k = next();
-    qb.andWhere(
-      bestPriceSupplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`),
-      { [k]: singleToken(value) },
-    );
-    return;
-  }
-  if (op === CatalogueFilterOperator.DoesNotContain) {
-    const k = next();
-    qb.andWhere(
-      `NOT (${bestPriceSupplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`)})`,
-      { [k]: singleToken(value) },
-    );
-    return;
-  }
-  if (op === CatalogueFilterOperator.ContainsAnyOf) {
-    const tokens = Array.isArray(value) ? value : [value];
-    qb.andWhere(
-      new Brackets((outer) => {
-        for (const t of tokens) {
-          const k = next();
-          outer.orWhere(
-            bestPriceSupplierListingExists(
-              `STRPOS(${nameLower}, LOWER(:${k})) > 0`,
-            ),
-            { [k]: t },
-          );
-        }
-      }),
-    );
-    return;
-  }
-  if (op === CatalogueFilterOperator.DoesNotContainAnyOf) {
-    const tokens = Array.isArray(value) ? value : [value];
-    for (const t of tokens) {
-      const k = next();
-      qb.andWhere(
-        `NOT (${bestPriceSupplierListingExists(`STRPOS(${nameLower}, LOWER(:${k})) > 0`)})`,
-        { [k]: t },
-      );
-    }
-  }
-}
-
 function applyStringFilter(
   qb: SelectQueryBuilder<CatalogueProductEntity>,
   filter: Extract<CatalogueProductFilter, { kind: 'string' }> & {
@@ -267,89 +172,6 @@ function applyStringFilter(
   }
 }
 
-function applySalesCategoryFilter(
-  qb: SelectQueryBuilder<CatalogueProductEntity>,
-  filter: Extract<
-    CatalogueProductFilter,
-    { kind: 'enum'; fieldId: typeof CatalogueFilterFieldId.SalesCategory }
-  >,
-  next: NextParam,
-): void {
-  const col = 'product.salesCategory';
-  const op = filter.operator;
-  const value = filter.value;
-
-  if (op === CatalogueFilterOperator.IsExactly) {
-    const k = next();
-    const v = Array.isArray(value) ? value[0] : value;
-    qb.andWhere(`${col} = :${k}`, { [k]: v });
-    return;
-  }
-  if (op === CatalogueFilterOperator.IsDistinctFrom) {
-    const k = next();
-    const v = Array.isArray(value) ? value[0] : value;
-    qb.andWhere(`${col} <> :${k}`, { [k]: v });
-    return;
-  }
-  if (op === CatalogueFilterOperator.ContainsAnyOf) {
-    const arr = Array.isArray(value) ? value : [value];
-    const k = next();
-    qb.andWhere(`${col} IN (:...${k})`, { [k]: arr });
-    return;
-  }
-  if (op === CatalogueFilterOperator.DoesNotContainAnyOf) {
-    const arr = Array.isArray(value) ? value : [value];
-    const k = next();
-    qb.andWhere(`${col} NOT IN (:...${k})`, { [k]: arr });
-  }
-}
-
-function applyLegalCategoryFilter(
-  qb: SelectQueryBuilder<CatalogueProductEntity>,
-  filter: Extract<
-    CatalogueProductFilter,
-    { kind: 'enum'; fieldId: typeof CatalogueFilterFieldId.LegalCategory }
-  >,
-  next: NextParam,
-): void {
-  const col = 'product.legalCategory';
-  const op = filter.operator;
-  const value = filter.value;
-
-  if (op === CatalogueFilterOperator.IsExactly) {
-    const k = next();
-    const v = Array.isArray(value) ? value[0] : value;
-    qb.andWhere(`${col} = :${k}`, { [k]: v });
-    return;
-  }
-  if (op === CatalogueFilterOperator.IsDistinctFrom) {
-    const k = next();
-    const v = Array.isArray(value) ? value[0] : value;
-    qb.andWhere(`${col} <> :${k}`, { [k]: v });
-    return;
-  }
-  if (op === CatalogueFilterOperator.ContainsAnyOf) {
-    const arr = Array.isArray(value) ? value : [value];
-    const k = next();
-    qb.andWhere(`${col} IN (:...${k})`, { [k]: arr });
-    return;
-  }
-  if (op === CatalogueFilterOperator.DoesNotContainAnyOf) {
-    const arr = Array.isArray(value) ? value : [value];
-    const k = next();
-    qb.andWhere(`${col} NOT IN (:...${k})`, { [k]: arr });
-  }
-}
-
-function applyPomFilter(
-  qb: SelectQueryBuilder<CatalogueProductEntity>,
-  filter: Extract<CatalogueProductFilter, { kind: 'boolean' }>,
-  next: NextParam,
-): void {
-  const k = next();
-  qb.andWhere(`product.pom = :${k}`, { [k]: filter.value });
-}
-
 /** Escape `%`, `_`, and `\\` for use in ILIKE ... ESCAPE '\\'. */
 function escapeIlikePattern(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
@@ -382,32 +204,36 @@ export function applyCatalogueProductFilters(
   }
   const next = createParamCounter();
   for (const filter of filters) {
-    if (filter.kind === 'string') {
-      if (filter.fieldId === CatalogueFilterFieldId.Supplier) {
-        applySupplierFilter(qb, filter as CatalogueProductSupplierFilter, next);
-      } else if (filter.fieldId === CatalogueFilterFieldId.BestSupplier) {
-        applyBestSupplierFilter(
-          qb,
-          filter as CatalogueProductBestSupplierFilter,
-          next,
-        );
-      } else {
-        applyStringFilter(
-          qb,
-          filter as Extract<CatalogueProductFilter, { kind: 'string' }> & {
-            fieldId: typeof CatalogueFilterFieldId.ManufacturerName;
-          },
-          next,
-        );
-      }
-    } else if (filter.fieldId === CatalogueFilterFieldId.SalesCategory) {
-      applySalesCategoryFilter(qb, filter, next);
-    } else if (filter.fieldId === CatalogueFilterFieldId.LegalCategory) {
-      applyLegalCategoryFilter(qb, filter, next);
-    } else if (filter.kind === 'boolean') {
-      applyPomFilter(qb, filter, next);
+    if (filter.fieldId === CatalogueFilterFieldId.Supplier) {
+      applySupplierFilter(qb, filter as CatalogueProductSupplierFilter, next);
+    } else {
+      applyStringFilter(
+        qb,
+        filter as Extract<CatalogueProductFilter, { kind: 'string' }> & {
+          fieldId: typeof CatalogueFilterFieldId.ManufacturerName;
+        },
+        next,
+      );
     }
   }
+}
+
+function minListedPriceScalarSql(supplierName: Supplier): string {
+  return `(SELECT MIN(l.listed_price::numeric) FROM catalogue_product_supplier_listings l INNER JOIN catalogue_suppliers s ON s.id = l.supplier_id WHERE l.product_id = product.id AND s.name = '${supplierName}' AND l.listed_price IS NOT NULL)`;
+}
+
+function minSupplierNameScalarSql(): string {
+  return `(SELECT MIN(s.name::text) FROM catalogue_product_supplier_listings l INNER JOIN catalogue_suppliers s ON s.id = l.supplier_id WHERE l.product_id = product.id)`;
+}
+
+function orderBySelectAlias(
+  qb: SelectQueryBuilder<CatalogueProductEntity>,
+  scalarExpression: string,
+  selectAlias: string,
+  dir: 'ASC' | 'DESC',
+): void {
+  qb.addSelect(scalarExpression, selectAlias);
+  qb.orderBy(selectAlias, dir, 'NULLS LAST');
 }
 
 export function applyCatalogueProductSort(
@@ -421,24 +247,43 @@ export function applyCatalogueProductSort(
   }
   const dir = sort.direction.toUpperCase() as 'ASC' | 'DESC';
   switch (sort.fieldId) {
-    case CatalogueFilterFieldId.Name:
+    case CatalogueListSortFieldId.Name:
       qb.orderBy('product.name', dir);
       break;
-    case CatalogueFilterFieldId.ManufacturerName:
+    case CatalogueListSortFieldId.ManufacturerName:
       qb.orderBy('manufacturer.name', dir);
       break;
-    case CatalogueFilterFieldId.SalesCategory:
-      qb.orderBy('product.salesCategory', dir);
+    case CatalogueListSortFieldId.Supplier:
+      orderBySelectAlias(
+        qb,
+        minSupplierNameScalarSql(),
+        'catalogue_sort_supplier',
+        dir,
+      );
       break;
-    case CatalogueFilterFieldId.LegalCategory:
-      qb.orderBy('product.legalCategory', dir);
+    case CatalogueListSortFieldId.CovetrusPrice:
+      orderBySelectAlias(
+        qb,
+        minListedPriceScalarSql(Supplier.COVETRUS),
+        'catalogue_sort_covetrus',
+        dir,
+      );
       break;
-    case CatalogueFilterFieldId.Pom:
-      qb.orderBy('product.pom', dir);
+    case CatalogueListSortFieldId.NvsPrice:
+      orderBySelectAlias(
+        qb,
+        minListedPriceScalarSql(Supplier.NVS),
+        'catalogue_sort_nvs',
+        dir,
+      );
       break;
-    case CatalogueFilterFieldId.Supplier:
-    case CatalogueFilterFieldId.BestSupplier:
-      qb.orderBy('product.updatedAt', 'DESC');
+    case CatalogueListSortFieldId.VeenakPrice:
+      orderBySelectAlias(
+        qb,
+        minListedPriceScalarSql(Supplier.VEENAK),
+        'catalogue_sort_veenak',
+        dir,
+      );
       break;
     default:
       qb.orderBy('product.updatedAt', 'DESC');

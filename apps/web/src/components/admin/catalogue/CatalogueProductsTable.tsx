@@ -6,7 +6,7 @@ import {
   type DataTableColumn,
 } from "@/components/ui/data-table/DataTable";
 import {
-  CatalogueFilterFieldId,
+  CatalogueListSortFieldId,
   type CatalogueProductListItem,
 } from "@vetply/shared";
 import type { CatalogueSortFieldId } from "./catalogue-filter-model";
@@ -14,34 +14,33 @@ import { CatalogueProductThumbnail } from "./CatalogueProductThumbnail";
 import { useCatalogueView } from "./CatalogueViewContext";
 
 const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
-  CatalogueFilterFieldId.Name,
-  CatalogueFilterFieldId.ManufacturerName,
-  CatalogueFilterFieldId.SalesCategory,
-  CatalogueFilterFieldId.LegalCategory,
-  CatalogueFilterFieldId.Pom,
-  CatalogueFilterFieldId.Supplier,
+  CatalogueListSortFieldId.Name,
+  CatalogueListSortFieldId.ManufacturerName,
+  CatalogueListSortFieldId.Supplier,
+  CatalogueListSortFieldId.CovetrusPrice,
+  CatalogueListSortFieldId.NvsPrice,
+  CatalogueListSortFieldId.VeenakPrice,
 ];
 
 const COLUMNS: DataTableColumn[] = [
   { id: "image", header: "" },
-  { id: CatalogueFilterFieldId.Name, header: "Name" },
+  { id: CatalogueListSortFieldId.Name, header: "Name" },
   {
-    id: CatalogueFilterFieldId.ManufacturerName,
+    id: CatalogueListSortFieldId.ManufacturerName,
     header: "Manufacturer",
   },
-  {
-    id: CatalogueFilterFieldId.SalesCategory,
-    header: "Sales category",
-  },
-  {
-    id: CatalogueFilterFieldId.LegalCategory,
-    header: "Legal category",
-  },
-  { id: CatalogueFilterFieldId.Pom, header: "POM" },
   { id: "unit", header: "Unit" },
-  { id: "bestSupplierName", header: "Best supplier" },
-  { id: "bestPrice", header: "Best price" },
+  { id: CatalogueListSortFieldId.CovetrusPrice, header: "Covetrus price" },
+  { id: CatalogueListSortFieldId.NvsPrice, header: "NVS price" },
+  { id: CatalogueListSortFieldId.VeenakPrice, header: "Veenak price" },
 ];
+
+function formatPriceCell(value: string | null): string {
+  if (value === null) {
+    return "—";
+  }
+  return value;
+}
 
 export function CatalogueProductsTable() {
   const {
@@ -105,20 +104,14 @@ export function CatalogueProductsTable() {
         if (columnId === "unit") {
           return `${row.unitQuantity} ${row.unitType}`;
         }
-        if (columnId === "bestSupplierName") {
-          return row.bestSupplierName ?? "—";
+        if (columnId === CatalogueListSortFieldId.CovetrusPrice) {
+          return formatPriceCell(row.covetrusPrice);
         }
-        if (columnId === "bestPrice") {
-          if (row.bestPrice === null) {
-            return "—";
-          }
-          return row.bestPrice;
+        if (columnId === CatalogueListSortFieldId.NvsPrice) {
+          return formatPriceCell(row.nvsPrice);
         }
-        if (columnId === CatalogueFilterFieldId.Pom) {
-          if (row.pom === null) {
-            return "—";
-          }
-          return row.pom ? "Yes" : "No";
+        if (columnId === CatalogueListSortFieldId.VeenakPrice) {
+          return formatPriceCell(row.veenakPrice);
         }
         const v = row[columnId as keyof CatalogueProductListItem];
         if (v === null || v === undefined) {

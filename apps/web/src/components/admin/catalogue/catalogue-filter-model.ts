@@ -1,95 +1,53 @@
 import {
-  CATALOGUE_FILTER_BOOLEAN_OPERATORS,
-  CATALOGUE_FILTER_ENUM_OPERATORS,
   CATALOGUE_FILTER_STRING_FIELDS,
   CATALOGUE_FILTER_STRING_OPERATORS,
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
+  CatalogueListSortFieldId,
+  Supplier,
   catalogueProductFilterSchema,
   type CatalogueProductFilter,
-  LegalCategory,
-  SalesCategory,
-  Supplier,
 } from "@vetply/shared";
 
-export { CatalogueFilterFieldId, CatalogueFilterOperator } from "@vetply/shared";
+export {
+  CatalogueFilterFieldId,
+  CatalogueFilterOperator,
+  CatalogueListSortFieldId,
+} from "@vetply/shared";
 
-export const SALES_CATEGORY_OPTIONS = Object.values(SalesCategory) as SalesCategory[];
-export const LEGAL_CATEGORY_OPTIONS = Object.values(LegalCategory) as LegalCategory[];
-export const SUPPLIER_OPTIONS = Object.values(Supplier) as Supplier[];
-
-export type FieldKind = "string" | "enum" | "boolean";
+export type FieldKind = "string";
 
 export const STRING_FIELDS = CATALOGUE_FILTER_STRING_FIELDS;
 
-export function getFieldKind(fieldId: CatalogueFilterFieldId): FieldKind {
-  if (fieldId === CatalogueFilterFieldId.Pom) {
-    return "boolean";
-  }
-  if (
-    fieldId === CatalogueFilterFieldId.SalesCategory ||
-    fieldId === CatalogueFilterFieldId.LegalCategory
-  ) {
-    return "enum";
-  }
+export const SUPPLIER_OPTIONS = Object.values(Supplier) as Supplier[];
+
+export function getFieldKind(_fieldId: CatalogueFilterFieldId): FieldKind {
   return "string";
 }
 
 export function operatorsForField(
-  fieldId: CatalogueFilterFieldId,
+  _fieldId: CatalogueFilterFieldId,
 ): readonly CatalogueFilterOperator[] {
-  const kind = getFieldKind(fieldId);
-  if (kind === "boolean") {
-    return CATALOGUE_FILTER_BOOLEAN_OPERATORS;
-  }
-  if (kind === "enum") {
-    return CATALOGUE_FILTER_ENUM_OPERATORS;
-  }
   return CATALOGUE_FILTER_STRING_OPERATORS;
 }
 
 export function defaultOperatorForField(
-  fieldId: CatalogueFilterFieldId,
+  _fieldId: CatalogueFilterFieldId,
 ): CatalogueFilterOperator {
-  return (
-    operatorsForField(fieldId)[0] ?? CatalogueFilterOperator.IsExactly
-  );
+  return CatalogueFilterOperator.IsExactly;
 }
 
-export type AppliedFilter =
-  | {
-      id: string;
-      kind: "string";
-      fieldId:
-        | typeof CatalogueFilterFieldId.ManufacturerName
-        | typeof CatalogueFilterFieldId.Supplier
-        | typeof CatalogueFilterFieldId.BestSupplier;
-      operator: CatalogueFilterOperator;
-      value: string | string[];
-    }
-  | {
-      id: string;
-      kind: "enum";
-      fieldId: typeof CatalogueFilterFieldId.SalesCategory;
-      operator: CatalogueFilterOperator;
-      value: SalesCategory | SalesCategory[];
-    }
-  | {
-      id: string;
-      kind: "enum";
-      fieldId: typeof CatalogueFilterFieldId.LegalCategory;
-      operator: CatalogueFilterOperator;
-      value: LegalCategory | LegalCategory[];
-    }
-  | {
-      id: string;
-      kind: "boolean";
-      fieldId: typeof CatalogueFilterFieldId.Pom;
-      operator: CatalogueFilterOperator;
-      value: boolean;
-    };
+export type AppliedFilter = {
+  id: string;
+  kind: "string";
+  fieldId:
+    | typeof CatalogueFilterFieldId.ManufacturerName
+    | typeof CatalogueFilterFieldId.Supplier;
+  operator: CatalogueFilterOperator;
+  value: string | string[];
+};
 
-export type CatalogueSortFieldId = CatalogueFilterFieldId;
+export type CatalogueSortFieldId = CatalogueListSortFieldId;
 
 export function appliedFiltersToApiPayload(
   filters: AppliedFilter[],
@@ -111,9 +69,6 @@ export function logCatalogueListRequestPayload(payload: CatalogueListStubPayload
 }
 
 export function formatOperandSummary(filter: AppliedFilter): string {
-  if (filter.kind === "boolean") {
-    return filter.value ? "Yes" : "No";
-  }
   if (Array.isArray(filter.value)) {
     return filter.value.join(", ");
   }
@@ -121,13 +76,8 @@ export function formatOperandSummary(filter: AppliedFilter): string {
 }
 
 const FIELD_LABELS: Record<CatalogueFilterFieldId, string> = {
-  [CatalogueFilterFieldId.Name]: "Name",
   [CatalogueFilterFieldId.ManufacturerName]: "Manufacturer",
   [CatalogueFilterFieldId.Supplier]: "Supplier",
-  [CatalogueFilterFieldId.BestSupplier]: "Best supplier",
-  [CatalogueFilterFieldId.SalesCategory]: "Sales category",
-  [CatalogueFilterFieldId.LegalCategory]: "Legal category",
-  [CatalogueFilterFieldId.Pom]: "POM",
 };
 
 const OPERATOR_LABELS: Record<CatalogueFilterOperator, string> = {

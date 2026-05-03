@@ -3,7 +3,7 @@ import {
   catalogueProductFilterSchema,
   catalogueSortSchema,
 } from "./catalogue-list-filters.schemas";
-import { CatalogUnitType, LegalCategory, SalesCategory } from "./enums";
+import { CatalogUnitType } from "./enums";
 
 export const CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE = 50;
 
@@ -106,15 +106,14 @@ export const catalogueProductListItemSchema = z.object({
   name: z.string(),
   image: z.string().max(2048).nullable(),
   manufacturerName: z.string().nullable(),
-  salesCategory: z.nativeEnum(SalesCategory).nullable(),
-  legalCategory: z.nativeEnum(LegalCategory).nullable(),
-  pom: z.boolean().nullable(),
   unitType: z.nativeEnum(CatalogUnitType),
   unitQuantity: z.string(),
-  /** Supplier name on a listing that achieves the minimum listed price (deterministic tie-break). */
-  bestSupplierName: z.string().nullable(),
-  /** Minimum `listed_price` across all supplier listings for this product. */
-  bestPrice: z.string().nullable(),
+  /** Listed price for Covetrus listing, two decimal places; null if none. */
+  covetrusPrice: z.string().nullable(),
+  /** Listed price for NVS listing, two decimal places; null if none. */
+  nvsPrice: z.string().nullable(),
+  /** Listed price for Veenak listing, two decimal places; null if none. */
+  veenakPrice: z.string().nullable(),
 });
 
 export type CatalogueProductListItem = z.infer<
