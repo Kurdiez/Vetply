@@ -4,5 +4,6 @@
 **/.env
 **/coverage
 **/build
-apps/web
+apps/web/.next
+apps/web/node_modules
 apps/firebase-functions
