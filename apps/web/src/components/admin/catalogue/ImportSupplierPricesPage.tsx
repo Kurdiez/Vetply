@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/Button";
-import { FileInput } from "@/components/ui/FileInput";
-import { Select } from "@/components/ui/Select";
-import type { CatalogueSupplierImportUploadKind } from "@vetply/shared";
+import { Button } from '@/components/ui/Button';
+import { FileInput } from '@/components/ui/FileInput';
+import { Select } from '@/components/ui/Select';
+import type { CatalogueSupplierImportUploadKind } from '@vetply/shared';
 import {
   ImportSupplierPricesProvider,
   useImportSupplierPrices,
-} from "./ImportSupplierPricesContext";
+} from './ImportSupplierPricesContext';
 
 function ImportSupplierPricesFormBody() {
   const {
@@ -29,11 +29,13 @@ function ImportSupplierPricesFormBody() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-lg font-semibold text-white">Import supplier prices</h1>
+      <h1 className="text-lg font-semibold text-white">
+        Import supplier prices
+      </h1>
       <p className="mt-2 text-sm text-gray-400">
-        Choose the supplier file type, then select your file. Only fields that map
-        to the catalogue schema are imported. Large files are sent in batches of{" "}
-        {batchMaxLabel} rows.
+        Choose the supplier file type, then select your file. Only fields that
+        map to the catalogue schema are imported. Large files are sent in
+        batches of {batchMaxLabel} rows.
       </p>
       <form
         className="mt-8 space-y-6"
@@ -111,7 +113,7 @@ function ImportSupplierPricesFormBody() {
           fullWidth
           disabled={submitting || !file}
         >
-          {submitting ? "Importing…" : "Import"}
+          {submitting ? 'Importing…' : 'Import'}
         </Button>
       </form>
     </div>

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/Button";
+import { Button } from '@/components/ui/Button';
 import {
   DataTable,
   type DataTableColumn,
-} from "@/components/ui/data-table/DataTable";
+} from '@/components/ui/data-table/DataTable';
 import {
   CatalogueListSortFieldId,
   type CatalogueProductListItem,
-} from "@vetply/shared";
-import type { CatalogueSortFieldId } from "./catalogue-filter-model";
-import { CatalogueProductThumbnail } from "./CatalogueProductThumbnail";
-import { useCatalogueView } from "./CatalogueViewContext";
+} from '@vetply/shared';
+import type { CatalogueSortFieldId } from './catalogue-filter-model';
+import { CatalogueProductThumbnail } from './CatalogueProductThumbnail';
+import { useCatalogueView } from './CatalogueViewContext';
 
 const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
   CatalogueListSortFieldId.Name,
@@ -23,21 +23,22 @@ const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
 ];
 
 const COLUMNS: DataTableColumn[] = [
-  { id: "image", header: "" },
-  { id: CatalogueListSortFieldId.Name, header: "Name" },
+  { id: 'select', header: '' },
+  { id: 'image', header: '' },
+  { id: CatalogueListSortFieldId.Name, header: 'Name' },
   {
     id: CatalogueListSortFieldId.ManufacturerName,
-    header: "Manufacturer",
+    header: 'Manufacturer',
   },
-  { id: "unit", header: "Unit" },
-  { id: CatalogueListSortFieldId.CovetrusPrice, header: "Covetrus price" },
-  { id: CatalogueListSortFieldId.NvsPrice, header: "NVS price" },
-  { id: CatalogueListSortFieldId.VeenakPrice, header: "Veenak price" },
+  { id: 'unit', header: 'Unit' },
+  { id: CatalogueListSortFieldId.CovetrusPrice, header: 'Covetrus price' },
+  { id: CatalogueListSortFieldId.NvsPrice, header: 'NVS price' },
+  { id: CatalogueListSortFieldId.VeenakPrice, header: 'Veenak price' },
 ];
 
 function formatPriceCell(value: string | null): string {
   if (value === null) {
-    return "—";
+    return '—';
   }
   return value;
 }
@@ -50,9 +51,11 @@ export function CatalogueProductsTable() {
     sort,
     toggleSortColumn,
     navigateToProduct,
+    toggleProductSelection,
+    isProductSelected,
   } = useCatalogueView();
 
-  if (status === "loading" && items.length === 0) {
+  if (status === 'loading' && items.length === 0) {
     return (
       <div className="mt-6 rounded-lg border border-white/10 bg-gray-800/50 px-4 py-12 text-center text-sm text-gray-400">
         Loading catalogue…
@@ -60,7 +63,7 @@ export function CatalogueProductsTable() {
     );
   }
 
-  if (status === "error" && items.length === 0) {
+  if (status === 'error' && items.length === 0) {
     return (
       <div className="mt-6 flex flex-col items-center gap-4 rounded-lg border border-white/10 bg-gray-800/50 px-4 py-12 text-center">
         <p className="text-sm text-gray-300">Could not load products.</p>
@@ -71,7 +74,7 @@ export function CatalogueProductsTable() {
     );
   }
 
-  if (status === "ready" && items.length === 0) {
+  if (status === 'ready' && items.length === 0) {
     return (
       <div className="mt-6 rounded-lg border border-white/10 bg-gray-800/50 px-4 py-12 text-center text-sm text-gray-400">
         No products in the catalogue yet. Import supplier prices to add items.
@@ -92,8 +95,29 @@ export function CatalogueProductsTable() {
       }
       onRowClick={(row) => navigateToProduct(row.id)}
       getRowKey={(row) => row.id}
+      getRowClassName={(row) =>
+        isProductSelected(row.id) ? 'bg-primary-500/15' : undefined
+      }
       renderCell={(row, columnId) => {
-        if (columnId === "image") {
+        if (columnId === 'select') {
+          return (
+            <span
+              className="inline-flex items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <label className="flex cursor-pointer items-center gap-2">
+                <span className="sr-only">Select {row.name}</span>
+                <input
+                  type="checkbox"
+                  className="size-4 rounded border-white/20 bg-gray-700 text-primary-500 focus:ring-primary-500"
+                  checked={isProductSelected(row.id)}
+                  onChange={() => toggleProductSelection(row.id)}
+                />
+              </label>
+            </span>
+          );
+        }
+        if (columnId === 'image') {
           return (
             <CatalogueProductThumbnail
               imageUrl={row.image}
@@ -101,7 +125,7 @@ export function CatalogueProductsTable() {
             />
           );
         }
-        if (columnId === "unit") {
+        if (columnId === 'unit') {
           return `${row.unitQuantity} ${row.unitType}`;
         }
         if (columnId === CatalogueListSortFieldId.CovetrusPrice) {
@@ -115,9 +139,9 @@ export function CatalogueProductsTable() {
         }
         const v = row[columnId as keyof CatalogueProductListItem];
         if (v === null || v === undefined) {
-          return "—";
+          return '—';
         }
-        return typeof v === "string" || typeof v === "boolean" ? String(v) : "";
+        return typeof v === 'string' || typeof v === 'boolean' ? String(v) : '';
       }}
     />
   );

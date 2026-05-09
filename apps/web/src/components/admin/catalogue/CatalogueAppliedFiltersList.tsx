@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { AppliedFiltersStack } from "@/components/ui/filters/AppliedFiltersStack";
-import { useMemo } from "react";
-import { formatAppliedFilterDisplayParts } from "./catalogue-filter-model";
-import { useCatalogueView } from "./CatalogueViewContext";
+import { AppliedFiltersStack } from '@/components/ui/filters/AppliedFiltersStack';
+import { useMemo } from 'react';
+import { formatAppliedFilterDisplayParts } from './catalogue-filter-model';
+import { useCatalogueView } from './CatalogueViewContext';
 
 export function CatalogueAppliedFiltersList() {
   const { appliedFilters, removeFilter } = useCatalogueView();
@@ -17,7 +17,5 @@ export function CatalogueAppliedFiltersList() {
     [appliedFilters],
   );
 
-  return (
-    <AppliedFiltersStack rows={rows} onRemove={removeFilter} />
-  );
+  return <AppliedFiltersStack rows={rows} onRemove={removeFilter} />;
 }

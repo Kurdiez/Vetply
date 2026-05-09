@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { HeroImagePanel } from "@/components/marketing/HeroImagePanel";
-import { Button } from "@/components/ui/Button";
-import { IconButton } from "@/components/ui/IconButton";
-import { routes } from "@/constants/routes";
-import { Dialog, DialogPanel } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import Link from "next/link";
-import { useState } from "react";
+import { HeroImagePanel } from '@/components/marketing/HeroImagePanel';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { routes } from '@/constants/routes';
+import { Dialog, DialogPanel } from '@headlessui/react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
+import { useState } from 'react';
 
 const navigation = [
-  { name: "Features", href: "#features" },
-  { name: "Pricing", href: "#pricing" },
-  { name: "Sign in", href: routes.signIn },
+  { name: 'Features', href: '#features' },
+  { name: 'Pricing', href: '#pricing' },
+  { name: 'Sign in', href: routes.signIn },
 ];
 
 export function HeroSection() {
@@ -27,10 +27,7 @@ export function HeroSection() {
               aria-label="Global"
               className="flex items-center justify-between lg:justify-start"
             >
-              <Link
-                href={routes.home}
-                className="-m-1.5 shrink-0 p-1.5"
-              >
+              <Link href={routes.home} className="-m-1.5 shrink-0 p-1.5">
                 <span className="sr-only">Vetply</span>
                 <img
                   src="/logo.svg"
@@ -53,7 +50,7 @@ export function HeroSection() {
               </IconButton>
               <div className="hidden lg:ml-12 lg:flex lg:gap-x-14">
                 {navigation.map((item) =>
-                  item.href.startsWith("/") ? (
+                  item.href.startsWith('/') ? (
                     <Link
                       key={item.name}
                       href={item.href}
@@ -110,7 +107,7 @@ export function HeroSection() {
               <div className="-my-6 divide-y divide-white/10">
                 <div className="space-y-2 py-6">
                   {navigation.map((item) =>
-                    item.href.startsWith("/") ? (
+                    item.href.startsWith('/') ? (
                       <Link
                         key={item.name}
                         href={item.href}
@@ -154,7 +151,7 @@ export function HeroSection() {
                 <div className="hidden sm:mb-10 sm:flex">
                   <div className="relative rounded-full px-3 py-1 text-sm/6 text-gray-400 ring-1 ring-white/10 hover:ring-white/20">
                     Supplier pricing, your contract discounts, and rebates —
-                    finally in sync.{" "}
+                    finally in sync.{' '}
                     <a
                       href="#features"
                       className="font-semibold whitespace-nowrap text-primary-100"
@@ -169,7 +166,7 @@ export function HeroSection() {
                 </h1>
                 <p className="mt-8 text-lg font-medium text-pretty text-gray-400 sm:text-xl/8">
                   Vetply brings together prices on thousands of products from
-                  many suppliers and layers on{" "}
+                  many suppliers and layers on{' '}
                   <span className="text-gray-300">your</span> reality — custom
                   discounts, manufacturer rebates, and one-off deals — so you
                   are not rebuilding spreadsheets every week.

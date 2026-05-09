@@ -5,19 +5,23 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
+  CatalogUnitType,
   CatalogueManufacturerOption,
   CatalogueProductDetail,
   CatalogueProductUpdateBody,
   catalogueProductDetailSchema,
 } from '@vetply/shared';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
+import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import {
   ceilPriceToTwoDecimalPlaces,
   formatUnitQuantityAsWholeNumber,
 } from '../utils/catalogue-price-format';
+
+const MANUAL_CREATE_DEFAULT_PRODUCT_NAME = 'Default Product Title';
 
 @Injectable()
 export class CatalogueProductDetailService {
@@ -26,6 +30,8 @@ export class CatalogueProductDetailService {
     private readonly productRepository: Repository<CatalogueProductEntity>,
     @InjectRepository(CatalogueManufacturerEntity)
     private readonly manufacturerRepository: Repository<CatalogueManufacturerEntity>,
+    @InjectRepository(CatalogueProductSupplierListingEntity)
+    private readonly listingRepository: Repository<CatalogueProductSupplierListingEntity>,
   ) {}
 
   async getProductDetail(id: string): Promise<CatalogueProductDetail> {
@@ -82,6 +88,21 @@ export class CatalogueProductDetailService {
     return zodResTransform(payload, catalogueProductDetailSchema) ?? payload;
   }
 
+  async createManualProduct(): Promise<CatalogueProductDetail> {
+    const draft = this.productRepository.create({
+      name: MANUAL_CREATE_DEFAULT_PRODUCT_NAME,
+      manufacturerId: null,
+      salesCategory: null,
+      legalCategory: null,
+      pom: null,
+      image: null,
+      unitType: CatalogUnitType.EA,
+      unitQuantity: '1.000000',
+    });
+    const saved = await this.productRepository.save(draft);
+    return this.getProductDetail(saved.id);
+  }
+
   async listManufacturers(): Promise<CatalogueManufacturerOption[]> {
     const rows = await this.manufacturerRepository.find({
       order: { name: 'ASC' },
@@ -118,5 +139,31 @@ export class CatalogueProductDetailService {
     await this.productRepository.save(product);
 
     return this.getProductDetail(id);
+  }
+
+  async bulkDeleteProducts(
+    productIds: string[],
+  ): Promise<{ deletedCount: number }> {
+    const unique = [...new Set(productIds)];
+    if (unique.length === 0) {
+      return { deletedCount: 0 };
+    }
+    const result = await this.productRepository.delete({ id: In(unique) });
+    return { deletedCount: result.affected ?? 0 };
+  }
+
+  async unlinkSupplierListing(
+    productId: string,
+    listingId: string,
+  ): Promise<CatalogueProductDetail> {
+    const listing = await this.listingRepository.findOne({
+      where: { id: listingId, productId },
+    });
+    if (!listing) {
+      throw new NotFoundException();
+    }
+    listing.productId = null;
+    await this.listingRepository.save(listing);
+    return this.getProductDetail(productId);
   }
 }

@@ -1,14 +1,14 @@
-import { routes } from "@/constants/routes";
-import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
+import { routes } from '@/constants/routes';
+import { pathWithoutQueryAndTrailingSlash } from '@/utils/admin-path';
 import {
   CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE,
   catalogueProductsListQuerySchema,
   type CatalogueProductFilter,
-} from "@vetply/shared";
-import type { UrlObject } from "url";
-import type { AppliedFilter } from "./catalogue-filter-model";
-import { appliedFiltersToApiPayload } from "./catalogue-filter-model";
-import type { CatalogueSortState } from "./catalogue-sort";
+} from '@vetply/shared';
+import type { UrlObject } from 'url';
+import type { AppliedFilter } from './catalogue-filter-model';
+import { appliedFiltersToApiPayload } from './catalogue-filter-model';
+import type { CatalogueSortState } from './catalogue-sort';
 
 export type CatalogueListUrlState = {
   page: number;
@@ -62,7 +62,7 @@ export function parseCatalogueListFromQuery(
     data: {
       page: d.page,
       pageSize: d.pageSize,
-      nameSearch: d.q ?? "",
+      nameSearch: d.q ?? '',
       appliedFilters: d.filters?.length
         ? apiFiltersToAppliedFilters(d.filters)
         : [],
@@ -77,20 +77,20 @@ export function buildCatalogueListUrl(
 ): string {
   const params = new URLSearchParams();
   if (state.page !== 1) {
-    params.set("page", String(state.page));
+    params.set('page', String(state.page));
   }
   if (state.pageSize !== CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE) {
-    params.set("pageSize", String(state.pageSize));
+    params.set('pageSize', String(state.pageSize));
   }
-  if (state.nameSearch.trim() !== "") {
-    params.set("q", state.nameSearch.trim());
+  if (state.nameSearch.trim() !== '') {
+    params.set('q', state.nameSearch.trim());
   }
   const payloadFilters = appliedFiltersToApiPayload(state.appliedFilters);
   if (payloadFilters.length > 0) {
-    params.set("filters", JSON.stringify(payloadFilters));
+    params.set('filters', JSON.stringify(payloadFilters));
   }
   if (state.sort) {
-    params.set("sort", JSON.stringify(state.sort));
+    params.set('sort', JSON.stringify(state.sort));
   }
   const q = params.toString();
   return q ? `${basePath}?${q}` : basePath;
@@ -116,16 +116,17 @@ export function catalogueListStateEquals(
 }
 
 /** `pages/admin/[[...slug]].tsx` — the dynamic route that covers all admin paths. */
-const ADMIN_CATALOGUE_PAGE_ROUTE = "/admin/[[...slug]]";
+const ADMIN_CATALOGUE_PAGE_ROUTE = '/admin/[[...slug]]';
 
-export function buildCatalogueProductDetailNavigation(
-  productId: string,
-): { url: UrlObject; as: string } {
+export function buildCatalogueProductDetailNavigation(productId: string): {
+  url: UrlObject;
+  as: string;
+} {
   const as = routes.admin.catalogue.productDetail(productId);
   return {
     url: {
       pathname: ADMIN_CATALOGUE_PAGE_ROUTE,
-      query: { slug: ["catalogue", "product", productId] },
+      query: { slug: ['catalogue', 'product', productId] },
     },
     as,
   };
@@ -139,10 +140,10 @@ export function buildCatalogueListDynamicRouteNavigation(
   href: string,
   baseOrigin: string,
 ): { url: UrlObject; as: string } | null {
-  const origin = baseOrigin.replace(/\/$/, "");
-  const resolved = href.startsWith("http")
+  const origin = baseOrigin.replace(/\/$/, '');
+  const resolved = href.startsWith('http')
     ? href
-    : `${origin}${href.startsWith("/") ? "" : "/"}${href}`;
+    : `${origin}${href.startsWith('/') ? '' : '/'}${href}`;
   let u: URL;
   try {
     u = new URL(resolved);
@@ -157,7 +158,7 @@ export function buildCatalogueListDynamicRouteNavigation(
   u.searchParams.forEach((value, key) => {
     query[key] = value;
   });
-  query.slug = ["catalogue"];
+  query.slug = ['catalogue'];
   return {
     url: {
       pathname: ADMIN_CATALOGUE_PAGE_ROUTE,

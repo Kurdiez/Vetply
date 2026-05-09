@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { AdminGate } from "@/components/admin/AdminGate";
-import { CatalogueProductDetailPage } from "@/components/admin/catalogue/CatalogueProductDetailPage";
-import { CatalogueViewPage } from "@/components/admin/catalogue/CatalogueViewPage";
-import { ImportSupplierPricesPage } from "@/components/admin/catalogue/ImportSupplierPricesPage";
+import { AdminGate } from '@/components/admin/AdminGate';
+import { CatalogueProductDetailPage } from '@/components/admin/catalogue/CatalogueProductDetailPage';
+import { CatalogueViewPage } from '@/components/admin/catalogue/CatalogueViewPage';
+import { ImportSupplierPricesPage } from '@/components/admin/catalogue/ImportSupplierPricesPage';
 import {
   isValidAdminPath,
   parseCatalogueProductDetailId,
   routes,
-} from "@/constants/routes";
-import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
-import { useRouter } from "next/router";
-import { useEffect } from "react";
+} from '@/constants/routes';
+import { pathWithoutQueryAndTrailingSlash } from '@/utils/admin-path';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 function AdminMain() {
   const router = useRouter();

@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -12,9 +14,11 @@ import {
 } from '@nestjs/common';
 import {
   ImportSupplierPricesBatchReq,
+  catalogueBulkDeleteProductsBodySchema,
   catalogueProductUpdateBodySchema,
   catalogueProductsListQuerySchema,
   importSupplierPricesBatchReqSchema,
+  type CatalogueBulkDeleteProductsBody,
   type CatalogueProductUpdateBody,
 } from '@vetply/shared';
 import { ZodError } from 'zod';
@@ -36,6 +40,33 @@ export class CatalogueController {
   @Get('products/:id')
   getProduct(@Param('id', ParseUUIDPipe) id: string) {
     return this.catalogueProductDetailService.getProductDetail(id);
+  }
+
+  @Post('products')
+  @HttpCode(HttpStatus.CREATED)
+  createProduct() {
+    return this.catalogueProductDetailService.createManualProduct();
+  }
+
+  @Post('products/bulk-delete')
+  bulkDeleteProducts(
+    @Body(new ZodValidationPipe(catalogueBulkDeleteProductsBodySchema))
+    body: CatalogueBulkDeleteProductsBody,
+  ) {
+    return this.catalogueProductDetailService.bulkDeleteProducts(
+      body.productIds,
+    );
+  }
+
+  @Post('products/:productId/listings/:listingId/unlink')
+  unlinkSupplierListing(
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Param('listingId', ParseUUIDPipe) listingId: string,
+  ) {
+    return this.catalogueProductDetailService.unlinkSupplierListing(
+      productId,
+      listingId,
+    );
   }
 
   @Get('manufacturers')

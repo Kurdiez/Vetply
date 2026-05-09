@@ -1,9 +1,9 @@
 import { VeenakImportRow } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
-import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
-import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { canonicalCatalogueImportProductName } from '~/catalogue/utils/catalogue-product-name-aliases';
 import { findExistingCatalogueProductIdForSupplierImport } from '~/catalogue/utils/catalogue-product-import-match';
+import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
+import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { parseNvsUom, parseNvsVpp } from '../utils/nvs-csv-parsers';
 
 export async function importVeenakCatalogueRow(
@@ -36,7 +36,14 @@ export async function importVeenakCatalogueRow(
     relations: ['product'],
   });
 
-  if (existingListing?.product) {
+  if (existingListing) {
+    if (existingListing.product) {
+      existingListing.name = productName;
+      existingListing.listedPrice = listedPrice;
+      await listingRepo.save(existingListing);
+      return 'imported';
+    }
+
     existingListing.name = productName;
     existingListing.listedPrice = listedPrice;
     await listingRepo.save(existingListing);

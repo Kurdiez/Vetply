@@ -1,12 +1,9 @@
-"use client";
+'use client';
 
-import { useRouter } from "next/router";
-import type { ReactNode } from "react";
-import {
-  isAdminRoutePath,
-  isAppRoutePath,
-} from "@/constants/routes";
-import { MeProvider } from "@/contexts/MeContext";
+import { useRouter } from 'next/router';
+import type { ReactNode } from 'react';
+import { isAdminRoutePath, isAppRoutePath } from '@/constants/routes';
+import { MeProvider } from '@/contexts/MeContext';
 
 export function MeProviderShell({ children }: { children: ReactNode }) {
   const router = useRouter();

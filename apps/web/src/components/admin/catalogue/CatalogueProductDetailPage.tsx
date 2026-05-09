@@ -1,18 +1,20 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/Button";
-import { ArrowLeftIcon } from "@heroicons/react/20/solid";
+import { Button } from '@/components/ui/Button';
+import { IconTextButton } from '@/components/ui/IconTextButton';
+import { ArrowLeftIcon, LinkSlashIcon } from '@heroicons/react/20/solid';
 import {
   CatalogueProductDetailProvider,
   useCatalogueProductDetail,
-} from "./CatalogueProductDetailContext";
-import { CatalogueProductEditModal } from "./CatalogueProductEditModal";
-import { CatalogueProductThumbnail } from "./CatalogueProductThumbnail";
+} from './CatalogueProductDetailContext';
+import { CatalogueProductEditModal } from './CatalogueProductEditModal';
+import { CatalogueProductThumbnail } from './CatalogueProductThumbnail';
 
 function DetailBody() {
-  const { detail, status } = useCatalogueProductDetail();
+  const { detail, status, unlinkSupplierListing, unlinkingListingId } =
+    useCatalogueProductDetail();
 
-  if (status === "loading" || status === "idle") {
+  if (status === 'loading' || status === 'idle') {
     return (
       <p className="text-sm text-gray-400" aria-live="polite">
         Loading product…
@@ -20,7 +22,7 @@ function DetailBody() {
     );
   }
 
-  if (status === "error" || !detail) {
+  if (status === 'error' || !detail) {
     return (
       <p className="text-sm text-gray-300">
         Could not load this product. Use Back above to return.
@@ -41,27 +43,33 @@ function DetailBody() {
           <h1 className="text-lg font-semibold text-white">{detail.name}</h1>
           <dl className="mt-6 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
             <div>
-              <dt className="text-xs font-medium text-gray-500">Manufacturer</dt>
+              <dt className="text-xs font-medium text-gray-500">
+                Manufacturer
+              </dt>
               <dd className="mt-1 text-sm text-gray-200">
-                {detail.manufacturerName ?? "—"}
+                {detail.manufacturerName ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-gray-500">Sales category</dt>
+              <dt className="text-xs font-medium text-gray-500">
+                Sales category
+              </dt>
               <dd className="mt-1 text-sm text-gray-200">
-                {detail.salesCategory ?? "—"}
+                {detail.salesCategory ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-xs font-medium text-gray-500">Legal category</dt>
+              <dt className="text-xs font-medium text-gray-500">
+                Legal category
+              </dt>
               <dd className="mt-1 text-sm text-gray-200">
-                {detail.legalCategory ?? "—"}
+                {detail.legalCategory ?? '—'}
               </dd>
             </div>
             <div>
               <dt className="text-xs font-medium text-gray-500">POM</dt>
               <dd className="mt-1 text-sm text-gray-200">
-                {detail.pom === null ? "—" : detail.pom ? "Yes" : "No"}
+                {detail.pom === null ? '—' : detail.pom ? 'Yes' : 'No'}
               </dd>
             </div>
             <div>
@@ -117,6 +125,12 @@ function DetailBody() {
                   >
                     Listed price
                   </th>
+                  <th
+                    scope="col"
+                    className="w-[7rem] px-3 py-3 text-right font-semibold text-gray-200"
+                  >
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10 bg-gray-800/50 text-gray-300">
@@ -128,9 +142,22 @@ function DetailBody() {
                     <td className="whitespace-nowrap px-3 py-3 font-mono text-xs">
                       {row.supplierProductId}
                     </td>
-                    <td className="min-w-0 break-words px-3 py-3">{row.name}</td>
+                    <td className="min-w-0 break-words px-3 py-3">
+                      {row.name}
+                    </td>
                     <td className="whitespace-nowrap px-3 py-3">
-                      {row.listedPrice ?? "—"}
+                      {row.listedPrice ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right align-middle">
+                      <IconTextButton
+                        type="button"
+                        variant="red"
+                        icon={<LinkSlashIcon />}
+                        disabled={unlinkingListingId !== null}
+                        onClick={() => void unlinkSupplierListing(row.id)}
+                      >
+                        Unlink
+                      </IconTextButton>
                     </td>
                   </tr>
                 ))}
@@ -158,7 +185,7 @@ function DetailChrome() {
           <ArrowLeftIcon className="size-4 shrink-0" aria-hidden />
           Back
         </Button>
-        {status === "ready" && detail ? (
+        {status === 'ready' && detail ? (
           <Button type="button" onClick={openEditModal}>
             Edit
           </Button>

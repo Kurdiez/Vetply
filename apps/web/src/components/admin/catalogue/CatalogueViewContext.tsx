@@ -1,14 +1,18 @@
-"use client";
+'use client';
 
-import { routes } from "@/constants/routes";
-import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
-import { isNextRouterAsPathInSyncWithBrowser } from "@/utils/next-router-location";
-import { fetchCatalogueProducts } from "@/utils/vetply-api/catalogue-api";
+import { routes } from '@/constants/routes';
+import { pathWithoutQueryAndTrailingSlash } from '@/utils/admin-path';
+import { isNextRouterAsPathInSyncWithBrowser } from '@/utils/next-router-location';
+import { useSelectedRowIds } from '@/hooks/use-selected-row-ids';
+import {
+  fetchCatalogueProducts,
+  postBulkDeleteCatalogueProducts,
+} from '@/utils/vetply-api/catalogue-api';
 import {
   CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE,
   type CatalogueProductListItem,
-} from "@vetply/shared";
-import { useRouter } from "next/router";
+} from '@vetply/shared';
+import { useRouter } from 'next/router';
 import {
   createContext,
   useCallback,
@@ -20,21 +24,21 @@ import {
   type Dispatch,
   type ReactNode,
   type SetStateAction,
-} from "react";
-import { toast } from "sonner";
+} from 'react';
+import { toast } from 'sonner';
 import type {
   AppliedFilter,
   CatalogueSortFieldId,
-} from "./catalogue-filter-model";
+} from './catalogue-filter-model';
 import {
   appliedFiltersToApiPayload,
   logCatalogueListRequestPayload,
-} from "./catalogue-filter-model";
+} from './catalogue-filter-model';
 import {
   createEmptyDraft,
   validateDraftAndBuildFilter,
   type CatalogueFilterDraft,
-} from "./catalogue-filter-validation";
+} from './catalogue-filter-validation';
 import {
   buildCatalogueListDynamicRouteNavigation,
   buildCatalogueListUrl,
@@ -42,11 +46,11 @@ import {
   catalogueListStateEquals,
   parseCatalogueListFromQuery,
   type CatalogueListUrlState,
-} from "./catalogue-list-url";
-import type { CatalogueSortState } from "./catalogue-sort";
-import { nextSortState } from "./catalogue-sort";
+} from './catalogue-list-url';
+import type { CatalogueSortState } from './catalogue-sort';
+import { nextSortState } from './catalogue-sort';
 
-type CatalogueViewStatus = "idle" | "loading" | "ready" | "error";
+type CatalogueViewStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 type CatalogueViewContextValue = {
   page: number;
@@ -68,6 +72,15 @@ type CatalogueViewContextValue = {
   searchInput: string;
   setSearchInput: Dispatch<SetStateAction<string>>;
   navigateToProduct: (productId: string) => void;
+  /** IDs selected for bulk actions; persists across catalogue list pages. */
+  selectedProductIds: ReadonlySet<string>;
+  selectedProductCount: number;
+  toggleProductSelection: (productId: string) => void;
+  setProductSelection: (productId: string, selected: boolean) => void;
+  clearProductSelection: () => void;
+  isProductSelected: (productId: string) => boolean;
+  /** Returns true when the API delete succeeded. */
+  bulkDeleteSelectedProducts: () => Promise<boolean>;
 };
 
 const CatalogueViewContext = createContext<CatalogueViewContextValue | null>(
@@ -95,19 +108,28 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     [],
   );
   const [totalCount, setTotalCount] = useState(0);
-  const [status, setStatus] = useState<CatalogueViewStatus>("idle");
+  const [status, setStatus] = useState<CatalogueViewStatus>('idle');
   const [fetchTick, setFetchTick] = useState(0);
   const [sort, setSort] = useState<CatalogueSortState>(null);
   const [appliedFilters, setAppliedFilters] = useState<AppliedFilter[]>([]);
   const [filterDraft, setFilterDraft] = useState<CatalogueFilterDraft>(() =>
     createEmptyDraft(),
   );
-  const [searchInput, setSearchInput] = useState("");
-  const [nameSearch, setNameSearch] = useState("");
-  const searchCommitRef = useRef("");
+  const [searchInput, setSearchInput] = useState('');
+  const [nameSearch, setNameSearch] = useState('');
+  const searchCommitRef = useRef('');
+
+  const {
+    selectedIds: selectedProductIds,
+    selectedCount: selectedProductCount,
+    toggleSelected: toggleProductSelection,
+    setSelected: setProductSelection,
+    clearSelection: clearProductSelection,
+    isSelected: isProductSelected,
+  } = useSelectedRowIds();
 
   const stateRef = useRef(
-    toListState(1, CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE, "", [], null),
+    toListState(1, CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE, '', [], null),
   );
   useEffect(() => {
     stateRef.current = toListState(
@@ -142,9 +164,9 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       setPageSizeState(CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE);
       setAppliedFilters([]);
       setSort(null);
-      searchCommitRef.current = "";
-      setSearchInput("");
-      setNameSearch("");
+      searchCommitRef.current = '';
+      setSearchInput('');
+      setNameSearch('');
       setHydratedFromUrl(true);
       return;
     }
@@ -164,6 +186,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     setSearchInput(q);
     setNameSearch(q);
     setHydratedFromUrl(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate only when isReady+asPath gate passes; omitting router.query avoids redundant runs (see block comment above).
   }, [router.isReady, router.asPath]);
 
   /**
@@ -249,6 +272,28 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     setFetchTick((tick) => tick + 1);
   }, []);
 
+  const bulkDeleteSelectedProducts = useCallback(async (): Promise<boolean> => {
+    if (selectedProductCount === 0) {
+      return false;
+    }
+    try {
+      await postBulkDeleteCatalogueProducts({
+        productIds: [...selectedProductIds],
+      });
+      clearProductSelection();
+      refetch();
+      return true;
+    } catch {
+      toast.error('Could not delete products.');
+      return false;
+    }
+  }, [
+    selectedProductCount,
+    selectedProductIds,
+    clearProductSelection,
+    refetch,
+  ]);
+
   const toggleSortColumn = useCallback(
     (fieldId: CatalogueSortFieldId) => {
       const newSort = nextSortState(sort, fieldId);
@@ -309,7 +354,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (status !== "ready") {
+    if (status !== 'ready') {
       return;
     }
     const maxPage = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -342,7 +387,7 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function run() {
-      setStatus("loading");
+      setStatus('loading');
       try {
         const res = await fetchCatalogueProducts({
           page,
@@ -356,13 +401,13 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
         }
         setFetchedItems(res.items);
         setTotalCount(res.totalCount);
-        setStatus("ready");
+        setStatus('ready');
       } catch {
         if (cancelled) {
           return;
         }
-        setStatus("error");
-        toast.error("Could not load catalogue.");
+        setStatus('error');
+        toast.error('Could not load catalogue.');
       }
     }
 
@@ -400,6 +445,13 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       searchInput,
       setSearchInput,
       navigateToProduct,
+      selectedProductIds,
+      selectedProductCount,
+      toggleProductSelection,
+      setProductSelection,
+      clearProductSelection,
+      isProductSelected,
+      bulkDeleteSelectedProducts,
     }),
     [
       page,
@@ -418,6 +470,13 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       removeFilter,
       searchInput,
       navigateToProduct,
+      selectedProductIds,
+      selectedProductCount,
+      toggleProductSelection,
+      setProductSelection,
+      clearProductSelection,
+      isProductSelected,
+      bulkDeleteSelectedProducts,
     ],
   );
 
@@ -432,7 +491,7 @@ export function useCatalogueView(): CatalogueViewContextValue {
   const ctx = useContext(CatalogueViewContext);
   if (!ctx) {
     throw new Error(
-      "useCatalogueView must be used within CatalogueViewProvider",
+      'useCatalogueView must be used within CatalogueViewProvider',
     );
   }
   return ctx;

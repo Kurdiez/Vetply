@@ -1,30 +1,30 @@
-import type { Supplier } from "@vetply/shared";
+import type { Supplier } from '@vetply/shared';
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
-} from "@vetply/shared";
-import type { AppliedFilter } from "./catalogue-filter-model";
+} from '@vetply/shared';
+import type { AppliedFilter } from './catalogue-filter-model';
 import {
   defaultOperatorForField,
   operatorsForField,
-} from "./catalogue-filter-model";
+} from './catalogue-filter-model';
 
 export type CatalogueFilterDraft = {
-  fieldId: CatalogueFilterFieldId | "";
-  operator: CatalogueFilterOperator | "";
+  fieldId: CatalogueFilterFieldId | '';
+  operator: CatalogueFilterOperator | '';
   stringSingle: string;
   stringTags: string[];
-  supplierSingle: Supplier | "";
+  supplierSingle: Supplier | '';
   supplierTags: Supplier[];
 };
 
 export function createEmptyDraft(): CatalogueFilterDraft {
   return {
-    fieldId: "",
-    operator: "",
-    stringSingle: "",
+    fieldId: '',
+    operator: '',
+    stringSingle: '',
     stringTags: [],
-    supplierSingle: "",
+    supplierSingle: '',
     supplierTags: [],
   };
 }
@@ -51,8 +51,8 @@ export function validateDraftAndBuildFilter(
   draft: CatalogueFilterDraft,
   newId: () => string,
 ): { ok: true; filter: AppliedFilter } | { ok: false; message: string } {
-  if (draft.fieldId === "") {
-    return { ok: false, message: "Select a field." };
+  if (draft.fieldId === '') {
+    return { ok: false, message: 'Select a field.' };
   }
 
   const fieldId = draft.fieldId;
@@ -63,7 +63,7 @@ export function validateDraftAndBuildFilter(
       : defaultOperatorForField(fieldId);
 
   if (!allowed.includes(op)) {
-    return { ok: false, message: "Select an operator." };
+    return { ok: false, message: 'Select an operator.' };
   }
 
   if (fieldId === CatalogueFilterFieldId.Supplier) {
@@ -72,28 +72,28 @@ export function validateDraftAndBuildFilter(
       if (tags.length === 0) {
         return {
           ok: false,
-          message: "Select at least one supplier.",
+          message: 'Select at least one supplier.',
         };
       }
       return {
         ok: true,
         filter: {
           id: newId(),
-          kind: "string",
+          kind: 'string',
           fieldId,
           operator: op,
           value: tags,
         },
       };
     }
-    if (draft.supplierSingle === "") {
-      return { ok: false, message: "Select a supplier." };
+    if (draft.supplierSingle === '') {
+      return { ok: false, message: 'Select a supplier.' };
     }
     return {
       ok: true,
       filter: {
         id: newId(),
-        kind: "string",
+        kind: 'string',
         fieldId,
         operator: op,
         value: draft.supplierSingle,
@@ -106,14 +106,14 @@ export function validateDraftAndBuildFilter(
     if (tags.length === 0) {
       return {
         ok: false,
-        message: "Add at least one value for this operator.",
+        message: 'Add at least one value for this operator.',
       };
     }
     return {
       ok: true,
       filter: {
         id: newId(),
-        kind: "string",
+        kind: 'string',
         fieldId: CatalogueFilterFieldId.ManufacturerName,
         operator: op,
         value: tags,
@@ -122,13 +122,13 @@ export function validateDraftAndBuildFilter(
   }
   const trimmed = draft.stringSingle.trim();
   if (trimmed.length === 0) {
-    return { ok: false, message: "Enter a value." };
+    return { ok: false, message: 'Enter a value.' };
   }
   return {
     ok: true,
     filter: {
       id: newId(),
-      kind: "string",
+      kind: 'string',
       fieldId: CatalogueFilterFieldId.ManufacturerName,
       operator: op,
       value: trimmed,

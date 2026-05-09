@@ -24,14 +24,15 @@ export class CatalogueProductSupplierListingEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
-  @Column({ name: 'product_id', type: 'uuid' })
-  productId!: string;
+  @Column({ name: 'product_id', type: 'uuid', nullable: true })
+  productId!: string | null;
 
   @ManyToOne(() => CatalogueProductEntity, (p) => p.listings, {
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
+    nullable: true,
   })
   @JoinColumn({ name: 'product_id' })
-  product!: CatalogueProductEntity;
+  product!: CatalogueProductEntity | null;
 
   @Column({ name: 'supplier_id', type: 'uuid' })
   supplierId!: string;

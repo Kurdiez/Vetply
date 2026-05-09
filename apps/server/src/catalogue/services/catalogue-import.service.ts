@@ -38,6 +38,7 @@ export class CatalogueImportService {
     let nvsNonPomBreakdown:
       | {
           updatedExistingListing: number;
+          updatedOrphanListing: number;
           newListingOnMatchedProduct: number;
           newProductWithListing: number;
         }
@@ -49,6 +50,7 @@ export class CatalogueImportService {
         if (body.nvsFormat === 'non_pom_csv') {
           const breakdown = {
             updatedExistingListing: 0,
+            updatedOrphanListing: 0,
             newListingOnMatchedProduct: 0,
             newProductWithListing: 0,
           };
@@ -65,6 +67,9 @@ export class CatalogueImportService {
               switch (result.outcome) {
                 case 'updated_existing_listing':
                   breakdown.updatedExistingListing += 1;
+                  break;
+                case 'updated_orphan_listing':
+                  breakdown.updatedOrphanListing += 1;
                   break;
                 case 'new_listing_matched_product':
                   breakdown.newListingOnMatchedProduct += 1;

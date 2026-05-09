@@ -69,16 +69,23 @@ export async function importCovetrusPreviewRow(
     relations: ['product'],
   });
 
-  if (existingListing?.product) {
-    const productRepo = manager.getRepository(CatalogueProductEntity);
-    const product = existingListing.product;
-    product.manufacturerId = manufacturerId;
-    product.salesCategory = salesCategory;
-    product.legalCategory = legalCategory;
-    product.unitType = CatalogUnitType.EA;
-    product.unitQuantity = '1.000000';
-    product.name = canonicalCatalogueImportProductName(name);
-    await productRepo.save(product);
+  if (existingListing) {
+    if (existingListing.product) {
+      const productRepo = manager.getRepository(CatalogueProductEntity);
+      const product = existingListing.product;
+      product.manufacturerId = manufacturerId;
+      product.salesCategory = salesCategory;
+      product.legalCategory = legalCategory;
+      product.unitType = CatalogUnitType.EA;
+      product.unitQuantity = '1.000000';
+      product.name = canonicalCatalogueImportProductName(name);
+      await productRepo.save(product);
+
+      existingListing.name = name;
+      existingListing.listedPrice = listedPrice;
+      await listingRepo.save(existingListing);
+      return 'imported';
+    }
 
     existingListing.name = name;
     existingListing.listedPrice = listedPrice;

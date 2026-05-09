@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { SidebarNavButton } from "@/components/ui/SidebarNavButton";
+import { SidebarNavButton } from '@/components/ui/SidebarNavButton';
 import {
   isUnderAdminCatalogue,
   parseCatalogueProductDetailId,
   routes,
-} from "@/constants/routes";
-import { pathWithoutQueryAndTrailingSlash } from "@/utils/admin-path";
-import { ChevronRightIcon } from "@heroicons/react/20/solid";
-import { RectangleStackIcon } from "@heroicons/react/24/outline";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
+} from '@/constants/routes';
+import { pathWithoutQueryAndTrailingSlash } from '@/utils/admin-path';
+import { ChevronRightIcon } from '@heroicons/react/20/solid';
+import { RectangleStackIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 
 function classNames(...classes: (string | false | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 type AdminSidebarNavProps = {
@@ -41,10 +41,10 @@ function NavLink({
       href={href}
       onClick={handleClick}
       className={classNames(
-        "block rounded-md py-2 pr-2 pl-9 text-sm/6",
+        'block rounded-md py-2 pr-2 pl-9 text-sm/6',
         active
-          ? "bg-white/5 font-medium text-white"
-          : "text-gray-400 hover:bg-white/5 hover:text-white",
+          ? 'bg-white/5 font-medium text-white'
+          : 'text-gray-400 hover:bg-white/5 hover:text-white',
       )}
     >
       {children}
@@ -85,8 +85,8 @@ export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
             <ChevronRightIcon
               aria-hidden
               className={classNames(
-                "size-4 shrink-0 text-gray-500 transition duration-200",
-                catalogueOpen ? "rotate-90" : "",
+                'size-4 shrink-0 text-gray-500 transition duration-200',
+                catalogueOpen ? 'rotate-90' : '',
               )}
             />
           </SidebarNavButton>

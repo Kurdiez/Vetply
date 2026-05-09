@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { FilterEnumTagList } from "@/components/ui/filters/FilterEnumTagList";
-import { FilterLabeledSelect } from "@/components/ui/filters/FilterLabeledSelect";
-import type { FilterSelectOption } from "@/components/ui/filters/FilterLabeledSelect";
-import { FilterStringTagList } from "@/components/ui/filters/FilterStringTagList";
-import { FilterTextInput } from "@/components/ui/filters/FilterTextInput";
-import { Select } from "@/components/ui/Select";
-import { useCallback, useMemo } from "react";
+import { FilterEnumTagList } from '@/components/ui/filters/FilterEnumTagList';
+import { FilterLabeledSelect } from '@/components/ui/filters/FilterLabeledSelect';
+import type { FilterSelectOption } from '@/components/ui/filters/FilterLabeledSelect';
+import { FilterStringTagList } from '@/components/ui/filters/FilterStringTagList';
+import { FilterTextInput } from '@/components/ui/filters/FilterTextInput';
+import { Select } from '@/components/ui/Select';
+import { useCallback, useMemo } from 'react';
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
@@ -14,31 +14,31 @@ import {
   defaultOperatorForField,
   getFieldKind,
   operatorsForField,
-} from "./catalogue-filter-model";
-import { createEmptyDraft } from "./catalogue-filter-validation";
-import { useCatalogueView } from "./CatalogueViewContext";
+} from './catalogue-filter-model';
+import { createEmptyDraft } from './catalogue-filter-validation';
+import { useCatalogueView } from './CatalogueViewContext';
 
 const FIELD_OPTIONS: FilterSelectOption[] = [
   {
     value: CatalogueFilterFieldId.ManufacturerName,
-    label: "Manufacturer",
+    label: 'Manufacturer',
   },
   {
     value: CatalogueFilterFieldId.Supplier,
-    label: "Supplier",
+    label: 'Supplier',
   },
 ];
 
 const OPERATOR_LABEL: Record<CatalogueFilterOperator, string> = {
-  [CatalogueFilterOperator.IsExactly]: "Is exactly",
-  [CatalogueFilterOperator.IsDistinctFrom]: "Is distinct from",
-  [CatalogueFilterOperator.Contains]: "Contains",
-  [CatalogueFilterOperator.DoesNotContain]: "Does not contain",
-  [CatalogueFilterOperator.ContainsAnyOf]: "Contains any one of",
-  [CatalogueFilterOperator.DoesNotContainAnyOf]: "Does not contain any of",
+  [CatalogueFilterOperator.IsExactly]: 'Is exactly',
+  [CatalogueFilterOperator.IsDistinctFrom]: 'Is distinct from',
+  [CatalogueFilterOperator.Contains]: 'Contains',
+  [CatalogueFilterOperator.DoesNotContain]: 'Does not contain',
+  [CatalogueFilterOperator.ContainsAnyOf]: 'Contains any one of',
+  [CatalogueFilterOperator.DoesNotContainAnyOf]: 'Does not contain any of',
 };
 
-function isStringMultiOp(op: CatalogueFilterOperator | ""): boolean {
+function isStringMultiOp(op: CatalogueFilterOperator | ''): boolean {
   return (
     op === CatalogueFilterOperator.ContainsAnyOf ||
     op === CatalogueFilterOperator.DoesNotContainAnyOf
@@ -56,7 +56,7 @@ export function CatalogueFilterForm() {
 
   const effectiveOperator = useMemo(() => {
     if (!fieldId) {
-      return "";
+      return '';
     }
     if (filterDraft.operator && allowedOps.includes(filterDraft.operator)) {
       return filterDraft.operator;
@@ -84,7 +84,7 @@ export function CatalogueFilterForm() {
 
   const setField = useCallback(
     (value: string) => {
-      if (value === "") {
+      if (value === '') {
         setFilterDraft(createEmptyDraft());
         return;
       }
@@ -102,7 +102,7 @@ export function CatalogueFilterForm() {
     (operator: string) => {
       setFilterDraft((d) => ({
         ...d,
-        operator: operator as CatalogueFilterOperator | "",
+        operator: operator as CatalogueFilterOperator | '',
       }));
     },
     [setFilterDraft],
@@ -208,9 +208,7 @@ export function CatalogueFilterForm() {
         id="filter-string-single"
         label="Value"
         value={filterDraft.stringSingle}
-        onChange={(v) =>
-          setFilterDraft((d) => ({ ...d, stringSingle: v }))
-        }
+        onChange={(v) => setFilterDraft((d) => ({ ...d, stringSingle: v }))}
       />
     );
   }, [
@@ -230,7 +228,7 @@ export function CatalogueFilterForm() {
           label="Field"
           value={fieldId}
           onChange={setField}
-          options={[{ value: "", label: "Select field…" }, ...FIELD_OPTIONS]}
+          options={[{ value: '', label: 'Select field…' }, ...FIELD_OPTIONS]}
         />
         <FilterLabeledSelect
           id="catalogue-filter-operator"
@@ -240,7 +238,7 @@ export function CatalogueFilterForm() {
           options={
             fieldId
               ? operatorOptions
-              : [{ value: "", label: "Select field first…" }]
+              : [{ value: '', label: 'Select field first…' }]
           }
           disabled={!fieldId}
         />

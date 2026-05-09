@@ -20,6 +20,7 @@ import { CatalogueProductSupplierListingEntity } from '~/database/entities/catal
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import { importNvsCatalogueRow } from '../importers/nvs-catalogue-importer';
+import * as catalogueProductImportMatch from '../utils/catalogue-product-import-match';
 
 function validRow(overrides: Partial<NvsImportRow> = {}): NvsImportRow {
   return {
@@ -47,6 +48,7 @@ describe('importNvsCatalogueRow', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await cleanupAllTestResources(dbContext, testModule);
   });
 
@@ -176,5 +178,66 @@ describe('importNvsCatalogueRow', () => {
     expect(after).toHaveLength(1);
     expect(after[0].supplierProductId).toBe('00719870');
     expect(after[0].name).toBe('Same line different padding');
+  });
+
+  it('calls smart match only when creating the first listing for a part number', async () => {
+    const spy = jest.spyOn(
+      catalogueProductImportMatch,
+      'findExistingCatalogueProductIdForSupplierImport',
+    );
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const nvs = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.NVS }),
+    );
+
+    await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({ partNo: 'PART-SMART-1' }),
+      nvs.id,
+    );
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    spy.mockClear();
+    await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({
+        partNo: 'PART-SMART-1',
+        description: 'Second import same part',
+      }),
+      nvs.id,
+    );
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('does not call smart match when updating an orphan listing', async () => {
+    const spy = jest.spyOn(
+      catalogueProductImportMatch,
+      'findExistingCatalogueProductIdForSupplierImport',
+    );
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const nvs = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.NVS }),
+    );
+
+    await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({ partNo: 'PART-ORPH-1' }),
+      nvs.id,
+    );
+
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+    const pid = (await productRepo.find())[0].id;
+    await productRepo.delete({ id: pid });
+
+    spy.mockClear();
+    await importNvsCatalogueRow(
+      dbContext.manager,
+      validRow({
+        partNo: 'PART-ORPH-1',
+        description: 'Orphan listing refresh',
+      }),
+      nvs.id,
+    );
+    expect(spy).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,5 @@
-import { IconButton } from "@/components/ui/IconButton";
-import { TrashIcon } from "@heroicons/react/20/solid";
+import { IconButton } from '@/components/ui/IconButton';
+import { TrashIcon } from '@heroicons/react/20/solid';
 
 export type AppliedFilterSegmentClassNames = {
   field?: string;
@@ -15,9 +15,9 @@ export type AppliedFilterRow = {
   segmentClassNames?: AppliedFilterSegmentClassNames;
 };
 
-const DEFAULT_FIELD_CLASS = "text-primary-400";
-const DEFAULT_OPERATOR_CLASS = "text-amber-300/95";
-const DEFAULT_OPERANDS_CLASS = "text-gray-100";
+const DEFAULT_FIELD_CLASS = 'text-primary-400';
+const DEFAULT_OPERATOR_CLASS = 'text-primary-300/95';
+const DEFAULT_OPERANDS_CLASS = 'text-gray-100';
 
 export type AppliedFiltersStackProps = {
   rows: AppliedFilterRow[];
@@ -28,12 +28,10 @@ export type AppliedFiltersStackProps = {
 export function AppliedFiltersStack({
   rows,
   onRemove,
-  emptyMessage = "No filters applied.",
+  emptyMessage = 'No filters applied.',
 }: AppliedFiltersStackProps) {
   if (rows.length === 0) {
-    return (
-      <p className="text-sm text-gray-500">{emptyMessage}</p>
-    );
+    return <p className="text-sm text-gray-500">{emptyMessage}</p>;
   }
 
   return (
@@ -47,9 +45,7 @@ export function AppliedFiltersStack({
           ) : null}
           <p className="min-w-0 flex-1 text-sm">
             <span
-              className={
-                row.segmentClassNames?.field ?? DEFAULT_FIELD_CLASS
-              }
+              className={row.segmentClassNames?.field ?? DEFAULT_FIELD_CLASS}
             >
               {row.field}
             </span>

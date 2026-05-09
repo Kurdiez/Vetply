@@ -1,14 +1,15 @@
-"use client";
+'use client';
 
 import {
   fetchCatalogueProductDetail,
   patchCatalogueProduct,
-} from "@/utils/vetply-api/catalogue-api";
+  postUnlinkCatalogueSupplierListing,
+} from '@/utils/vetply-api/catalogue-api';
 import type {
   CatalogueProductDetail,
   CatalogueProductUpdateBody,
-} from "@vetply/shared";
-import { useRouter } from "next/router";
+} from '@vetply/shared';
+import { useRouter } from 'next/router';
 import {
   createContext,
   useCallback,
@@ -17,10 +18,10 @@ import {
   useMemo,
   useState,
   type ReactNode,
-} from "react";
-import { toast } from "sonner";
+} from 'react';
+import { toast } from 'sonner';
 
-type CatalogueProductDetailStatus = "idle" | "loading" | "ready" | "error";
+type CatalogueProductDetailStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 type CatalogueProductDetailContextValue = {
   productId: string;
@@ -32,6 +33,8 @@ type CatalogueProductDetailContextValue = {
   openEditModal: () => void;
   closeEditModal: () => void;
   saveProduct: (body: CatalogueProductUpdateBody) => Promise<void>;
+  unlinkSupplierListing: (listingId: string) => Promise<void>;
+  unlinkingListingId: string | null;
 };
 
 const CatalogueProductDetailContext =
@@ -46,10 +49,12 @@ export function CatalogueProductDetailProvider({
 }) {
   const router = useRouter();
   const [detail, setDetail] = useState<CatalogueProductDetail | null>(null);
-  const [status, setStatus] =
-    useState<CatalogueProductDetailStatus>("idle");
+  const [status, setStatus] = useState<CatalogueProductDetailStatus>('idle');
   const [fetchTick, setFetchTick] = useState(0);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [unlinkingListingId, setUnlinkingListingId] = useState<string | null>(
+    null,
+  );
 
   const refetch = useCallback(() => {
     setFetchTick((t) => t + 1);
@@ -73,10 +78,29 @@ export function CatalogueProductDetailProvider({
         const updated = await patchCatalogueProduct(productId, body);
         setDetail(updated);
         setEditModalOpen(false);
-        toast.success("Product updated.");
+        toast.success('Product updated.');
       } catch {
-        toast.error("Could not save product.");
-        throw new Error("save failed");
+        toast.error('Could not save product.');
+        throw new Error('save failed');
+      }
+    },
+    [productId],
+  );
+
+  const unlinkSupplierListing = useCallback(
+    async (listingId: string) => {
+      setUnlinkingListingId(listingId);
+      try {
+        const updated = await postUnlinkCatalogueSupplierListing(
+          productId,
+          listingId,
+        );
+        setDetail(updated);
+        toast.success('Supplier listing unlinked.');
+      } catch {
+        toast.error('Could not unlink supplier listing.');
+      } finally {
+        setUnlinkingListingId(null);
       }
     },
     [productId],
@@ -89,21 +113,21 @@ export function CatalogueProductDetailProvider({
     let cancelled = false;
 
     async function run() {
-      setStatus("loading");
+      setStatus('loading');
       try {
         const d = await fetchCatalogueProductDetail(productId);
         if (cancelled) {
           return;
         }
         setDetail(d);
-        setStatus("ready");
+        setStatus('ready');
       } catch {
         if (cancelled) {
           return;
         }
         setDetail(null);
-        setStatus("error");
-        toast.error("Could not load product.");
+        setStatus('error');
+        toast.error('Could not load product.');
       }
     }
 
@@ -124,6 +148,8 @@ export function CatalogueProductDetailProvider({
       openEditModal,
       closeEditModal,
       saveProduct,
+      unlinkSupplierListing,
+      unlinkingListingId,
     }),
     [
       productId,
@@ -135,6 +161,8 @@ export function CatalogueProductDetailProvider({
       openEditModal,
       closeEditModal,
       saveProduct,
+      unlinkSupplierListing,
+      unlinkingListingId,
     ],
   );
 
@@ -149,7 +177,7 @@ export function useCatalogueProductDetail(): CatalogueProductDetailContextValue 
   const ctx = useContext(CatalogueProductDetailContext);
   if (!ctx) {
     throw new Error(
-      "useCatalogueProductDetail must be used within CatalogueProductDetailProvider",
+      'useCatalogueProductDetail must be used within CatalogueProductDetailProvider',
     );
   }
   return ctx;

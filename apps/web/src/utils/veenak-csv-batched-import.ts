@@ -2,16 +2,16 @@ import type {
   ImportSupplierPricesBatchReq,
   ImportSupplierPricesBatchRes,
   VeenakImportRow,
-} from "@vetply/shared";
-import { Supplier, VEENAK_IMPORT_BATCH_MAX } from "@vetply/shared";
-import Papa from "papaparse";
+} from '@vetply/shared';
+import { Supplier, VEENAK_IMPORT_BATCH_MAX } from '@vetply/shared';
+import Papa from 'papaparse';
 
 const VEENAK_MIN_COLS = 5;
 
 function cell(data: unknown[], i: number): string {
   const v = data[i];
   if (v === null || v === undefined) {
-    return "";
+    return '';
   }
   return String(v).trim();
 }
@@ -79,7 +79,7 @@ export async function runVeenakCsvBatchedImport(
   const totalDataRows =
     options?.totalDataRows ?? (await countValidVeenakDataRows(file));
   if (totalDataRows === 0) {
-    throw new Error("NO_DATA_ROWS");
+    throw new Error('NO_DATA_ROWS');
   }
 
   const totalBatches = Math.ceil(totalDataRows / VEENAK_IMPORT_BATCH_MAX);

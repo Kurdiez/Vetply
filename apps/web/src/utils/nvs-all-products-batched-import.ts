@@ -2,12 +2,12 @@ import type {
   ImportSupplierPricesBatchReq,
   ImportSupplierPricesBatchRes,
   NvsAllProductsImportRow,
-} from "@vetply/shared";
+} from '@vetply/shared';
 import {
   NVS_IMPORT_BATCH_MAX,
   parseNvsAllProductsLine,
   Supplier,
-} from "@vetply/shared";
+} from '@vetply/shared';
 
 export type NvsAllProductsImportProgress = {
   rowsPosted: number;
@@ -54,7 +54,7 @@ export async function runNvsAllProductsBatchedImport(
   }
   const totalDataRows = options?.totalDataRows ?? allRows.length;
   if (totalDataRows === 0 || allRows.length === 0) {
-    throw new Error("NO_DATA_ROWS");
+    throw new Error('NO_DATA_ROWS');
   }
 
   const totalBatches = Math.ceil(totalDataRows / NVS_IMPORT_BATCH_MAX);
@@ -69,7 +69,7 @@ export async function runNvsAllProductsBatchedImport(
     const rows = allRows.slice(start, start + NVS_IMPORT_BATCH_MAX);
     const res = await postBatch({
       supplier: Supplier.NVS,
-      nvsFormat: "all_products",
+      nvsFormat: 'all_products',
       batchIndex: batchIdx,
       totalBatches,
       totalDataRows,

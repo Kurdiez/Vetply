@@ -20,6 +20,7 @@ import { CatalogueProductSupplierListingEntity } from '~/database/entities/catal
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import { importVeenakCatalogueRow } from '../importers/veenak-catalogue-importer';
+import * as catalogueProductImportMatch from '../utils/catalogue-product-import-match';
 
 function veenakRow(overrides: Partial<VeenakImportRow> = {}): VeenakImportRow {
   return {
@@ -44,6 +45,7 @@ describe('importVeenakCatalogueRow', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await cleanupAllTestResources(dbContext, testModule);
   });
 
@@ -158,5 +160,66 @@ describe('importVeenakCatalogueRow', () => {
     expect(listings[0].listedPrice).toBe('9.9900');
     const products = await productRepo.find();
     expect(products[0].name).toBe('First');
+  });
+
+  it('calls smart match only when creating the first listing for a supplier SKU', async () => {
+    const spy = jest.spyOn(
+      catalogueProductImportMatch,
+      'findExistingCatalogueProductIdForSupplierImport',
+    );
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const veenak = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.VEENAK }),
+    );
+
+    await importVeenakCatalogueRow(
+      dbContext.manager,
+      veenakRow({ productId: 'SMART-MATCH-SKU-1' }),
+      veenak.id,
+    );
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    spy.mockClear();
+    await importVeenakCatalogueRow(
+      dbContext.manager,
+      veenakRow({
+        productId: 'SMART-MATCH-SKU-1',
+        productName: 'Renamed only on listing',
+      }),
+      veenak.id,
+    );
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('does not call smart match when updating an orphan listing', async () => {
+    const spy = jest.spyOn(
+      catalogueProductImportMatch,
+      'findExistingCatalogueProductIdForSupplierImport',
+    );
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const veenak = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.VEENAK }),
+    );
+
+    await importVeenakCatalogueRow(
+      dbContext.manager,
+      veenakRow({ productId: 'ORPHAN-SKU-1' }),
+      veenak.id,
+    );
+
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+    const pid = (await productRepo.find())[0].id;
+    await productRepo.delete({ id: pid });
+
+    spy.mockClear();
+    await importVeenakCatalogueRow(
+      dbContext.manager,
+      veenakRow({
+        productId: 'ORPHAN-SKU-1',
+        productName: 'Orphan row update',
+      }),
+      veenak.id,
+    );
+    expect(spy).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,8 @@
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import {
   buildPaginationWindow,
   type PaginationWindowEntry,
-} from "./pagination-window";
+} from './pagination-window';
 
 export type TablePaginationProps = {
   page: number;
@@ -13,7 +13,7 @@ export type TablePaginationProps = {
 };
 
 function windowKey(entry: PaginationWindowEntry, index: number): string {
-  return entry === "ellipsis" ? `e-${index}` : `p-${entry}`;
+  return entry === 'ellipsis' ? `e-${index}` : `p-${entry}`;
 }
 
 export function TablePagination({
@@ -52,8 +52,8 @@ export function TablePagination({
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
           <p className="text-sm text-gray-300">
-            Showing <span className="font-medium">{from}</span> to{" "}
-            <span className="font-medium">{to}</span> of{" "}
+            Showing <span className="font-medium">{from}</span> to{' '}
+            <span className="font-medium">{to}</span> of{' '}
             <span className="font-medium">{totalCount}</span> results
           </p>
         </div>
@@ -72,7 +72,7 @@ export function TablePagination({
               <ChevronLeftIcon aria-hidden className="size-5" />
             </button>
             {windowItems.map((entry, index) =>
-              entry === "ellipsis" ? (
+              entry === 'ellipsis' ? (
                 <span
                   key={windowKey(entry, index)}
                   className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-400 inset-ring inset-ring-gray-700 focus:outline-offset-0"
@@ -84,12 +84,12 @@ export function TablePagination({
                   key={windowKey(entry, index)}
                   type="button"
                   disabled={disabled}
-                  aria-current={entry === safePage ? "page" : undefined}
+                  aria-current={entry === safePage ? 'page' : undefined}
                   onClick={() => onPageChange(entry)}
                   className={
                     entry === safePage
-                      ? "relative z-10 inline-flex cursor-pointer items-center bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-400 focus:z-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:cursor-not-allowed"
-                      : "relative inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-gray-200 inset-ring inset-ring-gray-700 hover:bg-white/5 focus:z-20 focus:outline-offset-0 disabled:cursor-not-allowed"
+                      ? 'relative z-10 inline-flex cursor-pointer items-center bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-400 focus:z-20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 disabled:cursor-not-allowed'
+                      : 'relative inline-flex cursor-pointer items-center px-4 py-2 text-sm font-semibold text-gray-200 inset-ring inset-ring-gray-700 hover:bg-white/5 focus:z-20 focus:outline-offset-0 disabled:cursor-not-allowed'
                   }
                 >
                   {entry}

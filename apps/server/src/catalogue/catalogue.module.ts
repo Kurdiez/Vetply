@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseModule } from '~/database/database.module';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
+import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import { UserEntity } from '~/database/entities/user.entity';
 import { CatalogueController } from './controllers/catalogue.controller';
@@ -18,6 +19,7 @@ import { CatalogueProductListService } from './services/catalogue-product-list.s
     TypeOrmModule.forFeature([
       UserEntity,
       CatalogueProductEntity,
+      CatalogueProductSupplierListingEntity,
       CatalogueManufacturerEntity,
       CatalogueSupplierEntity,
     ]),

@@ -3,16 +3,16 @@ import type {
   ImportSupplierPricesBatchRes,
   NvsImportRow,
   NvsNonPomBatchBreakdown,
-} from "@vetply/shared";
-import { NVS_IMPORT_BATCH_MAX, Supplier } from "@vetply/shared";
-import Papa from "papaparse";
+} from '@vetply/shared';
+import { NVS_IMPORT_BATCH_MAX, Supplier } from '@vetply/shared';
+import Papa from 'papaparse';
 
 const NVS_MIN_COLS = 11;
 
 function cell(data: unknown[], i: number): string {
   const v = data[i];
   if (v === null || v === undefined) {
-    return "";
+    return '';
   }
   return String(v).trim();
 }
@@ -86,7 +86,7 @@ export async function runNvsCsvBatchedImport(
   const totalDataRows =
     options?.totalDataRows ?? (await countValidNvsDataRows(file));
   if (totalDataRows === 0) {
-    throw new Error("NO_DATA_ROWS");
+    throw new Error('NO_DATA_ROWS');
   }
 
   const totalBatches = Math.ceil(totalDataRows / NVS_IMPORT_BATCH_MAX);
@@ -102,6 +102,7 @@ export async function runNvsCsvBatchedImport(
     let totalSkipped = 0;
     const nvsTotals: NvsNonPomBatchBreakdown = {
       updatedExistingListing: 0,
+      updatedOrphanListing: 0,
       newListingOnMatchedProduct: 0,
       newProductWithListing: 0,
     };
@@ -116,7 +117,7 @@ export async function runNvsCsvBatchedImport(
     const flush = async (rows: NvsImportRow[], index: number) => {
       const res = await postBatch({
         supplier: Supplier.NVS,
-        nvsFormat: "non_pom_csv",
+        nvsFormat: 'non_pom_csv',
         batchIndex: index,
         totalBatches,
         totalDataRows,
@@ -127,6 +128,7 @@ export async function runNvsCsvBatchedImport(
       const br = res.nvsNonPomBreakdown;
       if (br) {
         nvsTotals.updatedExistingListing += br.updatedExistingListing;
+        nvsTotals.updatedOrphanListing += br.updatedOrphanListing;
         nvsTotals.newListingOnMatchedProduct += br.newListingOnMatchedProduct;
         nvsTotals.newProductWithListing += br.newProductWithListing;
       }

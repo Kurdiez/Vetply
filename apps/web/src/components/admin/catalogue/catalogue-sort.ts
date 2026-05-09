@@ -1,15 +1,18 @@
 import {
   CatalogueListSortFieldId,
   type CatalogueProductListItem,
-} from "@vetply/shared";
-import type { CatalogueSortFieldId } from "./catalogue-filter-model";
+} from '@vetply/shared';
+import type { CatalogueSortFieldId } from './catalogue-filter-model';
 
 export type CatalogueSortState = {
   fieldId: CatalogueSortFieldId;
-  direction: "asc" | "desc";
+  direction: 'asc' | 'desc';
 } | null;
 
-function compareNullableNumberStrings(a: string | null, b: string | null): number {
+function compareNullableNumberStrings(
+  a: string | null,
+  b: string | null,
+): number {
   if (a === null && b === null) {
     return 0;
   }
@@ -38,7 +41,7 @@ export function sortCatalogueItems(
     return items;
   }
 
-  const mult = sort.direction === "asc" ? 1 : -1;
+  const mult = sort.direction === 'asc' ? 1 : -1;
   const copy = [...items];
 
   copy.sort((a, b) => {
@@ -48,9 +51,9 @@ export function sortCatalogueItems(
       case CatalogueListSortFieldId.ManufacturerName: {
         const va = a[sort.fieldId];
         const vb = b[sort.fieldId];
-        const sa = va == null ? "" : String(va);
-        const sb = vb == null ? "" : String(vb);
-        cmp = sa.localeCompare(sb, undefined, { sensitivity: "base" });
+        const sa = va == null ? '' : String(va);
+        const sb = vb == null ? '' : String(vb);
+        cmp = sa.localeCompare(sb, undefined, { sensitivity: 'base' });
         break;
       }
       case CatalogueListSortFieldId.CovetrusPrice:
@@ -77,10 +80,10 @@ export function nextSortState(
   clickedColumn: CatalogueSortFieldId,
 ): CatalogueSortState {
   if (!current || current.fieldId !== clickedColumn) {
-    return { fieldId: clickedColumn, direction: "asc" };
+    return { fieldId: clickedColumn, direction: 'asc' };
   }
-  if (current.direction === "asc") {
-    return { fieldId: clickedColumn, direction: "desc" };
+  if (current.direction === 'asc') {
+    return { fieldId: clickedColumn, direction: 'desc' };
   }
   return null;
 }

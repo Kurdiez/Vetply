@@ -7,22 +7,22 @@ import {
   Supplier,
   catalogueProductFilterSchema,
   type CatalogueProductFilter,
-} from "@vetply/shared";
+} from '@vetply/shared';
 
 export {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
   CatalogueListSortFieldId,
-} from "@vetply/shared";
+} from '@vetply/shared';
 
-export type FieldKind = "string";
+export type FieldKind = 'string';
 
 export const STRING_FIELDS = CATALOGUE_FILTER_STRING_FIELDS;
 
 export const SUPPLIER_OPTIONS = Object.values(Supplier) as Supplier[];
 
 export function getFieldKind(_fieldId: CatalogueFilterFieldId): FieldKind {
-  return "string";
+  return 'string';
 }
 
 export function operatorsForField(
@@ -39,7 +39,7 @@ export function defaultOperatorForField(
 
 export type AppliedFilter = {
   id: string;
-  kind: "string";
+  kind: 'string';
   fieldId:
     | typeof CatalogueFilterFieldId.ManufacturerName
     | typeof CatalogueFilterFieldId.Supplier;
@@ -60,33 +60,35 @@ export function appliedFiltersToApiPayload(
 export type CatalogueListStubPayload = {
   page: number;
   pageSize: number;
-  sort: { fieldId: CatalogueSortFieldId; direction: "asc" | "desc" } | null;
+  sort: { fieldId: CatalogueSortFieldId; direction: 'asc' | 'desc' } | null;
   filters: AppliedFilter[];
 };
 
-export function logCatalogueListRequestPayload(payload: CatalogueListStubPayload): void {
-  console.log("[catalogue] list request (stub)", payload);
+export function logCatalogueListRequestPayload(
+  payload: CatalogueListStubPayload,
+): void {
+  console.log('[catalogue] list request (stub)', payload);
 }
 
 export function formatOperandSummary(filter: AppliedFilter): string {
   if (Array.isArray(filter.value)) {
-    return filter.value.join(", ");
+    return filter.value.join(', ');
   }
   return filter.value;
 }
 
 const FIELD_LABELS: Record<CatalogueFilterFieldId, string> = {
-  [CatalogueFilterFieldId.ManufacturerName]: "Manufacturer",
-  [CatalogueFilterFieldId.Supplier]: "Supplier",
+  [CatalogueFilterFieldId.ManufacturerName]: 'Manufacturer',
+  [CatalogueFilterFieldId.Supplier]: 'Supplier',
 };
 
 const OPERATOR_LABELS: Record<CatalogueFilterOperator, string> = {
-  [CatalogueFilterOperator.IsExactly]: "is exactly",
-  [CatalogueFilterOperator.IsDistinctFrom]: "is distinct from",
-  [CatalogueFilterOperator.Contains]: "contains",
-  [CatalogueFilterOperator.DoesNotContain]: "does not contain",
-  [CatalogueFilterOperator.ContainsAnyOf]: "contains any one of",
-  [CatalogueFilterOperator.DoesNotContainAnyOf]: "does not contain any of",
+  [CatalogueFilterOperator.IsExactly]: 'is exactly',
+  [CatalogueFilterOperator.IsDistinctFrom]: 'is distinct from',
+  [CatalogueFilterOperator.Contains]: 'contains',
+  [CatalogueFilterOperator.DoesNotContain]: 'does not contain',
+  [CatalogueFilterOperator.ContainsAnyOf]: 'contains any one of',
+  [CatalogueFilterOperator.DoesNotContainAnyOf]: 'does not contain any of',
 };
 
 export function formatAppliedFilterDisplayParts(filter: AppliedFilter): {

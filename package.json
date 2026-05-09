@@ -8,7 +8,11 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "check-all": "yarn workspace @vetply/server check-all && yarn workspace @vetply/web check-all",
     "dev": "turbo run dev",
+    "format": "prettier --write \"apps/server/src\" \"apps/web/src\" \"apps/web/scripts\" \"packages/shared/src\"",
+    "format:check": "prettier --check \"apps/server/src\" \"apps/web/src\" \"apps/web/scripts\" \"packages/shared/src\"",
+    "lint": "turbo run lint",
     "prepare": "husky",
     "prepare:all": "yarn install && yarn workspace @vetply/shared build",
     "start": "turbo run start"
@@ -21,6 +25,7 @@
     "husky": "^9.1.6",
     "knip": "^5.58.1",
     "lint-staged": "^15.2.10",
+    "prettier": "^3.8.1",
     "sort-package-json": "^2.10.1",
     "turbo": "^2.9.3",
     "typescript": "^5.8.3"

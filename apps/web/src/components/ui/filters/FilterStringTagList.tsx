@@ -1,6 +1,6 @@
-import { useCallback, useState } from "react";
-import { IconButton } from "@/components/ui/IconButton";
-import { XMarkIcon } from "@heroicons/react/20/solid";
+import { useCallback, useState } from 'react';
+import { IconButton } from '@/components/ui/IconButton';
+import { XMarkIcon } from '@heroicons/react/20/solid';
 
 export type FilterStringTagListProps = {
   id: string;
@@ -18,25 +18,22 @@ export function FilterStringTagList({
   tags,
   onAdd,
   onRemove,
-  placeholder = "Type and press Enter",
+  placeholder = 'Type and press Enter',
   disabled = false,
 }: FilterStringTagListProps) {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
 
   const commit = useCallback(() => {
     const t = input.trim();
     if (t.length > 0) {
       onAdd(t);
-      setInput("");
+      setInput('');
     }
   }, [input, onAdd]);
 
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm/6 font-medium text-white"
-      >
+      <label htmlFor={id} className="block text-sm/6 font-medium text-white">
         {label}
       </label>
       <div className="mt-2 space-y-2">
@@ -70,7 +67,7 @@ export function FilterStringTagList({
           placeholder={placeholder}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === 'Enter') {
               e.preventDefault();
               commit();
             }

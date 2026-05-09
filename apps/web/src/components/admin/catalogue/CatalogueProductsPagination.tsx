@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { TablePagination } from "@/components/ui/data-table/TablePagination";
-import { useCatalogueView } from "./CatalogueViewContext";
+import { TablePagination } from '@/components/ui/data-table/TablePagination';
+import { useCatalogueView } from './CatalogueViewContext';
 
 export function CatalogueProductsPagination() {
   const { page, pageSize, totalCount, setPage, status } = useCatalogueView();
@@ -12,7 +12,7 @@ export function CatalogueProductsPagination() {
       pageSize={pageSize}
       totalCount={totalCount}
       onPageChange={setPage}
-      disabled={status === "loading"}
+      disabled={status === 'loading'}
     />
   );
 }

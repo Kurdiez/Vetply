@@ -1,12 +1,12 @@
-import { createAccountBusinessErrorBodySchema } from "@vetply/shared";
-import axios, { isAxiosError } from "axios";
-import { toast } from "sonner";
-import { getPublicApiBaseUrl } from "./base-url";
-import { VetplyBadRequestError } from "./vetply-bad-request-error";
-import { VETPLY_ACCESS_TOKEN_KEY } from "./storage";
+import { createAccountBusinessErrorBodySchema } from '@vetply/shared';
+import axios, { isAxiosError } from 'axios';
+import { toast } from 'sonner';
+import { getPublicApiBaseUrl } from './base-url';
+import { VetplyBadRequestError } from './vetply-bad-request-error';
+import { VETPLY_ACCESS_TOKEN_KEY } from './storage';
 
 const UNEXPECTED_MESSAGE =
-  "Something unexpected happened. Please try again or contact support.";
+  'Something unexpected happened. Please try again or contact support.';
 
 export function vetplyApiUnexpectedErrorToastShown(err: unknown): boolean {
   if (!isAxiosError(err)) {
@@ -14,7 +14,7 @@ export function vetplyApiUnexpectedErrorToastShown(err: unknown): boolean {
   }
   const status = err.response?.status;
   const data = err.response?.data;
-  if (status === 400 && data !== undefined && typeof data === "object") {
+  if (status === 400 && data !== undefined && typeof data === 'object') {
     const parsed = createAccountBusinessErrorBodySchema.safeParse(data);
     if (parsed.success) {
       return false;
@@ -30,7 +30,7 @@ export function vetplyApiUnexpectedErrorToastShown(err: unknown): boolean {
 }
 
 function readStoredToken(): string | null {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return null;
   }
   return localStorage.getItem(VETPLY_ACCESS_TOKEN_KEY);
@@ -59,7 +59,7 @@ vetplyApiClient.interceptors.response.use(
     const status = error.response?.status;
     const data = error.response?.data;
 
-    if (status === 400 && data !== undefined && typeof data === "object") {
+    if (status === 400 && data !== undefined && typeof data === 'object') {
       const parsed = createAccountBusinessErrorBodySchema.safeParse(data);
       if (parsed.success) {
         return Promise.reject(

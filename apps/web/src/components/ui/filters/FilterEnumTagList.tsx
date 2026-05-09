@@ -1,7 +1,7 @@
-import { IconButton } from "@/components/ui/IconButton";
-import { Select } from "@/components/ui/Select";
-import { XMarkIcon } from "@heroicons/react/20/solid";
-import type { FilterSelectOption } from "./FilterLabeledSelect";
+import { IconButton } from '@/components/ui/IconButton';
+import { Select } from '@/components/ui/Select';
+import { XMarkIcon } from '@heroicons/react/20/solid';
+import type { FilterSelectOption } from './FilterLabeledSelect';
 
 export type FilterEnumTagListProps = {
   id: string;
@@ -59,7 +59,7 @@ export function FilterEnumTagList({
           </ul>
         )}
         <Select
-          key={selected.join("|")}
+          key={selected.join('|')}
           id={addControlId}
           value=""
           disabled={disabled || available.length === 0}
@@ -67,12 +67,12 @@ export function FilterEnumTagList({
             const v = e.target.value;
             if (v) {
               onAdd(v);
-              e.target.value = "";
+              e.target.value = '';
             }
           }}
         >
           <option value="">
-            {available.length === 0 ? "All values added" : "Add value…"}
+            {available.length === 0 ? 'All values added' : 'Add value…'}
           </option>
           {available.map((opt) => (
             <option key={opt.value} value={opt.value}>

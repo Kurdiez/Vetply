@@ -1,13 +1,13 @@
 export const routes = {
-  home: "/",
-  signIn: "/sign-in",
-  signUp: "/sign-up",
-  app: "/app",
+  home: '/',
+  signIn: '/sign-in',
+  signUp: '/sign-up',
+  app: '/app',
   admin: {
-    root: "/admin",
+    root: '/admin',
     catalogue: {
-      view: "/admin/catalogue",
-      importSupplierPrices: "/admin/catalogue/import-supplier-prices",
+      view: '/admin/catalogue',
+      importSupplierPrices: '/admin/catalogue/import-supplier-prices',
       productDetail: (productId: string) =>
         `/admin/catalogue/product/${productId}`,
     },

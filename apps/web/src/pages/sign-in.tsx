@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { FormEvent, useState } from "react";
-import { ContinueWithGoogle } from "@/components/auth/ContinueWithGoogle";
-import { Button } from "@/components/ui/Button";
-import { TextInput } from "@/components/ui/TextInput";
-import { VETPLY_ACCESS_TOKEN_KEY } from "@/utils/vetply-api/storage";
-import { vetplyApiUnexpectedErrorToastShown } from "@/utils/vetply-api/http-client";
-import { routes } from "@/constants/routes";
-import { login } from "@/utils/vetply-api/user-auth";
-import { isAxiosError } from "axios";
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { FormEvent, useState } from 'react';
+import { ContinueWithGoogle } from '@/components/auth/ContinueWithGoogle';
+import { Button } from '@/components/ui/Button';
+import { TextInput } from '@/components/ui/TextInput';
+import { VETPLY_ACCESS_TOKEN_KEY } from '@/utils/vetply-api/storage';
+import { vetplyApiUnexpectedErrorToastShown } from '@/utils/vetply-api/http-client';
+import { routes } from '@/constants/routes';
+import { login } from '@/utils/vetply-api/user-auth';
+import { isAxiosError } from 'axios';
 
 export default function SignInPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,17 +29,17 @@ export default function SignInPage() {
       await router.push(routes.app);
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 401) {
-        setError("Invalid email or password");
+        setError('Invalid email or password');
         return;
       }
       if (isAxiosError(err) && err.response?.status === 400) {
-        setError("Please check your email and password.");
+        setError('Please check your email and password.');
         return;
       }
       if (vetplyApiUnexpectedErrorToastShown(err)) {
         return;
       }
-      setError("Something went wrong. Try again.");
+      setError('Something went wrong. Try again.');
     } finally {
       setSubmitting(false);
     }
@@ -68,7 +68,7 @@ export default function SignInPage() {
         <div className="bg-gray-800/50 px-6 py-12 outline -outline-offset-1 outline-white/10 sm:rounded-lg sm:px-12">
           {error ? (
             <p
-              className="mb-6 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-300"
+              className="mb-6 rounded-md bg-danger-500/10 px-3 py-2 text-sm text-danger-400"
               role="alert"
             >
               {error}
@@ -168,7 +168,7 @@ export default function SignInPage() {
 
             <div>
               <Button type="submit" fullWidth disabled={submitting}>
-                {submitting ? "Signing in…" : "Sign in"}
+                {submitting ? 'Signing in…' : 'Sign in'}
               </Button>
             </div>
           </form>
@@ -177,7 +177,7 @@ export default function SignInPage() {
         </div>
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
-          Not a member?{" "}
+          Not a member?{' '}
           <Link
             href={routes.signUp}
             className="font-semibold text-primary-100 hover:text-primary-200"

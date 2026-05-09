@@ -41,13 +41,20 @@ export async function importNvsAllProductsRow(
     relations: ['product'],
   });
 
-  if (existingListing?.product) {
-    const productRepo = manager.getRepository(CatalogueProductEntity);
-    const product = existingListing.product;
-    product.unitType = uom.unitType;
-    product.unitQuantity = uom.unitQuantity;
-    product.name = canonicalCatalogueImportProductName(name);
-    await productRepo.save(product);
+  if (existingListing) {
+    if (existingListing.product) {
+      const productRepo = manager.getRepository(CatalogueProductEntity);
+      const product = existingListing.product;
+      product.unitType = uom.unitType;
+      product.unitQuantity = uom.unitQuantity;
+      product.name = canonicalCatalogueImportProductName(name);
+      await productRepo.save(product);
+
+      existingListing.name = name;
+      existingListing.listedPrice = listedPrice;
+      await listingRepo.save(existingListing);
+      return 'imported';
+    }
 
     existingListing.name = name;
     existingListing.listedPrice = listedPrice;

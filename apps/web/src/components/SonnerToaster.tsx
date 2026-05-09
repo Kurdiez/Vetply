@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { Toaster } from "sonner";
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Toaster } from 'sonner';
 
 export function SonnerToaster() {
   const [mounted, setMounted] = useState(false);

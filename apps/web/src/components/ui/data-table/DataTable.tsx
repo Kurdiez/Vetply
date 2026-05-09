@@ -1,8 +1,5 @@
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "@heroicons/react/20/solid";
-import type { ReactNode } from "react";
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
+import type { ReactNode } from 'react';
 
 export type DataTableColumn = {
   id: string;
@@ -19,9 +16,10 @@ export type DataTableProps<T> = {
   className?: string;
   sortableColumnIds?: string[];
   sortColumnId?: string | null;
-  sortDirection?: "asc" | "desc" | null;
+  sortDirection?: 'asc' | 'desc' | null;
   onSortColumnClick?: (columnId: string) => void;
   onRowClick?: (row: T) => void;
+  getRowClassName?: (row: T) => string | undefined;
 };
 
 export function DataTable<T>({
@@ -29,12 +27,13 @@ export function DataTable<T>({
   rows,
   getRowKey,
   renderCell,
-  className = "mt-8 flow-root",
+  className = 'mt-8 flow-root',
   sortableColumnIds,
   sortColumnId = null,
   sortDirection = null,
   onSortColumnClick,
   onRowClick,
+  getRowClassName,
 }: DataTableProps<T>) {
   return (
     <div className={className}>
@@ -51,8 +50,8 @@ export function DataTable<T>({
                       sortColumnId === col.id && sortDirection !== null;
                     const thClass =
                       idx === 0
-                        ? "py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-200 sm:pl-6"
-                        : "px-3 py-3.5 text-left text-sm font-semibold text-gray-200";
+                        ? 'py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-200 sm:pl-6'
+                        : 'px-3 py-3.5 text-left text-sm font-semibold text-gray-200';
 
                     const headerInner = sortable ? (
                       <button
@@ -61,13 +60,13 @@ export function DataTable<T>({
                         className="group inline-flex w-full cursor-pointer items-center gap-1 rounded text-left font-semibold text-gray-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
                       >
                         <span>{col.header}</span>
-                        {activeSort && sortDirection === "asc" ? (
+                        {activeSort && sortDirection === 'asc' ? (
                           <ChevronUpIcon
                             aria-hidden
                             className="size-4 shrink-0 text-primary-400"
                           />
                         ) : null}
-                        {activeSort && sortDirection === "desc" ? (
+                        {activeSort && sortDirection === 'desc' ? (
                           <ChevronDownIcon
                             aria-hidden
                             className="size-4 shrink-0 text-primary-400"
@@ -85,12 +84,12 @@ export function DataTable<T>({
                         className={thClass}
                         aria-sort={
                           sortable
-                            ? sortColumnId === col.id && sortDirection === "asc"
-                              ? "ascending"
+                            ? sortColumnId === col.id && sortDirection === 'asc'
+                              ? 'ascending'
                               : sortColumnId === col.id &&
-                                  sortDirection === "desc"
-                                ? "descending"
-                                : "none"
+                                  sortDirection === 'desc'
+                                ? 'descending'
+                                : 'none'
                             : undefined
                         }
                       >
@@ -104,22 +103,23 @@ export function DataTable<T>({
                 {rows.map((row) => (
                   <tr
                     key={getRowKey(row)}
-                    className={
+                    className={[
                       onRowClick
-                        ? "cursor-pointer transition-colors hover:bg-admin-table-row-hover"
-                        : undefined
-                    }
-                    onClick={
-                      onRowClick ? () => onRowClick(row) : undefined
-                    }
+                        ? 'cursor-pointer transition-colors hover:bg-admin-table-row-hover'
+                        : undefined,
+                      getRowClassName?.(row),
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
                   >
                     {columns.map((col, idx) => (
                       <td
                         key={col.id}
                         className={
                           idx === 0
-                            ? "py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6"
-                            : "px-3 py-4 text-sm whitespace-nowrap text-gray-400"
+                            ? 'py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-white sm:pl-6'
+                            : 'px-3 py-4 text-sm whitespace-nowrap text-gray-400'
                         }
                       >
                         {renderCell(row, col.id)}

@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/Button";
-import { routes } from "@/constants/routes";
+import { Button } from '@/components/ui/Button';
+import { routes } from '@/constants/routes';
 
 export function CtaSection() {
   return (

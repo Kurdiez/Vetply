@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/Button";
-import { useState } from "react";
-import { CatalogueAddFilterModal } from "./CatalogueAddFilterModal";
-import { CatalogueAppliedFiltersList } from "./CatalogueAppliedFiltersList";
+import { Button } from '@/components/ui/Button';
+import { useState } from 'react';
+import { CatalogueAddFilterModal } from './CatalogueAddFilterModal';
+import { CatalogueAppliedFiltersList } from './CatalogueAppliedFiltersList';
 
 export function CatalogueFiltersSection() {
   const [addModalOpen, setAddModalOpen] = useState(false);

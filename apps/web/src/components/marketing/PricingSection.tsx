@@ -1,60 +1,60 @@
-import { Button } from "@/components/ui/Button";
-import { routes } from "@/constants/routes";
-import { CheckIcon } from "@heroicons/react/20/solid";
+import { Button } from '@/components/ui/Button';
+import { routes } from '@/constants/routes';
+import { CheckIcon } from '@heroicons/react/20/solid';
 
 const tiers = [
   {
-    name: "Essentials",
-    id: "tier-essentials",
+    name: 'Essentials',
+    id: 'tier-essentials',
     href: routes.signUp,
-    priceMonthly: "$79",
+    priceMonthly: '$79',
     description:
-      "For a single clinic that wants distributor pricing and rebates in one place—not another spreadsheet.",
+      'For a single clinic that wants distributor pricing and rebates in one place—not another spreadsheet.',
     features: [
-      "Compare pricing across major veterinary distributors",
-      "Up to 3 team members",
-      "Track contract tiers and manufacturer rebates",
-      "CSV exports for ordering and finance",
-      "Email support (2 business days)",
+      'Compare pricing across major veterinary distributors',
+      'Up to 3 team members',
+      'Track contract tiers and manufacturer rebates',
+      'CSV exports for ordering and finance',
+      'Email support (2 business days)',
     ],
     mostPopular: false,
   },
   {
-    name: "Professional",
-    id: "tier-professional",
+    name: 'Professional',
+    id: 'tier-professional',
     href: routes.signUp,
-    priceMonthly: "$199",
+    priceMonthly: '$199',
     description:
-      "For busy practices that need shared access, richer analytics, and faster answers when programs change.",
+      'For busy practices that need shared access, richer analytics, and faster answers when programs change.',
     features: [
-      "Everything in Essentials",
-      "Unlimited team members",
-      "Spend rollups by category, supplier, and time period",
-      "Priority in-app chat support",
-      "Rebate accrual views and audit-friendly history",
+      'Everything in Essentials',
+      'Unlimited team members',
+      'Spend rollups by category, supplier, and time period',
+      'Priority in-app chat support',
+      'Rebate accrual views and audit-friendly history',
     ],
     mostPopular: true,
   },
   {
-    name: "Organization",
-    id: "tier-organization",
+    name: 'Organization',
+    id: 'tier-organization',
     href: routes.signUp,
-    priceMonthly: "$449",
+    priceMonthly: '$449',
     description:
-      "For groups and multi-location operators that need governance, rollups, and a partner in rollout.",
+      'For groups and multi-location operators that need governance, rollups, and a partner in rollout.',
     features: [
-      "Everything in Professional",
-      "Multi-location dashboards and consolidated reporting",
-      "SSO and role-based admin controls",
-      "Dedicated onboarding and quarterly business reviews",
-      "Optional custom data feeds and integrations",
+      'Everything in Professional',
+      'Multi-location dashboards and consolidated reporting',
+      'SSO and role-based admin controls',
+      'Dedicated onboarding and quarterly business reviews',
+      'Optional custom data feeds and integrations',
     ],
     mostPopular: false,
   },
 ];
 
 function classNames(...classes: (string | false | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 export function PricingSection() {
@@ -75,18 +75,21 @@ export function PricingSection() {
           </h2>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg font-medium text-pretty text-gray-400 sm:text-xl/8">
-          Pick the level of visibility and support you need. Every plan includes a{" "}
-          <span className="text-gray-300">1-month free trial</span>—no commitment until you are ready.
+          Pick the level of visibility and support you need. Every plan includes
+          a <span className="text-gray-300">1-month free trial</span>—no
+          commitment until you are ready.
         </p>
         <div className="mx-auto mt-16 grid max-w-md grid-cols-1 gap-y-8 sm:mt-20 lg:isolate lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {tiers.map((tier, tierIdx) => (
             <div
               key={tier.id}
               className={classNames(
-                tier.mostPopular ? "lg:z-10 lg:rounded-b-none" : "lg:mt-8",
-                tierIdx === 0 ? "lg:-mr-px lg:rounded-r-none" : "",
-                tierIdx === tiers.length - 1 ? "lg:-ml-px lg:rounded-l-none" : "",
-                "flex flex-col justify-between rounded-3xl bg-gray-800/50 p-8 ring-1 ring-inset ring-gray-700 xl:p-10",
+                tier.mostPopular ? 'lg:z-10 lg:rounded-b-none' : 'lg:mt-8',
+                tierIdx === 0 ? 'lg:-mr-px lg:rounded-r-none' : '',
+                tierIdx === tiers.length - 1
+                  ? 'lg:-ml-px lg:rounded-l-none'
+                  : '',
+                'flex flex-col justify-between rounded-3xl bg-gray-800/50 p-8 ring-1 ring-inset ring-gray-700 xl:p-10',
               )}
             >
               <div>
@@ -94,8 +97,8 @@ export function PricingSection() {
                   <h3
                     id={tier.id}
                     className={classNames(
-                      tier.mostPopular ? "text-primary-100" : "text-white",
-                      "text-lg/8 font-semibold",
+                      tier.mostPopular ? 'text-primary-100' : 'text-white',
+                      'text-lg/8 font-semibold',
                     )}
                   >
                     {tier.name}
@@ -106,14 +109,21 @@ export function PricingSection() {
                     </p>
                   ) : null}
                 </div>
-                <p className="mt-4 text-sm/6 text-gray-300">{tier.description}</p>
+                <p className="mt-4 text-sm/6 text-gray-300">
+                  {tier.description}
+                </p>
                 <p className="mt-6 flex items-baseline gap-x-1">
                   <span className="text-4xl font-semibold tracking-tight text-white">
                     {tier.priceMonthly}
                   </span>
-                  <span className="text-sm/6 font-semibold text-gray-400">/month</span>
+                  <span className="text-sm/6 font-semibold text-gray-400">
+                    /month
+                  </span>
                 </p>
-                <ul role="list" className="mt-8 space-y-3 text-sm/6 text-gray-300">
+                <ul
+                  role="list"
+                  className="mt-8 space-y-3 text-sm/6 text-gray-300"
+                >
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
                       <CheckIcon
@@ -129,7 +139,7 @@ export function PricingSection() {
                 href={tier.href}
                 aria-describedby={tier.id}
                 fullWidth
-                variant={tier.mostPopular ? "primary" : "secondary"}
+                variant={tier.mostPopular ? 'primary' : 'secondary'}
                 className="mt-8"
               >
                 Start free trial

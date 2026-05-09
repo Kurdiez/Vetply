@@ -1,4 +1,4 @@
-export type PaginationWindowEntry = number | "ellipsis";
+export type PaginationWindowEntry = number | 'ellipsis';
 
 export function buildPaginationWindow(
   currentPage: number,
@@ -23,7 +23,7 @@ export function buildPaginationWindow(
     const p = sorted[i];
     const prev = sorted[i - 1];
     if (i > 0 && prev !== undefined && p - prev > 1) {
-      out.push("ellipsis");
+      out.push('ellipsis');
     }
     out.push(p);
   }

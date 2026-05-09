@@ -3,31 +3,31 @@ import {
   ReceiptPercentIcon,
   Squares2X2Icon,
   TableCellsIcon,
-} from "@heroicons/react/24/outline";
+} from '@heroicons/react/24/outline';
 
 const features = [
   {
-    name: "Compare supplier pricing",
+    name: 'Compare supplier pricing',
     description:
-      "See prices across distributors on the products you already buy—without jumping between catalogs, portals, and emailed quotes.",
+      'See prices across distributors on the products you already buy—without jumping between catalogs, portals, and emailed quotes.',
     icon: ArrowsRightLeftIcon,
   },
   {
-    name: "Your discounts and rebates, layered in",
+    name: 'Your discounts and rebates, layered in',
     description:
-      "Apply manufacturer rebates, contract tiers, and one-off deals on top of list price so you know your true net cost—not a fantasy spreadsheet.",
+      'Apply manufacturer rebates, contract tiers, and one-off deals on top of list price so you know your true net cost—not a fantasy spreadsheet.',
     icon: ReceiptPercentIcon,
   },
   {
-    name: "One view of what you pay",
+    name: 'One view of what you pay',
     description:
-      "Replace scattered files with a single place for item-level pricing that reflects how your clinic actually purchases.",
+      'Replace scattered files with a single place for item-level pricing that reflects how your clinic actually purchases.',
     icon: Squares2X2Icon,
   },
   {
-    name: "Leave the spreadsheet rebuild behind",
+    name: 'Leave the spreadsheet rebuild behind',
     description:
-      "Stop re-merging tabs every week when prices or programs change. Work from numbers that stay tied to suppliers and your terms.",
+      'Stop re-merging tabs every week when prices or programs change. Work from numbers that stay tied to suppliers and your terms.',
     icon: TableCellsIcon,
   },
 ];

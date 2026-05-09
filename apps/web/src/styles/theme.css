@@ -1,0 +1,26 @@
+/* Vetply design tokens → Tailwind utilities (bg-primary-500, text-danger-400, …).
+ * Primary: 100 = brightest … 700 = darkest */
+
+@theme {
+  --color-primary-100: #4dc48e;
+  --color-primary-200: #45af7f;
+  --color-primary-300: #3d9a70;
+  --color-primary-400: #358661;
+  --color-primary-500: #2c7152;
+  --color-primary-600: #245c43;
+  --color-primary-700: #1c4734;
+
+  /* Danger: red ramp — 500 is brand anchor */
+  --color-danger-400: #e27472;
+  --color-danger-500: #d94643;
+  --color-danger-600: #b23937;
+
+  /* Semantic aliases (same tokens; use when scale step is not meaningful) */
+  --color-interactive: var(--color-primary-500);
+  --color-interactive-hover: var(--color-primary-400);
+  --color-destructive: var(--color-danger-500);
+  --color-destructive-hover: var(--color-danger-400);
+
+  /* Admin data tables: row hover (base row uses bg-gray-800/50 on tbody) */
+  --color-admin-table-row-hover: rgb(55 65 81 / 0.85);
+}

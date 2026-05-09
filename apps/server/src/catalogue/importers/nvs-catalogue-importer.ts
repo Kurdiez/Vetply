@@ -18,6 +18,7 @@ export type NvsCatalogueImportRowResult =
       ok: true;
       outcome:
         | 'updated_existing_listing'
+        | 'updated_orphan_listing'
         | 'new_listing_matched_product'
         | 'new_product_and_listing';
     }
@@ -80,31 +81,40 @@ export async function importNvsCatalogueRow(
     relations: ['product'],
   });
 
-  if (existingListing?.product) {
-    const manufacturerRepo = manager.getRepository(CatalogueManufacturerEntity);
-    let manufacturer = await manufacturerRepo.findOne({
-      where: { name: manufacturerName },
-    });
-    if (!manufacturer) {
-      manufacturer = manufacturerRepo.create({ name: manufacturerName });
-      manufacturer = await manufacturerRepo.save(manufacturer);
-    }
+  if (existingListing) {
+    if (existingListing.product) {
+      const manufacturerRepo = manager.getRepository(
+        CatalogueManufacturerEntity,
+      );
+      let manufacturer = await manufacturerRepo.findOne({
+        where: { name: manufacturerName },
+      });
+      if (!manufacturer) {
+        manufacturer = manufacturerRepo.create({ name: manufacturerName });
+        manufacturer = await manufacturerRepo.save(manufacturer);
+      }
 
-    const productRepo = manager.getRepository(CatalogueProductEntity);
-    const product = existingListing.product;
-    product.manufacturerId = manufacturer.id;
-    product.salesCategory = salesCategory;
-    product.legalCategory = legalCategory;
-    product.pom = pom;
-    product.unitType = uom.unitType;
-    product.unitQuantity = uom.unitQuantity;
-    product.name = canonicalCatalogueImportProductName(description);
-    await productRepo.save(product);
+      const productRepo = manager.getRepository(CatalogueProductEntity);
+      const product = existingListing.product;
+      product.manufacturerId = manufacturer.id;
+      product.salesCategory = salesCategory;
+      product.legalCategory = legalCategory;
+      product.pom = pom;
+      product.unitType = uom.unitType;
+      product.unitQuantity = uom.unitQuantity;
+      product.name = canonicalCatalogueImportProductName(description);
+      await productRepo.save(product);
+
+      existingListing.name = description;
+      existingListing.listedPrice = listedPrice;
+      await listingRepo.save(existingListing);
+      return { ok: true, outcome: 'updated_existing_listing' };
+    }
 
     existingListing.name = description;
     existingListing.listedPrice = listedPrice;
     await listingRepo.save(existingListing);
-    return { ok: true, outcome: 'updated_existing_listing' };
+    return { ok: true, outcome: 'updated_orphan_listing' };
   }
 
   const matchedProductId =

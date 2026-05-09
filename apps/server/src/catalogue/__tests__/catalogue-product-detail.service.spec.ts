@@ -1,6 +1,11 @@
 import { NotFoundException } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
-import { LegalCategory, SalesCategory, Supplier } from '@vetply/shared';
+import {
+  CatalogUnitType,
+  LegalCategory,
+  SalesCategory,
+  Supplier,
+} from '@vetply/shared';
 import { DataSource } from 'typeorm';
 import {
   saveCatalogueManufacturer,
@@ -41,6 +46,10 @@ describe('CatalogueProductDetailService', () => {
             new CatalogueProductDetailService(
               getTestRepository(dbContext, CatalogueProductEntity),
               getTestRepository(dbContext, CatalogueManufacturerEntity),
+              getTestRepository(
+                dbContext,
+                CatalogueProductSupplierListingEntity,
+              ),
             ),
         },
       ],
@@ -106,6 +115,131 @@ describe('CatalogueProductDetailService', () => {
   it('throws when product missing', async () => {
     await expect(
       service.getProductDetail('00000000-0000-4000-8000-000000000001'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('createManualProduct persists defaults and returns empty listings', async () => {
+    const detail = await service.createManualProduct();
+
+    expect(detail.name).toBe('Default Product Title');
+    expect(detail.listings).toEqual([]);
+    expect(detail.manufacturerId).toBeNull();
+    expect(detail.unitType).toBe(CatalogUnitType.EA);
+
+    const row = await productRepo.findOne({
+      where: { id: detail.id },
+    });
+    expect(row).not.toBeNull();
+    expect(row!.unitQuantity).toBe('1.000000');
+    expect(row!.salesCategory).toBeNull();
+    expect(row!.legalCategory).toBeNull();
+    expect(row!.pom).toBeNull();
+    expect(row!.image).toBeNull();
+  });
+
+  it('bulkDeleteProducts deletes products and sets listing product_id to null', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'BulkDeleteTarget',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const listingRow = await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: nvs.id,
+        supplierProductId: 'SKU-BULK-DEL',
+        name: 'Listed',
+        listedPrice: '1.0000',
+      }),
+    );
+
+    const result = await service.bulkDeleteProducts([product.id]);
+    expect(result.deletedCount).toBe(1);
+
+    const listingAfter = await listingRepo.findOne({
+      where: { id: listingRow.id },
+    });
+    expect(listingAfter).not.toBeNull();
+    expect(listingAfter!.productId).toBeNull();
+  });
+
+  it('unlinkSupplierListing sets listing product_id null and omits it from detail', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'UnlinkTarget',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const listingRow = await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: nvs.id,
+        supplierProductId: 'SKU-UNLINK',
+        name: 'Listed',
+        listedPrice: '2.0000',
+      }),
+    );
+
+    const before = await service.getProductDetail(product.id);
+    expect(before.listings).toHaveLength(1);
+
+    const after = await service.unlinkSupplierListing(
+      product.id,
+      listingRow.id,
+    );
+    expect(after.listings).toHaveLength(0);
+
+    const listingDb = await listingRepo.findOne({
+      where: { id: listingRow.id },
+    });
+    expect(listingDb?.productId).toBeNull();
+  });
+
+  it('unlinkSupplierListing throws when listing does not belong to product', async () => {
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'Solo',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    await expect(
+      service.unlinkSupplierListing(
+        product.id,
+        '00000000-0000-4000-8000-000000000099',
+      ),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

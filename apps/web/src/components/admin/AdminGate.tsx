@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { UserType } from "@vetply/shared";
-import { AdminSidebarNav } from "@/components/admin/AdminSidebarNav";
-import { DashboardShell } from "@/components/app/DashboardShell";
-import { Button } from "@/components/ui/Button";
-import { routes } from "@/constants/routes";
-import { useMe } from "@/contexts/MeContext";
-import { useRouter } from "next/router";
-import { useEffect, type ReactNode } from "react";
+import { UserType } from '@vetply/shared';
+import { AdminSidebarNav } from '@/components/admin/AdminSidebarNav';
+import { DashboardShell } from '@/components/app/DashboardShell';
+import { Button } from '@/components/ui/Button';
+import { routes } from '@/constants/routes';
+import { useMe } from '@/contexts/MeContext';
+import { useRouter } from 'next/router';
+import { useEffect, type ReactNode } from 'react';
 
 type AdminGateProps = {
   children?: ReactNode;
@@ -18,12 +18,12 @@ export function AdminGate({ children }: AdminGateProps) {
   const { me, status, refetch } = useMe();
 
   useEffect(() => {
-    if (status === "ready" && me && me.userType !== UserType.Super) {
+    if (status === 'ready' && me && me.userType !== UserType.Super) {
       void router.replace(routes.home);
     }
   }, [status, me, router]);
 
-  if (status === "error") {
+  if (status === 'error') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gray-900 px-4 text-white">
         <p className="text-sm/6 text-gray-300">Something went wrong.</p>
@@ -34,7 +34,7 @@ export function AdminGate({ children }: AdminGateProps) {
     );
   }
 
-  if (status !== "ready" || !me) {
+  if (status !== 'ready' || !me) {
     return <div className="min-h-screen bg-gray-900" />;
   }
 

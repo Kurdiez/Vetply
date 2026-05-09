@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "build": "next build",
+    "check-all": "yarn format && yarn lint",
     "dev": "node ./scripts/dev-restart.mjs",
     "dev:next": "next dev --port 6238",
     "dev:turbo": "node ./scripts/dev-restart-turbo.mjs",
-    "lint": "next lint",
+    "format": "prettier --write \"src\" \"scripts\"",
+    "format:check": "prettier --check \"src\" \"scripts\"",
+    "lint": "eslint \"src\" \"scripts\" --fix --cache --cache-location .eslintcache",
     "start": "next start --port 6238"
   },
   "dependencies": {
@@ -34,6 +37,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^15.5.14",
     "postcss": "^8.5.6",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3"
   },

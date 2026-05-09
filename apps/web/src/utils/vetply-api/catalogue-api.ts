@@ -1,9 +1,12 @@
 import {
+  catalogueBulkDeleteProductsResSchema,
   catalogueManufacturersListResSchema,
   catalogueProductDetailSchema,
   catalogueProductsListQueryInputSchema,
   catalogueProductsListResSchema,
   importSupplierPricesBatchResSchema,
+  type CatalogueBulkDeleteProductsBody,
+  type CatalogueBulkDeleteProductsRes,
   type CatalogueManufacturerOption,
   type CatalogueProductDetail,
   type CatalogueProductUpdateBody,
@@ -11,8 +14,8 @@ import {
   type CatalogueProductsListRes,
   type ImportSupplierPricesBatchReq,
   type ImportSupplierPricesBatchRes,
-} from "@vetply/shared";
-import { vetplyApiClient } from "./http-client";
+} from '@vetply/shared';
+import { vetplyApiClient } from './http-client';
 
 export async function fetchCatalogueProducts(
   query: Partial<CatalogueProductsListQueryInput> = {},
@@ -32,7 +35,7 @@ export async function fetchCatalogueProducts(
     params.sort = JSON.stringify(parsed.sort);
   }
   const { data } = await vetplyApiClient.get<unknown>(
-    "/admin/catalogue/products",
+    '/admin/catalogue/products',
     { params },
   );
   return catalogueProductsListResSchema.parse(data);
@@ -51,7 +54,7 @@ export async function fetchCatalogueManufacturers(): Promise<
   CatalogueManufacturerOption[]
 > {
   const { data } = await vetplyApiClient.get<unknown>(
-    "/admin/catalogue/manufacturers",
+    '/admin/catalogue/manufacturers',
   );
   return catalogueManufacturersListResSchema.parse(data);
 }
@@ -67,11 +70,38 @@ export async function patchCatalogueProduct(
   return catalogueProductDetailSchema.parse(data);
 }
 
+export async function postCreateCatalogueProduct(): Promise<CatalogueProductDetail> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    '/admin/catalogue/products',
+  );
+  return catalogueProductDetailSchema.parse(data);
+}
+
+export async function postBulkDeleteCatalogueProducts(
+  body: CatalogueBulkDeleteProductsBody,
+): Promise<CatalogueBulkDeleteProductsRes> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    '/admin/catalogue/products/bulk-delete',
+    body,
+  );
+  return catalogueBulkDeleteProductsResSchema.parse(data);
+}
+
+export async function postUnlinkCatalogueSupplierListing(
+  productId: string,
+  listingId: string,
+): Promise<CatalogueProductDetail> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    `/admin/catalogue/products/${productId}/listings/${listingId}/unlink`,
+  );
+  return catalogueProductDetailSchema.parse(data);
+}
+
 export async function postCatalogueImportSupplierPricesBatch(
   body: ImportSupplierPricesBatchReq,
 ): Promise<ImportSupplierPricesBatchRes> {
   const { data } = await vetplyApiClient.post<unknown>(
-    "/admin/catalogue/import-supplier-prices/batch",
+    '/admin/catalogue/import-supplier-prices/batch',
     body,
   );
   return importSupplierPricesBatchResSchema.parse(data);

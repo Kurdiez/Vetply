@@ -17,10 +17,7 @@ export function FilterTextInput({
 }: FilterTextInputProps) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm/6 font-medium text-white"
-      >
+      <label htmlFor={id} className="block text-sm/6 font-medium text-white">
         {label}
       </label>
       <div className="mt-2">

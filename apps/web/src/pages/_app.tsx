@@ -1,10 +1,10 @@
-import type { AppProps } from "next/app";
-import Head from "next/head";
-import { useRouter } from "next/router";
-import { MeProviderShell } from "@/components/MeProviderShell";
-import { SonnerToaster } from "@/components/SonnerToaster";
-import { documentTitleForPathname } from "@/constants/seo";
-import "@/styles/globals.css";
+import type { AppProps } from 'next/app';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { MeProviderShell } from '@/components/MeProviderShell';
+import { SonnerToaster } from '@/components/SonnerToaster';
+import { documentTitleForPathname } from '@/constants/seo';
+import '@/styles/globals.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();

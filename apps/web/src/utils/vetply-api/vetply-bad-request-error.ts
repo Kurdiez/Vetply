@@ -1,7 +1,7 @@
-import type { CreateAccountFailReason } from "@vetply/shared";
+import type { CreateAccountFailReason } from '@vetply/shared';
 
 export class VetplyBadRequestError extends Error {
-  readonly name = "VetplyBadRequestError";
+  readonly name = 'VetplyBadRequestError';
 
   constructor(public readonly failReason: CreateAccountFailReason) {
     super(failReason);

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useCatalogueView } from "./CatalogueViewContext";
+import { useCatalogueView } from './CatalogueViewContext';
 
 export function CatalogueNameSearch() {
   const { searchInput, setSearchInput } = useCatalogueView();

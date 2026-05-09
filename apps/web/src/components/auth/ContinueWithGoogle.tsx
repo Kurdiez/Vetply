@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/Button";
+import { Button } from '@/components/ui/Button';
 
 export function ContinueWithGoogle() {
   return (
@@ -12,12 +12,7 @@ export function ContinueWithGoogle() {
       </div>
 
       <div className="mt-6">
-        <Button
-          type="button"
-          variant="secondary"
-          fullWidth
-          className="gap-3"
-        >
+        <Button type="button" variant="secondary" fullWidth className="gap-3">
           <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5">
             <path
               d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0303 3.125C17.9502 1.19 15.2353 0 12.0003 0C7.31028 0 3.25527 2.69 1.28027 6.60998L5.27028 9.70498C6.21525 6.86002 8.87028 4.75 12.0003 4.75Z"

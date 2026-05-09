@@ -5,20 +5,20 @@
  */
 
 function sortSearchString(search: string): string {
-  if (!search || search === "?") {
-    return "";
+  if (!search || search === '?') {
+    return '';
   }
-  const raw = search.startsWith("?") ? search.slice(1) : search;
+  const raw = search.startsWith('?') ? search.slice(1) : search;
   const sp = new URLSearchParams(raw);
   const sorted = [...sp.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}=${v}`)
-    .join("&");
-  return sorted ? `?${sorted}` : "";
+    .join('&');
+  return sorted ? `?${sorted}` : '';
 }
 
 function normalizePathname(pathname: string): string {
-  if (pathname.length > 1 && pathname.endsWith("/")) {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
     return pathname.slice(0, -1);
   }
   return pathname;
@@ -34,11 +34,11 @@ export function normalizeClientPathForCompare(
 ): string {
   const trimmed = pathSearchHash.trim();
   if (!trimmed) {
-    return "";
+    return '';
   }
-  const absolute = trimmed.startsWith("http")
+  const absolute = trimmed.startsWith('http')
     ? trimmed
-    : `${baseOrigin.replace(/\/$/, "")}${trimmed.startsWith("/") ? "" : "/"}${trimmed}`;
+    : `${baseOrigin.replace(/\/$/, '')}${trimmed.startsWith('/') ? '' : '/'}${trimmed}`;
   let u: URL;
   try {
     u = new URL(absolute);
@@ -47,7 +47,7 @@ export function normalizeClientPathForCompare(
   }
   const pathname = normalizePathname(u.pathname);
   const search = sortSearchString(u.search);
-  const hash = u.hash ?? "";
+  const hash = u.hash ?? '';
   return `${pathname}${search}${hash}`;
 }
 
@@ -55,8 +55,10 @@ export function normalizeClientPathForCompare(
  * `true` when `router.asPath` matches the address bar (pathname + search + hash).
  * On the server or without `window`, returns `true` so callers don’t block unnecessarily.
  */
-export function isNextRouterAsPathInSyncWithBrowser(routerAsPath: string): boolean {
-  if (typeof window === "undefined") {
+export function isNextRouterAsPathInSyncWithBrowser(
+  routerAsPath: string,
+): boolean {
+  if (typeof window === 'undefined') {
     return true;
   }
   const browser = `${window.location.pathname}${window.location.search}${window.location.hash}`;

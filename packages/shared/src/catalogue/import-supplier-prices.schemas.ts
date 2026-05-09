@@ -97,6 +97,8 @@ export type ImportSupplierPricesBatchReq = z.infer<
 /** Present only for NVS Non-POM CSV batches (`nvsFormat: non_pom_csv`). */
 export const nvsNonPomBatchBreakdownSchema = z.object({
   updatedExistingListing: z.number().int().nonnegative(),
+  /** Listing row exists with no catalogue product; import updates listing fields only. */
+  updatedOrphanListing: z.number().int().nonnegative(),
   newListingOnMatchedProduct: z.number().int().nonnegative(),
   newProductWithListing: z.number().int().nonnegative(),
 });

@@ -1,4 +1,4 @@
-import { Select } from "@/components/ui/Select";
+import { Select } from '@/components/ui/Select';
 
 export type FilterSelectOption = { value: string; label: string };
 
@@ -21,10 +21,7 @@ export function FilterLabeledSelect({
 }: FilterLabeledSelectProps) {
   return (
     <div>
-      <label
-        htmlFor={id}
-        className="block text-sm/6 font-medium text-white"
-      >
+      <label htmlFor={id} className="block text-sm/6 font-medium text-white">
         {label}
       </label>
       <div className="mt-2">

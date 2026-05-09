@@ -1,22 +1,22 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { FormEvent, useState } from "react";
-import { ContinueWithGoogle } from "@/components/auth/ContinueWithGoogle";
-import { Button } from "@/components/ui/Button";
-import { TextInput } from "@/components/ui/TextInput";
-import { VETPLY_ACCESS_TOKEN_KEY } from "@/utils/vetply-api/storage";
-import { vetplyApiUnexpectedErrorToastShown } from "@/utils/vetply-api/http-client";
-import { createAccount } from "@/utils/vetply-api/user-auth";
-import { routes } from "@/constants/routes";
-import { isVetplyBadRequestError } from "@/utils/vetply-api/vetply-bad-request-error";
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { FormEvent, useState } from 'react';
+import { ContinueWithGoogle } from '@/components/auth/ContinueWithGoogle';
+import { Button } from '@/components/ui/Button';
+import { TextInput } from '@/components/ui/TextInput';
+import { VETPLY_ACCESS_TOKEN_KEY } from '@/utils/vetply-api/storage';
+import { vetplyApiUnexpectedErrorToastShown } from '@/utils/vetply-api/http-client';
+import { createAccount } from '@/utils/vetply-api/user-auth';
+import { routes } from '@/constants/routes';
+import { isVetplyBadRequestError } from '@/utils/vetply-api/vetply-bad-request-error';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,11 +24,11 @@ export default function SignUpPage() {
     e.preventDefault();
     setError(null);
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError('Passwords do not match');
       return;
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError('Password must be at least 8 characters');
       return;
     }
     setSubmitting(true);
@@ -38,11 +38,11 @@ export default function SignUpPage() {
       await router.push(routes.app);
     } catch (err) {
       if (isVetplyBadRequestError(err)) {
-        if (err.failReason === "ACCOUNT_EXISTS_VETPLY") {
-          setError("An account with this email already exists.");
+        if (err.failReason === 'ACCOUNT_EXISTS_VETPLY') {
+          setError('An account with this email already exists.');
         } else {
           setError(
-            "This email is registered with Google. Sign in with Google instead.",
+            'This email is registered with Google. Sign in with Google instead.',
           );
         }
         return;
@@ -50,7 +50,7 @@ export default function SignUpPage() {
       if (vetplyApiUnexpectedErrorToastShown(err)) {
         return;
       }
-      setError("Something went wrong. Try again.");
+      setError('Something went wrong. Try again.');
     } finally {
       setSubmitting(false);
     }
@@ -83,7 +83,7 @@ export default function SignUpPage() {
         <div className="bg-gray-800/50 px-6 py-12 outline -outline-offset-1 outline-white/10 sm:rounded-lg sm:px-12">
           {error ? (
             <p
-              className="mb-6 rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-300"
+              className="mb-6 rounded-md bg-danger-500/10 px-3 py-2 text-sm text-danger-400"
               role="alert"
             >
               {error}
@@ -152,7 +152,7 @@ export default function SignUpPage() {
 
             <div>
               <Button type="submit" fullWidth disabled={submitting}>
-                {submitting ? "Creating account…" : "Create account"}
+                {submitting ? 'Creating account…' : 'Create account'}
               </Button>
             </div>
           </form>
@@ -161,7 +161,7 @@ export default function SignUpPage() {
         </div>
 
         <p className="mt-10 text-center text-sm/6 text-gray-400">
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link
             href={routes.signIn}
             className="font-semibold text-primary-100 hover:text-primary-200"
