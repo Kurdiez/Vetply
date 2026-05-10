@@ -4,6 +4,7 @@ import {
   CatalogueListSortFieldId,
   type CatalogueProductFilter,
   type CatalogueSort,
+  type CatalogueProductPickerQuery,
   Supplier,
 } from '@vetply/shared';
 import type { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
@@ -193,6 +194,31 @@ export function applyCatalogueProductNameSearch(
   qb.andWhere(`product.name ILIKE :${k} ESCAPE '\\'`, {
     [k]: `%${escaped}%`,
   });
+}
+
+export function applyCatalogueProductPickerFilters(
+  qb: SelectQueryBuilder<CatalogueProductEntity>,
+  query: Pick<
+    CatalogueProductPickerQuery,
+    'legalCategory' | 'unitType' | 'unitQuantity'
+  >,
+): void {
+  if (query.legalCategory !== undefined) {
+    qb.andWhere('product.legalCategory = :pickerLegalCategory', {
+      pickerLegalCategory: query.legalCategory,
+    });
+  }
+  if (query.unitType !== undefined) {
+    qb.andWhere('product.unitType = :pickerUnitType', {
+      pickerUnitType: query.unitType,
+    });
+  }
+  if (query.unitQuantity !== undefined) {
+    qb.andWhere(
+      'CAST("product"."unit_quantity" AS numeric) = CAST(:pickerUnitQuantity AS numeric)',
+      { pickerUnitQuantity: query.unitQuantity },
+    );
+  }
 }
 
 export function applyCatalogueProductFilters(

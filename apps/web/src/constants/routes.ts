@@ -7,6 +7,7 @@ export const routes = {
     root: '/admin',
     catalogue: {
       view: '/admin/catalogue',
+      supplierListings: '/admin/catalogue/supplier-listings',
       importSupplierPrices: '/admin/catalogue/import-supplier-prices',
       productDetail: (productId: string) =>
         `/admin/catalogue/product/${productId}`,
@@ -32,6 +33,7 @@ export function isValidAdminPath(path: string): boolean {
   return (
     path === routes.admin.root ||
     path === routes.admin.catalogue.view ||
+    path === routes.admin.catalogue.supplierListings ||
     path === routes.admin.catalogue.importSupplierPrices ||
     parseCatalogueProductDetailId(path) !== null
   );

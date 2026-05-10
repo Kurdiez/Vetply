@@ -12,6 +12,7 @@ import { CatalogueSuppliersBootstrapService } from './services/catalogue-supplie
 import { CatalogueImportService } from './services/catalogue-import.service';
 import { CatalogueProductDetailService } from './services/catalogue-product-detail.service';
 import { CatalogueProductListService } from './services/catalogue-product-list.service';
+import { CatalogueSupplierListingListService } from './services/catalogue-supplier-listing-list.service';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { CatalogueProductListService } from './services/catalogue-product-list.s
     CatalogueSuppliersBootstrapService,
     CatalogueImportService,
     CatalogueProductListService,
+    CatalogueSupplierListingListService,
     CatalogueProductDetailService,
     SuperUserGuard,
   ],

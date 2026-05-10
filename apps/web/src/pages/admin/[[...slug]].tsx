@@ -3,6 +3,7 @@
 import { AdminGate } from '@/components/admin/AdminGate';
 import { CatalogueProductDetailPage } from '@/components/admin/catalogue/CatalogueProductDetailPage';
 import { CatalogueViewPage } from '@/components/admin/catalogue/CatalogueViewPage';
+import { SupplierListingsViewPage } from '@/components/admin/supplier-listings/SupplierListingsViewPage';
 import { ImportSupplierPricesPage } from '@/components/admin/catalogue/ImportSupplierPricesPage';
 import {
   isValidAdminPath,
@@ -46,6 +47,10 @@ function AdminMain() {
 
   if (path === routes.admin.catalogue.view) {
     return <CatalogueViewPage />;
+  }
+
+  if (path === routes.admin.catalogue.supplierListings) {
+    return <SupplierListingsViewPage />;
   }
 
   return null;

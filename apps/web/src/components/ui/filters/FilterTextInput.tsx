@@ -1,3 +1,5 @@
+import { adminFilterTextInputClassName } from '@/components/ui/form-field-styles';
+
 export type FilterTextInputProps = {
   id: string;
   label: string;
@@ -28,7 +30,7 @@ export function FilterTextInput({
           disabled={disabled}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          className="block w-full rounded-md border-0 bg-white/5 px-3 py-2 text-sm text-white ring-1 ring-inset ring-white/10 placeholder:text-gray-500 focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className={adminFilterTextInputClassName}
         />
       </div>
     </div>

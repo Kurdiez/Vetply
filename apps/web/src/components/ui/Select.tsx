@@ -1,8 +1,6 @@
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { forwardRef } from 'react';
-
-const selectFieldClassName =
-  'block w-full cursor-pointer appearance-none rounded-md border-0 bg-white/5 py-2 pr-11 pl-3 text-sm text-white ring-1 ring-inset ring-white/10 focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60';
+import { adminSelectFieldClassName } from '@/components/ui/form-field-styles';
 
 export type SelectProps = Omit<
   React.SelectHTMLAttributes<HTMLSelectElement>,
@@ -18,7 +16,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           disabled={disabled}
-          className={selectFieldClassName}
+          className={adminSelectFieldClassName}
           {...rest}
         />
         <ChevronDownIcon

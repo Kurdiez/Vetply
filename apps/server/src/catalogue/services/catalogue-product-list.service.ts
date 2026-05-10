@@ -2,9 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CatalogueProductListItem,
+  CatalogueProductPickerListRes,
+  CatalogueProductPickerQuery,
   CatalogueProductsListQuery,
   CatalogueProductsListRes,
   Supplier,
+  catalogueProductPickerListResSchema,
   catalogueProductsListResSchema,
 } from '@vetply/shared';
 import { Repository } from 'typeorm';
@@ -17,6 +20,7 @@ import {
 import {
   applyCatalogueProductFilters,
   applyCatalogueProductNameSearch,
+  applyCatalogueProductPickerFilters,
   applyCatalogueProductSort,
   createCatalogueProductListQueryBuilder,
 } from '../utils/catalogue-product-list-query';
@@ -110,5 +114,31 @@ export class CatalogueProductListService {
     };
 
     return zodResTransform(payload, catalogueProductsListResSchema) ?? payload;
+  }
+
+  async listProductsForPicker(
+    query: CatalogueProductPickerQuery,
+  ): Promise<CatalogueProductPickerListRes> {
+    const qb = createCatalogueProductListQueryBuilder(this.productRepository);
+    applyCatalogueProductNameSearch(qb, query.q);
+    applyCatalogueProductPickerFilters(qb, query);
+    qb.orderBy('product.name', 'ASC').addOrderBy('product.id', 'ASC');
+    qb.take(3);
+    const entities = await qb.getMany();
+
+    const items = entities.map((p) => ({
+      id: p.id,
+      name: p.name,
+      legalCategory: p.legalCategory,
+      unitType: p.unitType,
+      unitQuantity: formatUnitQuantityAsWholeNumber(p.unitQuantity),
+      image: p.image ?? null,
+      manufacturerName: p.manufacturer?.name ?? null,
+    }));
+
+    const payload: CatalogueProductPickerListRes = { items };
+    return (
+      zodResTransform(payload, catalogueProductPickerListResSchema) ?? payload
+    );
   }
 }

@@ -3,6 +3,8 @@ import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
   CatalogueListSortFieldId,
+  CatalogUnitType,
+  LegalCategory,
   Supplier,
   catalogueProductsListQuerySchema,
 } from '@vetply/shared';
@@ -485,6 +487,50 @@ describe('CatalogueProductListService', () => {
     expect(idxNone).toBeGreaterThanOrEqual(0);
     expect(idxCheap).toBeLessThan(idxExpensive);
     expect(idxExpensive).toBeLessThan(idxNone);
+  });
+
+  it('listProductsForPicker returns at most three rows ordered by name', async () => {
+    const mfg = await saveCatalogueManufacturer(manufacturerRepo, 'Picker Mfg');
+    const ids: string[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      const p = await saveCatalogueProduct(productRepo, {
+        manufacturerId: mfg.id,
+        name: `Picker item ${i}`,
+      });
+      ids.push(p.id);
+    }
+    const res = await service.listProductsForPicker({ q: 'Picker item' });
+    expect(res.items.length).toBe(3);
+    const names = res.items.map((r) => r.name);
+    expect(names).toEqual(['Picker item 0', 'Picker item 1', 'Picker item 2']);
+    expect(res.items.every((row) => ids.includes(row.id))).toBe(true);
+  });
+
+  it('listProductsForPicker applies legalCategory and unit filters', async () => {
+    const mfg = await saveCatalogueManufacturer(manufacturerRepo, 'FilterCo');
+    await saveCatalogueProduct(productRepo, {
+      manufacturerId: mfg.id,
+      name: 'Match pick',
+      legalCategory: LegalCategory.POM_V,
+      unitType: CatalogUnitType.EA,
+      unitQuantity: '10.000000',
+    });
+    await saveCatalogueProduct(productRepo, {
+      manufacturerId: mfg.id,
+      name: 'Wrong category',
+      legalCategory: LegalCategory.Consumables,
+      unitType: CatalogUnitType.EA,
+      unitQuantity: '10.000000',
+    });
+
+    const res = await service.listProductsForPicker({
+      q: 'Match',
+      legalCategory: LegalCategory.POM_V,
+      unitType: CatalogUnitType.EA,
+      unitQuantity: '10',
+    });
+    expect(res.items).toHaveLength(1);
+    expect(res.items[0].name).toBe('Match pick');
   });
 });
 

@@ -1,4 +1,8 @@
-import { NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import {
   CatalogUnitType,
@@ -241,5 +245,233 @@ describe('CatalogueProductDetailService', () => {
         '00000000-0000-4000-8000-000000000099',
       ),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('linkSupplierListingsToProduct links two orphan listings from different suppliers', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+    let veenak = await supplierRepo.findOne({
+      where: { name: Supplier.VEENAK },
+    });
+    if (!veenak) {
+      veenak = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.VEENAK }),
+      );
+    }
+
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'Link target product',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const l1 = await listingRepo.save(
+      listingRepo.create({
+        productId: null,
+        supplierId: nvs.id,
+        supplierProductId: 'ORPH-NVS',
+        name: 'Orphan NVS',
+        listedPrice: null,
+      }),
+    );
+    const l2 = await listingRepo.save(
+      listingRepo.create({
+        productId: null,
+        supplierId: veenak.id,
+        supplierProductId: 'ORPH-VEE',
+        name: 'Orphan Veenak',
+        listedPrice: null,
+      }),
+    );
+
+    const result = await service.linkSupplierListingsToProduct({
+      listingIds: [l1.id, l2.id],
+      productId: product.id,
+    });
+    expect(result.linkedCount).toBe(2);
+
+    const after1 = await listingRepo.findOne({ where: { id: l1.id } });
+    const after2 = await listingRepo.findOne({ where: { id: l2.id } });
+    expect(after1?.productId).toBe(product.id);
+    expect(after2?.productId).toBe(product.id);
+  });
+
+  it('linkSupplierListingsToProduct rejects two orphans from the same supplier', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'Dup supplier target',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const l1 = await listingRepo.save(
+      listingRepo.create({
+        productId: null,
+        supplierId: nvs.id,
+        supplierProductId: 'DUP-A',
+        name: 'Orphan A',
+        listedPrice: null,
+      }),
+    );
+    const l2 = await listingRepo.save(
+      listingRepo.create({
+        productId: null,
+        supplierId: nvs.id,
+        supplierProductId: 'DUP-B',
+        name: 'Orphan B',
+        listedPrice: null,
+      }),
+    );
+
+    await expect(
+      service.linkSupplierListingsToProduct({
+        listingIds: [l1.id, l2.id],
+        productId: product.id,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('linkSupplierListingsToProduct conflicts when supplier already linked to product', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'Occupied product',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: nvs.id,
+        supplierProductId: 'OCC-1',
+        name: 'Already linked',
+        listedPrice: '1.0000',
+      }),
+    );
+
+    const orphan = await listingRepo.save(
+      listingRepo.create({
+        productId: null,
+        supplierId: nvs.id,
+        supplierProductId: 'OCC-2',
+        name: 'Second NVS orphan',
+        listedPrice: null,
+      }),
+    );
+
+    await expect(
+      service.linkSupplierListingsToProduct({
+        listingIds: [orphan.id],
+        productId: product.id,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('bulkUnlinkSupplierListings clears product_id for all selected listings', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+    let veenak = await supplierRepo.findOne({
+      where: { name: Supplier.VEENAK },
+    });
+    if (!veenak) {
+      veenak = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.VEENAK }),
+      );
+    }
+
+    const product = await saveCatalogueProduct(productRepo, {
+      name: 'Bulk unlink target',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const l1 = await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: nvs.id,
+        supplierProductId: 'BU-1',
+        name: 'Listed 1',
+        listedPrice: null,
+      }),
+    );
+    const l2 = await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: veenak.id,
+        supplierProductId: 'BU-2',
+        name: 'Listed 2',
+        listedPrice: null,
+      }),
+    );
+
+    const result = await service.bulkUnlinkSupplierListings({
+      listingIds: [l1.id, l2.id],
+    });
+    expect(result.unlinkedCount).toBe(2);
+
+    const after1 = await listingRepo.findOne({ where: { id: l1.id } });
+    const after2 = await listingRepo.findOne({ where: { id: l2.id } });
+    expect(after1?.productId).toBeNull();
+    expect(after2?.productId).toBeNull();
+  });
+
+  it('bulkUnlinkSupplierListings rejects unknown listing id', async () => {
+    await expect(
+      service.bulkUnlinkSupplierListings({
+        listingIds: ['00000000-0000-4000-8000-000000000099'],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
