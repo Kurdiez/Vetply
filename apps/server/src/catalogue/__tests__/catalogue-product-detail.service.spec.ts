@@ -407,6 +407,55 @@ describe('CatalogueProductDetailService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
+  it('linkSupplierListingsToProduct moves a listing from one catalogue product to another', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+
+    let nvs = await supplierRepo.findOne({ where: { name: Supplier.NVS } });
+    if (!nvs) {
+      nvs = await supplierRepo.save(
+        supplierRepo.create({ name: Supplier.NVS }),
+      );
+    }
+
+    const productA = await saveCatalogueProduct(productRepo, {
+      name: 'Move from A',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+    const productB = await saveCatalogueProduct(productRepo, {
+      name: 'Move to B',
+      image: null,
+      salesCategory: SalesCategory.Consumables,
+      legalCategory: LegalCategory.Consumables,
+      pom: false,
+    });
+
+    const listingRow = await listingRepo.save(
+      listingRepo.create({
+        productId: productA.id,
+        supplierId: nvs.id,
+        supplierProductId: 'MOVE-1',
+        name: 'Linked on A',
+        listedPrice: '1.0000',
+      }),
+    );
+
+    const result = await service.linkSupplierListingsToProduct({
+      listingIds: [listingRow.id],
+      productId: productB.id,
+    });
+    expect(result.linkedCount).toBe(1);
+
+    const after = await listingRepo.findOne({ where: { id: listingRow.id } });
+    expect(after?.productId).toBe(productB.id);
+  });
+
   it('bulkUnlinkSupplierListings clears product_id for all selected listings', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const listingRepo = getTestRepository(

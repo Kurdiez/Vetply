@@ -208,14 +208,6 @@ export class CatalogueProductDetailService {
       }
 
       for (const l of listings) {
-        if (l.productId !== null) {
-          throw new BadRequestException(
-            'Only listings not linked to a catalogue product can be linked',
-          );
-        }
-      }
-
-      for (const l of listings) {
         const blocking = await listingRepo.findOne({
           where: {
             productId,
