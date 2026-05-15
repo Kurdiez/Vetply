@@ -3,16 +3,22 @@
 import { Button } from '@/components/ui/Button';
 import { IconTextButton } from '@/components/ui/IconTextButton';
 import { ArrowLeftIcon, LinkSlashIcon } from '@heroicons/react/20/solid';
+import type { CatalogueProductDetail } from '@vetply/shared';
 import {
   CatalogueProductDetailProvider,
   useCatalogueProductDetail,
+  type CatalogueProductDetailStatus,
 } from './CatalogueProductDetailContext';
 import { CatalogueProductEditModal } from './CatalogueProductEditModal';
 import { CatalogueProductThumbnail } from './CatalogueProductThumbnail';
 
-function DetailBody() {
-  const { detail, status, unlinkSupplierListing, unlinkingListingId } =
-    useCatalogueProductDetail();
+function CatalogueProductDetailMain(props: {
+  detail: CatalogueProductDetail | null;
+  status: CatalogueProductDetailStatus;
+  unlinkSupplierListing: (listingId: string) => Promise<void>;
+  unlinkingListingId: string | null;
+}) {
+  const { detail, status, unlinkSupplierListing, unlinkingListingId } = props;
 
   if (status === 'loading' || status === 'idle') {
     return (
@@ -170,8 +176,8 @@ function DetailBody() {
   );
 }
 
-function DetailChrome() {
-  const { goBack, status, detail, openEditModal } = useCatalogueProductDetail();
+function CatalogueProductDetailPageBody() {
+  const c = useCatalogueProductDetail();
 
   return (
     <div>
@@ -179,20 +185,31 @@ function DetailChrome() {
         <Button
           type="button"
           variant="secondary"
-          onClick={goBack}
+          onClick={c.goBack}
           className="inline-flex items-center gap-2"
         >
           <ArrowLeftIcon className="size-4 shrink-0" aria-hidden />
           Back
         </Button>
-        {status === 'ready' && detail ? (
-          <Button type="button" onClick={openEditModal}>
+        {c.status === 'ready' && c.detail ? (
+          <Button type="button" onClick={c.openEditModal}>
             Edit
           </Button>
         ) : null}
       </div>
-      <DetailBody />
-      <CatalogueProductEditModal />
+      <CatalogueProductDetailMain
+        detail={c.detail}
+        status={c.status}
+        unlinkSupplierListing={c.unlinkSupplierListing}
+        unlinkingListingId={c.unlinkingListingId}
+      />
+      <CatalogueProductEditModal
+        detail={c.detail}
+        status={c.status}
+        editModalOpen={c.editModalOpen}
+        closeEditModal={c.closeEditModal}
+        saveProduct={c.saveProduct}
+      />
     </div>
   );
 }
@@ -204,7 +221,7 @@ export function CatalogueProductDetailPage({
 }) {
   return (
     <CatalogueProductDetailProvider productId={productId}>
-      <DetailChrome />
+      <CatalogueProductDetailPageBody />
     </CatalogueProductDetailProvider>
   );
 }

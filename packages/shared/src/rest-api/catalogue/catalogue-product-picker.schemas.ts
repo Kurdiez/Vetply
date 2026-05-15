@@ -1,24 +1,24 @@
-import { z } from "zod";
-import { CatalogUnitType, LegalCategory } from "./enums";
+import { z } from 'zod';
+import { CatalogUnitType, LegalCategory } from '../../catalogue/enums';
 
 const MAX_NAME_SEARCH_LEN = 512;
 
 const optionalNameSearchQuery = z.preprocess((val: unknown) => {
-  if (val === undefined || val === null || val === "") {
+  if (val === undefined || val === null || val === '') {
     return undefined;
   }
   const s = Array.isArray(val) ? val[0] : String(val);
   const t = s.trim();
-  return t === "" ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
+  return t === '' ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
 }, z.string().max(MAX_NAME_SEARCH_LEN).optional());
 
 function optionalEnumQuery<T extends z.ZodTypeAny>(schema: T) {
   return z.preprocess((val: unknown) => {
-    if (val === undefined || val === null || val === "") {
+    if (val === undefined || val === null || val === '') {
       return undefined;
     }
     const s = Array.isArray(val) ? val[0] : String(val);
-    return s.trim() === "" ? undefined : s;
+    return s.trim() === '' ? undefined : s;
   }, schema.optional());
 }
 
@@ -27,12 +27,12 @@ export const catalogueProductPickerQuerySchema = z.object({
   legalCategory: optionalEnumQuery(z.nativeEnum(LegalCategory)),
   unitType: optionalEnumQuery(z.nativeEnum(CatalogUnitType)),
   unitQuantity: z.preprocess((val: unknown) => {
-    if (val === undefined || val === null || val === "") {
+    if (val === undefined || val === null || val === '') {
       return undefined;
     }
     const s = Array.isArray(val) ? val[0] : String(val);
     const t = s.trim();
-    return t === "" ? undefined : t;
+    return t === '' ? undefined : t;
   }, z.string().min(1).optional()),
 });
 
@@ -50,7 +50,7 @@ export const catalogueProductPickerQueryInputSchema = z.object({
         return undefined;
       }
       const t = s.trim();
-      return t === "" ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
+      return t === '' ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
     }),
   legalCategory: z.nativeEnum(LegalCategory).optional(),
   unitType: z.nativeEnum(CatalogUnitType).optional(),
@@ -62,7 +62,7 @@ export const catalogueProductPickerQueryInputSchema = z.object({
         return undefined;
       }
       const t = s.trim();
-      return t === "" ? undefined : t;
+      return t === '' ? undefined : t;
     }),
 });
 

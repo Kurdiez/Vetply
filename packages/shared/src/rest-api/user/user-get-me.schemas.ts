@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserType } from './user-type';
+import { UserType } from '../../user/user-type';
 
 export const userGetMeResSchema = z.object({
   userId: z.string().uuid(),

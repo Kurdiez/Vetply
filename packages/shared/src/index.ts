@@ -1,4 +1,3 @@
-export * from './auth';
 export * from './catalogue';
-export * from './example/schemas';
+export * from './rest-api';
 export * from './user';

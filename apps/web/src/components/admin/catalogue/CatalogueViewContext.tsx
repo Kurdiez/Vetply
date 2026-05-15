@@ -81,6 +81,13 @@ type CatalogueViewContextValue = {
   isProductSelected: (productId: string) => boolean;
   /** Returns true when the API delete succeeded. */
   bulkDeleteSelectedProducts: () => Promise<boolean>;
+  filterAddModalOpen: boolean;
+  openFilterAddModal: () => void;
+  closeFilterAddModal: () => void;
+  bulkDeleteConfirmOpen: boolean;
+  openBulkDeleteConfirm: () => void;
+  closeBulkDeleteConfirm: () => void;
+  confirmBulkDelete: () => Promise<boolean>;
 };
 
 const CatalogueViewContext = createContext<CatalogueViewContextValue | null>(
@@ -118,6 +125,8 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
   const [searchInput, setSearchInput] = useState('');
   const [nameSearch, setNameSearch] = useState('');
   const searchCommitRef = useRef('');
+  const [filterAddModalOpen, setFilterAddModalOpen] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
   const {
     selectedIds: selectedProductIds,
@@ -294,6 +303,30 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
     refetch,
   ]);
 
+  const openFilterAddModal = useCallback(() => {
+    setFilterAddModalOpen(true);
+  }, []);
+
+  const closeFilterAddModal = useCallback(() => {
+    setFilterAddModalOpen(false);
+  }, []);
+
+  const openBulkDeleteConfirm = useCallback(() => {
+    setBulkDeleteConfirmOpen(true);
+  }, []);
+
+  const closeBulkDeleteConfirm = useCallback(() => {
+    setBulkDeleteConfirmOpen(false);
+  }, []);
+
+  const confirmBulkDelete = useCallback(async (): Promise<boolean> => {
+    const ok = await bulkDeleteSelectedProducts();
+    if (ok) {
+      setBulkDeleteConfirmOpen(false);
+    }
+    return ok;
+  }, [bulkDeleteSelectedProducts]);
+
   const toggleSortColumn = useCallback(
     (fieldId: CatalogueSortFieldId) => {
       const newSort = nextSortState(sort, fieldId);
@@ -452,6 +485,13 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       clearProductSelection,
       isProductSelected,
       bulkDeleteSelectedProducts,
+      filterAddModalOpen,
+      openFilterAddModal,
+      closeFilterAddModal,
+      bulkDeleteConfirmOpen,
+      openBulkDeleteConfirm,
+      closeBulkDeleteConfirm,
+      confirmBulkDelete,
     }),
     [
       page,
@@ -466,9 +506,11 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       toggleSortColumn,
       appliedFilters,
       filterDraft,
+      setFilterDraft,
       addFilter,
       removeFilter,
       searchInput,
+      setSearchInput,
       navigateToProduct,
       selectedProductIds,
       selectedProductCount,
@@ -477,6 +519,13 @@ export function CatalogueViewProvider({ children }: { children: ReactNode }) {
       clearProductSelection,
       isProductSelected,
       bulkDeleteSelectedProducts,
+      filterAddModalOpen,
+      openFilterAddModal,
+      closeFilterAddModal,
+      bulkDeleteConfirmOpen,
+      openBulkDeleteConfirm,
+      closeBulkDeleteConfirm,
+      confirmBulkDelete,
     ],
   );
 

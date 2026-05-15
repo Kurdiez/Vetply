@@ -1,12 +1,24 @@
 'use client';
 
 import { TablePagination } from '@/components/ui/data-table/TablePagination';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
 
-export function SupplierListingsPagination() {
-  const { page, pageSize, totalCount, setPage, status } =
-    useSupplierListingsView();
+type SupplierListingsViewStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+export type SupplierListingsPaginationProps = {
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  setPage: (page: number) => void;
+  status: SupplierListingsViewStatus;
+};
+
+export function SupplierListingsPagination({
+  page,
+  pageSize,
+  totalCount,
+  setPage,
+  status,
+}: SupplierListingsPaginationProps) {
   return (
     <TablePagination
       page={page}

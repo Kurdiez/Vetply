@@ -3,6 +3,7 @@
 import { AdminGate } from '@/components/admin/AdminGate';
 import { CatalogueProductDetailPage } from '@/components/admin/catalogue/CatalogueProductDetailPage';
 import { CatalogueViewPage } from '@/components/admin/catalogue/CatalogueViewPage';
+import { CatalogueMappingExportsImportsPage } from '@/components/admin/catalogue/CatalogueMappingExportsImportsPage';
 import { SupplierListingsViewPage } from '@/components/admin/supplier-listings/SupplierListingsViewPage';
 import { ImportSupplierPricesPage } from '@/components/admin/catalogue/ImportSupplierPricesPage';
 import {
@@ -34,6 +35,10 @@ function AdminMain() {
   const path = pathWithoutQueryAndTrailingSlash(router.asPath);
   if (!isValidAdminPath(path)) {
     return null;
+  }
+
+  if (path === routes.admin.catalogue.mappingExportsImports) {
+    return <CatalogueMappingExportsImportsPage />;
   }
 
   if (path === routes.admin.catalogue.importSupplierPrices) {

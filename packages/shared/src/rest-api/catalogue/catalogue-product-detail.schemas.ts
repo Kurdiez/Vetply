@@ -1,5 +1,9 @@
-import { z } from "zod";
-import { CatalogUnitType, LegalCategory, SalesCategory } from "./enums";
+import { z } from 'zod';
+import {
+  CatalogUnitType,
+  LegalCategory,
+  SalesCategory,
+} from '../../catalogue/enums';
 
 export const catalogueProductDetailListingSchema = z.object({
   id: z.string().uuid(),
@@ -29,4 +33,6 @@ export const catalogueProductDetailSchema = z.object({
   listings: z.array(catalogueProductDetailListingSchema),
 });
 
-export type CatalogueProductDetail = z.infer<typeof catalogueProductDetailSchema>;
+export type CatalogueProductDetail = z.infer<
+  typeof catalogueProductDetailSchema
+>;

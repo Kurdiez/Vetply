@@ -1,11 +1,17 @@
 'use client';
 
 import { AdminListSearchField } from '@/components/admin/list/AdminListSearchField';
-import { useCatalogueView } from './CatalogueViewContext';
+import type { Dispatch, SetStateAction } from 'react';
 
-export function CatalogueNameSearch() {
-  const { searchInput, setSearchInput } = useCatalogueView();
+export type CatalogueNameSearchProps = {
+  searchInput: string;
+  setSearchInput: Dispatch<SetStateAction<string>>;
+};
 
+export function CatalogueNameSearch({
+  searchInput,
+  setSearchInput,
+}: CatalogueNameSearchProps) {
   return (
     <AdminListSearchField
       id="catalogue-product-name-search"

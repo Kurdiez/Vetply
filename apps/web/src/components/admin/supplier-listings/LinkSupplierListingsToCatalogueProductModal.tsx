@@ -8,10 +8,11 @@ import {
   CatalogUnitType,
   LegalCategory,
   type CatalogueProductPickerItem,
+  type CatalogueProductPickerQueryInput,
+  type CatalogueProductPickerListRes,
 } from '@vetply/shared';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
 
 const legalOptions = Object.values(LegalCategory).sort((a, b) =>
   a.localeCompare(b, undefined, { sensitivity: 'base' }),
@@ -22,19 +23,23 @@ const unitTypeOptions = Object.values(CatalogUnitType).sort((a, b) =>
 
 type PickerLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+export type LinkSupplierListingsToCatalogueProductModalProps = {
+  open: boolean;
+  onClose: () => void;
+  searchCatalogueProductsForPicker: (
+    params: Partial<CatalogueProductPickerQueryInput>,
+  ) => Promise<CatalogueProductPickerListRes>;
+  linkSelectedListingsToProduct: (productId: string) => Promise<boolean>;
+  selectedListingCount: number;
+};
+
 export function LinkSupplierListingsToCatalogueProductModal({
   open,
   onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const {
-    searchCatalogueProductsForPicker,
-    linkSelectedListingsToProduct,
-    selectedListingCount,
-  } = useSupplierListingsView();
-
+  searchCatalogueProductsForPicker,
+  linkSelectedListingsToProduct,
+  selectedListingCount,
+}: LinkSupplierListingsToCatalogueProductModalProps) {
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [legalCategory, setLegalCategory] = useState('');

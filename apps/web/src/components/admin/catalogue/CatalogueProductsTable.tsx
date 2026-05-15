@@ -11,7 +11,9 @@ import {
 } from '@vetply/shared';
 import type { CatalogueSortFieldId } from './catalogue-filter-model';
 import { CatalogueProductThumbnail } from './CatalogueProductThumbnail';
-import { useCatalogueView } from './CatalogueViewContext';
+import type { CatalogueSortState } from './catalogue-sort';
+
+type CatalogueViewStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
   CatalogueListSortFieldId.Name,
@@ -43,18 +45,27 @@ function formatPriceCell(value: string | null): string {
   return value;
 }
 
-export function CatalogueProductsTable() {
-  const {
-    items,
-    status,
-    refetch,
-    sort,
-    toggleSortColumn,
-    navigateToProduct,
-    toggleProductSelection,
-    isProductSelected,
-  } = useCatalogueView();
+export type CatalogueProductsTableProps = {
+  items: CatalogueProductListItem[];
+  status: CatalogueViewStatus;
+  refetch: () => void;
+  sort: CatalogueSortState;
+  toggleSortColumn: (fieldId: CatalogueSortFieldId) => void;
+  navigateToProduct: (productId: string) => void;
+  toggleProductSelection: (productId: string) => void;
+  isProductSelected: (productId: string) => boolean;
+};
 
+export function CatalogueProductsTable({
+  items,
+  status,
+  refetch,
+  sort,
+  toggleSortColumn,
+  navigateToProduct,
+  toggleProductSelection,
+  isProductSelected,
+}: CatalogueProductsTableProps) {
   if (status === 'loading' && items.length === 0) {
     return (
       <div className="mt-6 rounded-lg border border-white/10 bg-gray-800/50 px-4 py-12 text-center text-sm text-gray-400">
@@ -77,7 +88,8 @@ export function CatalogueProductsTable() {
   if (status === 'ready' && items.length === 0) {
     return (
       <div className="mt-6 rounded-lg border border-white/10 bg-gray-800/50 px-4 py-12 text-center text-sm text-gray-400">
-        No products in the catalogue yet. Import supplier prices to add items.
+        No products in the catalogue yet. Import supplier listing files to add
+        items.
       </div>
     );
   }

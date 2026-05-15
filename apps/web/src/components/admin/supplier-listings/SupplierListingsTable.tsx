@@ -9,11 +9,12 @@ import {
   SupplierListingSortFieldId,
   type CatalogueSupplierListingListItem,
 } from '@vetply/shared';
-
-type SupplierListingSortColumnId =
-  (typeof SupplierListingSortFieldId)[keyof typeof SupplierListingSortFieldId];
 import { CatalogueProductThumbnail } from '@/components/admin/catalogue/CatalogueProductThumbnail';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
+import type { SupplierListingSortState } from './supplier-listing-sort';
+
+type SupplierListingsViewStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+type SupplierListingSortColumnId = SupplierListingSortFieldId;
 
 const SORTABLE_COLUMN_IDS = [
   SupplierListingSortFieldId.ListingName,
@@ -46,17 +47,25 @@ function formatPriceCell(value: string | null): string {
   return value;
 }
 
-export function SupplierListingsTable() {
-  const {
-    items,
-    status,
-    refetch,
-    sort,
-    toggleSortColumn,
-    toggleListingSelection,
-    isListingSelected,
-  } = useSupplierListingsView();
+export type SupplierListingsTableProps = {
+  items: CatalogueSupplierListingListItem[];
+  status: SupplierListingsViewStatus;
+  refetch: () => void;
+  sort: SupplierListingSortState;
+  toggleSortColumn: (fieldId: SupplierListingSortColumnId) => void;
+  toggleListingSelection: (listingId: string) => void;
+  isListingSelected: (listingId: string) => boolean;
+};
 
+export function SupplierListingsTable({
+  items,
+  status,
+  refetch,
+  sort,
+  toggleSortColumn,
+  toggleListingSelection,
+  isListingSelected,
+}: SupplierListingsTableProps) {
   if (status === 'loading' && items.length === 0) {
     return (
       <div className="mt-6 rounded-lg border border-white/10 bg-gray-800/50 px-4 py-12 text-center text-sm text-gray-400">

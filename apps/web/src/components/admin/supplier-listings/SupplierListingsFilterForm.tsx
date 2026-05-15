@@ -11,13 +11,18 @@ import {
   SupplierListingStringOperator,
   SupplierListingSupplierOperator,
 } from '@vetply/shared';
-import { useCallback, useMemo } from 'react';
+import {
+  useCallback,
+  useMemo,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { SUPPLIER_OPTIONS } from './supplier-listing-filter-model';
 import {
   CATALOG_PRODUCT_FILTER_NOT_LINKED_OPERATOR,
   createEmptySupplierListingsDraft,
+  type SupplierListingsFilterDraft,
 } from './supplier-listing-filter-validation';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
 
 const FIELD_OPTIONS: FilterSelectOption[] = [
   { value: SupplierListingFilterFieldId.Supplier, label: 'Supplier' },
@@ -70,9 +75,15 @@ function isStringMultiOp(
   );
 }
 
-export function SupplierListingsFilterForm() {
-  const { filterDraft, setFilterDraft } = useSupplierListingsView();
+export type SupplierListingsFilterFormProps = {
+  filterDraft: SupplierListingsFilterDraft;
+  setFilterDraft: Dispatch<SetStateAction<SupplierListingsFilterDraft>>;
+};
 
+export function SupplierListingsFilterForm({
+  filterDraft,
+  setFilterDraft,
+}: SupplierListingsFilterFormProps) {
   const fieldId = filterDraft.fieldId;
 
   const setField = useCallback(

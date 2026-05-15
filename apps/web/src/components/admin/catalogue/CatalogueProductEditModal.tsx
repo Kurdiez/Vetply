@@ -12,12 +12,13 @@ import {
   LegalCategory,
   SalesCategory,
   type CatalogueManufacturerOption,
+  type CatalogueProductDetail,
   type CatalogueProductUpdateBody,
 } from '@vetply/shared';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { useCatalogueProductDetail } from './CatalogueProductDetailContext';
+import type { CatalogueProductDetailStatus } from './CatalogueProductDetailContext';
 
 const salesOptions = Object.values(SalesCategory).sort((a, b) =>
   a.localeCompare(b, undefined, { sensitivity: 'base' }),
@@ -36,10 +37,21 @@ function fieldError(message?: string) {
   return <p className="mt-1 text-sm text-danger-400">{message}</p>;
 }
 
-export function CatalogueProductEditModal() {
-  const { detail, status, editModalOpen, closeEditModal, saveProduct } =
-    useCatalogueProductDetail();
+export type CatalogueProductEditModalProps = {
+  detail: CatalogueProductDetail | null;
+  status: CatalogueProductDetailStatus;
+  editModalOpen: boolean;
+  closeEditModal: () => void;
+  saveProduct: (body: CatalogueProductUpdateBody) => Promise<void>;
+};
 
+export function CatalogueProductEditModal({
+  detail,
+  status,
+  editModalOpen,
+  closeEditModal,
+  saveProduct,
+}: CatalogueProductEditModalProps) {
   const [manufacturers, setManufacturers] = useState<
     CatalogueManufacturerOption[]
   >([]);

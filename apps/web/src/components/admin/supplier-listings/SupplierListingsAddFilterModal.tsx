@@ -2,22 +2,27 @@
 
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect } from 'react';
 import { createEmptySupplierListingsDraft } from './supplier-listing-filter-validation';
 import { SupplierListingsFilterForm } from './SupplierListingsFilterForm';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
+import type { SupplierListingsFilterDraft } from './supplier-listing-filter-validation';
 
 export type SupplierListingsAddFilterModalProps = {
   open: boolean;
   onClose: () => void;
+  addFilter: () => boolean;
+  filterDraft: SupplierListingsFilterDraft;
+  setFilterDraft: Dispatch<SetStateAction<SupplierListingsFilterDraft>>;
 };
 
 export function SupplierListingsAddFilterModal({
   open,
   onClose,
+  addFilter,
+  filterDraft,
+  setFilterDraft,
 }: SupplierListingsAddFilterModalProps) {
-  const { addFilter, setFilterDraft } = useSupplierListingsView();
-
   useEffect(() => {
     if (open) {
       setFilterDraft(createEmptySupplierListingsDraft());
@@ -55,7 +60,10 @@ export function SupplierListingsAddFilterModal({
       }
     >
       <div className="mt-6">
-        <SupplierListingsFilterForm />
+        <SupplierListingsFilterForm
+          filterDraft={filterDraft}
+          setFilterDraft={setFilterDraft}
+        />
       </div>
     </Modal>
   );

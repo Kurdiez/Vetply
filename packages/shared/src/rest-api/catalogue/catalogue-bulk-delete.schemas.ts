@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export const CATALOGUE_BULK_DELETE_MAX_IDS = 500;
 

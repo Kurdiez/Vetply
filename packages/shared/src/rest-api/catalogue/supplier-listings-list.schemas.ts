@@ -1,20 +1,20 @@
-import { z } from "zod";
+import { z } from 'zod';
 import {
   supplierListingFilterSchema,
   supplierListingSortSchema,
-} from "./supplier-listings-list-filters.schemas";
+} from '../../catalogue/supplier-listings-list-filters.schemas';
 
 export const CATALOGUE_SUPPLIER_LISTINGS_DEFAULT_PAGE_SIZE = 50;
 
 const MAX_NAME_SEARCH_LEN = 512;
 
 const optionalNameSearchQuery = z.preprocess((val: unknown) => {
-  if (val === undefined || val === null || val === "") {
+  if (val === undefined || val === null || val === '') {
     return undefined;
   }
   const s = Array.isArray(val) ? val[0] : String(val);
   const t = s.trim();
-  return t === "" ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
+  return t === '' ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
 }, z.string().max(MAX_NAME_SEARCH_LEN).optional());
 
 function optionalQueryJson<T extends z.ZodTypeAny>(schema: T, label: string) {
@@ -22,7 +22,7 @@ function optionalQueryJson<T extends z.ZodTypeAny>(schema: T, label: string) {
     .string()
     .optional()
     .transform((str, ctx) => {
-      if (str === undefined || str === "") {
+      if (str === undefined || str === '') {
         return undefined;
       }
       try {
@@ -60,9 +60,9 @@ export const catalogueSupplierListingsQuerySchema = z.object({
   q: optionalNameSearchQuery,
   filters: optionalQueryJson(
     z.array(supplierListingFilterSchema),
-    "filters",
+    'filters',
   ).optional(),
-  sort: optionalQueryJson(supplierListingSortSchema, "sort").optional(),
+  sort: optionalQueryJson(supplierListingSortSchema, 'sort').optional(),
 });
 
 export type CatalogueSupplierListingsQuery = z.infer<
@@ -86,7 +86,7 @@ export const catalogueSupplierListingsQueryInputSchema = z.object({
         return undefined;
       }
       const t = s.trim();
-      return t === "" ? undefined : t;
+      return t === '' ? undefined : t;
     }),
   filters: z.array(supplierListingFilterSchema).optional(),
   sort: supplierListingSortSchema.optional(),

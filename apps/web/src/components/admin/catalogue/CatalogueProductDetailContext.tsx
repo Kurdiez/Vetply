@@ -21,7 +21,11 @@ import {
 } from 'react';
 import { toast } from 'sonner';
 
-type CatalogueProductDetailStatus = 'idle' | 'loading' | 'ready' | 'error';
+export type CatalogueProductDetailStatus =
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'error';
 
 type CatalogueProductDetailContextValue = {
   productId: string;

@@ -80,6 +80,12 @@ type SupplierListingsViewContextValue = {
   ) => Promise<CatalogueProductPickerListRes>;
   linkSelectedListingsToProduct: (productId: string) => Promise<boolean>;
   unlinkSelectedListingsFromCatalogueProduct: () => Promise<boolean>;
+  filterAddModalOpen: boolean;
+  openFilterAddModal: () => void;
+  closeFilterAddModal: () => void;
+  linkListingsModalOpen: boolean;
+  openLinkListingsModal: () => void;
+  closeLinkListingsModal: () => void;
 };
 
 const SupplierListingsViewContext =
@@ -145,6 +151,8 @@ export function SupplierListingsViewProvider({
   const [searchInput, setSearchInput] = useState('');
   const [nameSearch, setNameSearch] = useState('');
   const searchCommitRef = useRef('');
+  const [filterAddModalOpen, setFilterAddModalOpen] = useState(false);
+  const [linkListingsModalOpen, setLinkListingsModalOpen] = useState(false);
 
   const {
     selectedIds: selectedListingIds,
@@ -339,6 +347,22 @@ export function SupplierListingsViewProvider({
       }
     }, [selectedListingIds, clearListingSelection, refetch]);
 
+  const openFilterAddModal = useCallback(() => {
+    setFilterAddModalOpen(true);
+  }, []);
+
+  const closeFilterAddModal = useCallback(() => {
+    setFilterAddModalOpen(false);
+  }, []);
+
+  const openLinkListingsModal = useCallback(() => {
+    setLinkListingsModalOpen(true);
+  }, []);
+
+  const closeLinkListingsModal = useCallback(() => {
+    setLinkListingsModalOpen(false);
+  }, []);
+
   const toggleSortColumn = useCallback(
     (fieldId: SupplierListingSortFieldId) => {
       const newSort = nextSupplierListingSortState(sort, fieldId);
@@ -498,6 +522,12 @@ export function SupplierListingsViewProvider({
       searchCatalogueProductsForPicker,
       linkSelectedListingsToProduct,
       unlinkSelectedListingsFromCatalogueProduct,
+      filterAddModalOpen,
+      openFilterAddModal,
+      closeFilterAddModal,
+      linkListingsModalOpen,
+      openLinkListingsModal,
+      closeLinkListingsModal,
     }),
     [
       page,
@@ -512,9 +542,11 @@ export function SupplierListingsViewProvider({
       toggleSortColumn,
       appliedFilters,
       filterDraft,
+      setFilterDraft,
       addFilter,
       removeFilter,
       searchInput,
+      setSearchInput,
       selectedListingIds,
       selectedListingCount,
       toggleListingSelection,
@@ -524,6 +556,12 @@ export function SupplierListingsViewProvider({
       searchCatalogueProductsForPicker,
       linkSelectedListingsToProduct,
       unlinkSelectedListingsFromCatalogueProduct,
+      filterAddModalOpen,
+      openFilterAddModal,
+      closeFilterAddModal,
+      linkListingsModalOpen,
+      openLinkListingsModal,
+      closeLinkListingsModal,
     ],
   );
 

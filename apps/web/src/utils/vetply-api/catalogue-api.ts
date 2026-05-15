@@ -4,12 +4,15 @@ import {
   catalogueProductDetailSchema,
   catalogueProductPickerListResSchema,
   catalogueProductPickerQueryInputSchema,
+  catalogueProductsImportBatchResSchema,
+  catalogueProductsImportDeleteMissingResSchema,
   catalogueProductsListQueryInputSchema,
   catalogueProductsListResSchema,
   catalogueSupplierListingsListResSchema,
   catalogueSupplierListingsQueryInputSchema,
   importSupplierPricesBatchResSchema,
   linkSupplierListingsResSchema,
+  supplierListingsMappingImportBatchResSchema,
   unlinkSupplierListingsResSchema,
   type CatalogueBulkDeleteProductsBody,
   type CatalogueBulkDeleteProductsRes,
@@ -18,6 +21,10 @@ import {
   type CatalogueProductPickerListRes,
   type CatalogueProductPickerQueryInput,
   type CatalogueProductUpdateBody,
+  type CatalogueProductsImportBatchReq,
+  type CatalogueProductsImportBatchRes,
+  type CatalogueProductsImportDeleteMissingBody,
+  type CatalogueProductsImportDeleteMissingRes,
   type CatalogueProductsListQueryInput,
   type CatalogueProductsListRes,
   type CatalogueSupplierListingsListRes,
@@ -26,10 +33,88 @@ import {
   type ImportSupplierPricesBatchRes,
   type LinkSupplierListingsBody,
   type LinkSupplierListingsRes,
+  type SupplierListingsMappingImportBatchReq,
+  type SupplierListingsMappingImportBatchRes,
   type UnlinkSupplierListingsBody,
   type UnlinkSupplierListingsRes,
+  Supplier,
 } from '@vetply/shared';
 import { vetplyApiClient } from './http-client';
+
+function filenameFromContentDisposition(
+  header: string | undefined,
+  fallback: string,
+): string {
+  if (header === undefined || header === '') {
+    return fallback;
+  }
+  const star = /filename\*=(?:UTF-8''|utf-8'')([^;\n]+)/i.exec(header);
+  if (star?.[1]) {
+    try {
+      return decodeURIComponent(star[1].trim().replace(/^"+|"+$/g, ''));
+    } catch {
+      return star[1].trim().replace(/^"+|"+$/g, '') || fallback;
+    }
+  }
+  const quoted = /filename="([^"]+)"/i.exec(header);
+  if (quoted?.[1]) {
+    return quoted[1];
+  }
+  const bare = /filename=([^;\s]+)/i.exec(header);
+  if (bare?.[1]) {
+    return bare[1].replace(/^"+|"+$/g, '');
+  }
+  return fallback;
+}
+
+function triggerBrowserFileDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function getBlobExport(
+  url: string,
+  options?: { params?: Record<string, string> },
+): Promise<{ blob: Blob; filename: string }> {
+  const defaultFilename =
+    options?.params?.supplier !== undefined
+      ? `supplier_listings_${options.params.supplier}.csv`
+      : 'catalogue_products.csv';
+  const res = await vetplyApiClient.get<Blob>(url, {
+    ...options,
+    responseType: 'blob',
+  });
+  const cd = res.headers['content-disposition'];
+  const filename = filenameFromContentDisposition(
+    typeof cd === 'string' ? cd : undefined,
+    defaultFilename,
+  );
+  return { blob: res.data, filename };
+}
+
+export async function downloadCatalogueProductsExportCsv(): Promise<void> {
+  const { blob, filename } = await getBlobExport(
+    '/admin/catalogue/products/export',
+  );
+  triggerBrowserFileDownload(blob, filename);
+}
+
+export async function downloadSupplierListingsExportCsv(
+  supplier: Supplier,
+): Promise<void> {
+  const { blob, filename } = await getBlobExport(
+    '/admin/catalogue/supplier-listings/export',
+    { params: { supplier } },
+  );
+  triggerBrowserFileDownload(blob, filename);
+}
 
 export async function fetchCatalogueProducts(
   query: Partial<CatalogueProductsListQueryInput> = {},
@@ -187,4 +272,34 @@ export async function postCatalogueImportSupplierPricesBatch(
     body,
   );
   return importSupplierPricesBatchResSchema.parse(data);
+}
+
+export async function postCatalogueProductsImportDeleteMissing(
+  body: CatalogueProductsImportDeleteMissingBody,
+): Promise<CatalogueProductsImportDeleteMissingRes> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    '/admin/catalogue/products/import/delete-missing',
+    body,
+  );
+  return catalogueProductsImportDeleteMissingResSchema.parse(data);
+}
+
+export async function postCatalogueProductsImportBatch(
+  body: CatalogueProductsImportBatchReq,
+): Promise<CatalogueProductsImportBatchRes> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    '/admin/catalogue/products/import/batch',
+    body,
+  );
+  return catalogueProductsImportBatchResSchema.parse(data);
+}
+
+export async function postSupplierListingsMappingImportBatch(
+  body: SupplierListingsMappingImportBatchReq,
+): Promise<SupplierListingsMappingImportBatchRes> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    '/admin/catalogue/supplier-listings/import-mapping/batch',
+    body,
+  );
+  return supplierListingsMappingImportBatchResSchema.parse(data);
 }

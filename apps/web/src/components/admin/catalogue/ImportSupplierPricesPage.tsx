@@ -9,28 +9,33 @@ import {
   useImportSupplierPrices,
 } from './ImportSupplierPricesContext';
 
-function ImportSupplierPricesFormBody() {
-  const {
-    routerReady,
-    uploadKind,
-    changeUploadKind,
-    selectFile,
-    submitting,
-    progressPct,
-    progressLabel,
-    submitImport,
-    batchMaxLabel,
-    file,
-  } = useImportSupplierPrices();
+export type ImportSupplierPricesFormProps = {
+  uploadKind: CatalogueSupplierImportUploadKind;
+  changeUploadKind: (kind: CatalogueSupplierImportUploadKind) => void;
+  selectFile: (file: File | null) => void;
+  submitting: boolean;
+  progressPct: number | null;
+  progressLabel: string;
+  submitImport: () => Promise<void>;
+  batchMaxLabel: string;
+  file: File | null;
+};
 
-  if (!routerReady) {
-    return null;
-  }
-
+function ImportSupplierPricesForm({
+  uploadKind,
+  changeUploadKind,
+  selectFile,
+  submitting,
+  progressPct,
+  progressLabel,
+  submitImport,
+  batchMaxLabel,
+  file,
+}: ImportSupplierPricesFormProps) {
   return (
     <div className="mx-auto max-w-lg px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-lg font-semibold text-white">
-        Import supplier prices
+        Import supplier listing files
       </h1>
       <p className="mt-2 text-sm text-gray-400">
         Choose the supplier file type, then select your file. Only fields that
@@ -120,10 +125,43 @@ function ImportSupplierPricesFormBody() {
   );
 }
 
+function ImportSupplierPricesPageBody() {
+  const {
+    routerReady,
+    uploadKind,
+    changeUploadKind,
+    selectFile,
+    submitting,
+    progressPct,
+    progressLabel,
+    submitImport,
+    batchMaxLabel,
+    file,
+  } = useImportSupplierPrices();
+
+  if (!routerReady) {
+    return null;
+  }
+
+  return (
+    <ImportSupplierPricesForm
+      uploadKind={uploadKind}
+      changeUploadKind={changeUploadKind}
+      selectFile={selectFile}
+      submitting={submitting}
+      progressPct={progressPct}
+      progressLabel={progressLabel}
+      submitImport={submitImport}
+      batchMaxLabel={batchMaxLabel}
+      file={file}
+    />
+  );
+}
+
 export function ImportSupplierPricesPage() {
   return (
     <ImportSupplierPricesProvider>
-      <ImportSupplierPricesFormBody />
+      <ImportSupplierPricesPageBody />
     </ImportSupplierPricesProvider>
   );
 }

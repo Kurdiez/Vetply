@@ -8,6 +8,7 @@ export const routes = {
     catalogue: {
       view: '/admin/catalogue',
       supplierListings: '/admin/catalogue/supplier-listings',
+      mappingExportsImports: '/admin/catalogue/mapping-exports-imports',
       importSupplierPrices: '/admin/catalogue/import-supplier-prices',
       productDetail: (productId: string) =>
         `/admin/catalogue/product/${productId}`,
@@ -34,6 +35,7 @@ export function isValidAdminPath(path: string): boolean {
     path === routes.admin.root ||
     path === routes.admin.catalogue.view ||
     path === routes.admin.catalogue.supplierListings ||
+    path === routes.admin.catalogue.mappingExportsImports ||
     path === routes.admin.catalogue.importSupplierPrices ||
     parseCatalogueProductDetailId(path) !== null
   );

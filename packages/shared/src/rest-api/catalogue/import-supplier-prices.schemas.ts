@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Supplier } from './supplier';
+import { Supplier } from '../../catalogue/supplier';
 
 export const NVS_IMPORT_BATCH_MAX = 500;
 export const VEENAK_IMPORT_BATCH_MAX = 500;
@@ -7,7 +7,6 @@ export const VEENAK_IMPORT_BATCH_MAX = 500;
 export const nvsImportFormatEnum = z.enum(['non_pom_csv', 'all_products']);
 export type NvsImportFormat = z.infer<typeof nvsImportFormatEnum>;
 
-/** Admin import page: which file pipeline is selected. */
 export const catalogueSupplierImportUploadKindEnum = z.enum([
   'nvs_non_pom_csv',
   'nvs_all_products',
@@ -68,10 +67,7 @@ const importSupplierPricesNvsAllProductsBatchSchema = z.object({
   supplier: z.literal(Supplier.NVS),
   nvsFormat: z.literal('all_products'),
   ...batchIndexFields,
-  rows: z
-    .array(nvsAllProductsImportRowSchema)
-    .min(1)
-    .max(NVS_IMPORT_BATCH_MAX),
+  rows: z.array(nvsAllProductsImportRowSchema).min(1).max(NVS_IMPORT_BATCH_MAX),
 });
 
 const importSupplierPricesVeenakBatchSchema = z.object({
@@ -94,10 +90,8 @@ export type ImportSupplierPricesBatchReq = z.infer<
   typeof importSupplierPricesBatchReqSchema
 >;
 
-/** Present only for NVS Non-POM CSV batches (`nvsFormat: non_pom_csv`). */
 export const nvsNonPomBatchBreakdownSchema = z.object({
   updatedExistingListing: z.number().int().nonnegative(),
-  /** Listing row exists with no catalogue product; import updates listing fields only. */
   updatedOrphanListing: z.number().int().nonnegative(),
   newListingOnMatchedProduct: z.number().int().nonnegative(),
   newProductWithListing: z.number().int().nonnegative(),

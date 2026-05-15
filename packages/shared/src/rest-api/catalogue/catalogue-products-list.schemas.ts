@@ -1,33 +1,29 @@
-import { z } from "zod";
+import { z } from 'zod';
 import {
   catalogueProductFilterSchema,
   catalogueSortSchema,
-} from "./catalogue-list-filters.schemas";
-import { CatalogUnitType } from "./enums";
+} from '../../catalogue/catalogue-list-filters.schemas';
+import { CatalogUnitType } from '../../catalogue/enums';
 
 export const CATALOGUE_PRODUCTS_DEFAULT_PAGE_SIZE = 50;
 
 const MAX_NAME_SEARCH_LEN = 512;
 
-/** Optional `q` query param: trimmed ILIKE search on product name. */
 const optionalNameSearchQuery = z.preprocess((val: unknown) => {
-  if (val === undefined || val === null || val === "") {
+  if (val === undefined || val === null || val === '') {
     return undefined;
   }
   const s = Array.isArray(val) ? val[0] : String(val);
   const t = s.trim();
-  return t === "" ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
+  return t === '' ? undefined : t.slice(0, MAX_NAME_SEARCH_LEN);
 }, z.string().max(MAX_NAME_SEARCH_LEN).optional());
 
-function optionalQueryJson<T extends z.ZodTypeAny>(
-  schema: T,
-  label: string,
-) {
+function optionalQueryJson<T extends z.ZodTypeAny>(schema: T, label: string) {
   return z
     .string()
     .optional()
     .transform((str, ctx) => {
-      if (str === undefined || str === "") {
+      if (str === undefined || str === '') {
         return undefined;
       }
       try {
@@ -65,9 +61,9 @@ export const catalogueProductsListQuerySchema = z.object({
   q: optionalNameSearchQuery,
   filters: optionalQueryJson(
     z.array(catalogueProductFilterSchema),
-    "filters",
+    'filters',
   ).optional(),
-  sort: optionalQueryJson(catalogueSortSchema, "sort").optional(),
+  sort: optionalQueryJson(catalogueSortSchema, 'sort').optional(),
 });
 
 export type CatalogueProductsListQuery = z.infer<
@@ -91,7 +87,7 @@ export const catalogueProductsListQueryInputSchema = z.object({
         return undefined;
       }
       const t = s.trim();
-      return t === "" ? undefined : t;
+      return t === '' ? undefined : t;
     }),
   filters: z.array(catalogueProductFilterSchema).optional(),
   sort: catalogueSortSchema.optional(),
@@ -108,11 +104,8 @@ export const catalogueProductListItemSchema = z.object({
   manufacturerName: z.string().nullable(),
   unitType: z.nativeEnum(CatalogUnitType),
   unitQuantity: z.string(),
-  /** Listed price for Covetrus listing, two decimal places; null if none. */
   covetrusPrice: z.string().nullable(),
-  /** Listed price for NVS listing, two decimal places; null if none. */
   nvsPrice: z.string().nullable(),
-  /** Listed price for Veenak listing, two decimal places; null if none. */
   veenakPrice: z.string().nullable(),
 });
 

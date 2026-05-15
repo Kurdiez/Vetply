@@ -1,11 +1,17 @@
 'use client';
 
 import { AdminListSearchField } from '@/components/admin/list/AdminListSearchField';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
+import type { Dispatch, SetStateAction } from 'react';
 
-export function SupplierListingsSearch() {
-  const { searchInput, setSearchInput } = useSupplierListingsView();
+export type SupplierListingsSearchProps = {
+  searchInput: string;
+  setSearchInput: Dispatch<SetStateAction<string>>;
+};
 
+export function SupplierListingsSearch({
+  searchInput,
+  setSearchInput,
+}: SupplierListingsSearchProps) {
   return (
     <AdminListSearchField
       id="supplier-listing-name-search"

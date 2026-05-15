@@ -2,22 +2,27 @@
 
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useEffect } from 'react';
 import { createEmptyDraft } from './catalogue-filter-validation';
 import { CatalogueFilterForm } from './CatalogueFilterForm';
-import { useCatalogueView } from './CatalogueViewContext';
+import type { CatalogueFilterDraft } from './catalogue-filter-validation';
 
 export type CatalogueAddFilterModalProps = {
   open: boolean;
   onClose: () => void;
+  addFilter: () => boolean;
+  filterDraft: CatalogueFilterDraft;
+  setFilterDraft: Dispatch<SetStateAction<CatalogueFilterDraft>>;
 };
 
 export function CatalogueAddFilterModal({
   open,
   onClose,
+  addFilter,
+  filterDraft,
+  setFilterDraft,
 }: CatalogueAddFilterModalProps) {
-  const { addFilter, setFilterDraft } = useCatalogueView();
-
   useEffect(() => {
     if (open) {
       setFilterDraft(createEmptyDraft());
@@ -55,7 +60,10 @@ export function CatalogueAddFilterModal({
       }
     >
       <div className="mt-6">
-        <CatalogueFilterForm />
+        <CatalogueFilterForm
+          filterDraft={filterDraft}
+          setFilterDraft={setFilterDraft}
+        />
       </div>
     </Modal>
   );

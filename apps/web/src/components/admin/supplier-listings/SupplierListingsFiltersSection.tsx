@@ -1,13 +1,33 @@
 'use client';
 
+import type { Dispatch, SetStateAction } from 'react';
 import { Button } from '@/components/ui/Button';
-import { useState } from 'react';
 import { SupplierListingsAddFilterModal } from './SupplierListingsAddFilterModal';
 import { SupplierListingsAppliedFiltersList } from './SupplierListingsAppliedFiltersList';
+import type { AppliedSupplierListingFilter } from './supplier-listing-filter-model';
+import type { SupplierListingsFilterDraft } from './supplier-listing-filter-validation';
 
-export function SupplierListingsFiltersSection() {
-  const [addModalOpen, setAddModalOpen] = useState(false);
+export type SupplierListingsFiltersSectionProps = {
+  filterAddModalOpen: boolean;
+  onOpenFilterAddModal: () => void;
+  onCloseFilterAddModal: () => void;
+  appliedFilters: AppliedSupplierListingFilter[];
+  removeFilter: (id: string) => void;
+  addFilter: () => boolean;
+  filterDraft: SupplierListingsFilterDraft;
+  setFilterDraft: Dispatch<SetStateAction<SupplierListingsFilterDraft>>;
+};
 
+export function SupplierListingsFiltersSection({
+  filterAddModalOpen,
+  onOpenFilterAddModal,
+  onCloseFilterAddModal,
+  appliedFilters,
+  removeFilter,
+  addFilter,
+  filterDraft,
+  setFilterDraft,
+}: SupplierListingsFiltersSectionProps) {
   return (
     <div className="flow-root">
       <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -23,7 +43,7 @@ export function SupplierListingsFiltersSection() {
                   </div>
                   <Button
                     type="button"
-                    onClick={() => setAddModalOpen(true)}
+                    onClick={onOpenFilterAddModal}
                     className="shrink-0"
                   >
                     Add filter
@@ -31,15 +51,21 @@ export function SupplierListingsFiltersSection() {
                 </div>
               </div>
               <div className="px-4 py-4 sm:px-6 lg:px-8">
-                <SupplierListingsAppliedFiltersList />
+                <SupplierListingsAppliedFiltersList
+                  appliedFilters={appliedFilters}
+                  removeFilter={removeFilter}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
       <SupplierListingsAddFilterModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        open={filterAddModalOpen}
+        onClose={onCloseFilterAddModal}
+        addFilter={addFilter}
+        filterDraft={filterDraft}
+        setFilterDraft={setFilterDraft}
       />
     </div>
   );

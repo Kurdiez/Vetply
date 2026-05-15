@@ -2,26 +2,25 @@
 
 import { IconTextButton } from '@/components/ui/IconTextButton';
 import { TrashIcon, XMarkIcon } from '@heroicons/react/20/solid';
-import { useCallback, useState } from 'react';
 import { CatalogueBulkDeleteConfirmModal } from './CatalogueBulkDeleteConfirmModal';
-import { useCatalogueView } from './CatalogueViewContext';
 
-export function CatalogueSelectionSummary() {
-  const {
-    selectedProductCount,
-    clearProductSelection,
-    bulkDeleteSelectedProducts,
-  } = useCatalogueView();
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+export type CatalogueSelectionSummaryProps = {
+  selectedProductCount: number;
+  clearProductSelection: () => void;
+  bulkDeleteConfirmOpen: boolean;
+  openBulkDeleteConfirm: () => void;
+  closeBulkDeleteConfirm: () => void;
+  confirmBulkDelete: () => Promise<boolean>;
+};
 
-  const openDeleteConfirm = useCallback(() => {
-    setDeleteConfirmOpen(true);
-  }, []);
-
-  const closeDeleteConfirm = useCallback(() => {
-    setDeleteConfirmOpen(false);
-  }, []);
-
+export function CatalogueSelectionSummary({
+  selectedProductCount,
+  clearProductSelection,
+  bulkDeleteConfirmOpen,
+  openBulkDeleteConfirm,
+  closeBulkDeleteConfirm,
+  confirmBulkDelete,
+}: CatalogueSelectionSummaryProps) {
   if (selectedProductCount === 0) {
     return null;
   }
@@ -48,17 +47,17 @@ export function CatalogueSelectionSummary() {
           <IconTextButton
             variant="red"
             icon={<TrashIcon />}
-            onClick={openDeleteConfirm}
+            onClick={openBulkDeleteConfirm}
           >
             Delete
           </IconTextButton>
         </div>
       </div>
       <CatalogueBulkDeleteConfirmModal
-        open={deleteConfirmOpen}
-        onClose={closeDeleteConfirm}
+        open={bulkDeleteConfirmOpen}
+        onClose={closeBulkDeleteConfirm}
         selectedCount={selectedProductCount}
-        onConfirmDelete={bulkDeleteSelectedProducts}
+        onConfirmDelete={confirmBulkDelete}
       />
     </>
   );

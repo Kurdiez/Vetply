@@ -6,7 +6,12 @@ import type { FilterSelectOption } from '@/components/ui/filters/FilterLabeledSe
 import { FilterStringTagList } from '@/components/ui/filters/FilterStringTagList';
 import { FilterTextInput } from '@/components/ui/filters/FilterTextInput';
 import { Select } from '@/components/ui/Select';
-import { useCallback, useMemo } from 'react';
+import {
+  useCallback,
+  useMemo,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
@@ -15,8 +20,10 @@ import {
   getFieldKind,
   operatorsForField,
 } from './catalogue-filter-model';
-import { createEmptyDraft } from './catalogue-filter-validation';
-import { useCatalogueView } from './CatalogueViewContext';
+import {
+  createEmptyDraft,
+  type CatalogueFilterDraft,
+} from './catalogue-filter-validation';
 
 const FIELD_OPTIONS: FilterSelectOption[] = [
   {
@@ -45,9 +52,15 @@ function isStringMultiOp(op: CatalogueFilterOperator | ''): boolean {
   );
 }
 
-export function CatalogueFilterForm() {
-  const { filterDraft, setFilterDraft } = useCatalogueView();
+export type CatalogueFilterFormProps = {
+  filterDraft: CatalogueFilterDraft;
+  setFilterDraft: Dispatch<SetStateAction<CatalogueFilterDraft>>;
+};
 
+export function CatalogueFilterForm({
+  filterDraft,
+  setFilterDraft,
+}: CatalogueFilterFormProps) {
   const fieldId = filterDraft.fieldId;
   const allowedOps = useMemo(
     () => (fieldId ? operatorsForField(fieldId) : []),

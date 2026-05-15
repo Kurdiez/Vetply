@@ -2,19 +2,20 @@
 
 import { IconTextButton } from '@/components/ui/IconTextButton';
 import { LinkIcon, LinkSlashIcon, XMarkIcon } from '@heroicons/react/20/solid';
-import { useSupplierListingsView } from './SupplierListingsViewContext';
+
+export type SupplierListingsSelectionSummaryProps = {
+  selectedListingCount: number;
+  clearListingSelection: () => void;
+  onOpenLinkModal: () => void;
+  unlinkSelectedListingsFromCatalogueProduct: () => Promise<boolean>;
+};
 
 export function SupplierListingsSelectionSummary({
+  selectedListingCount,
+  clearListingSelection,
   onOpenLinkModal,
-}: {
-  onOpenLinkModal: () => void;
-}) {
-  const {
-    selectedListingCount,
-    clearListingSelection,
-    unlinkSelectedListingsFromCatalogueProduct,
-  } = useSupplierListingsView();
-
+  unlinkSelectedListingsFromCatalogueProduct,
+}: SupplierListingsSelectionSummaryProps) {
   if (selectedListingCount === 0) {
     return null;
   }

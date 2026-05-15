@@ -119,11 +119,20 @@ export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
             </li>
             <li>
               <NavLink
+                href={routes.admin.catalogue.mappingExportsImports}
+                active={path === routes.admin.catalogue.mappingExportsImports}
+                onNavigate={onNavigate}
+              >
+                Mapping exports / imports
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 href={routes.admin.catalogue.importSupplierPrices}
                 active={path === routes.admin.catalogue.importSupplierPrices}
                 onNavigate={onNavigate}
               >
-                Import supplier price files
+                Import supplier listing files
               </NavLink>
             </li>
           </ul>

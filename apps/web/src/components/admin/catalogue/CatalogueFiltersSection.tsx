@@ -1,13 +1,33 @@
 'use client';
 
+import type { Dispatch, SetStateAction } from 'react';
 import { Button } from '@/components/ui/Button';
-import { useState } from 'react';
 import { CatalogueAddFilterModal } from './CatalogueAddFilterModal';
 import { CatalogueAppliedFiltersList } from './CatalogueAppliedFiltersList';
+import type { AppliedFilter } from './catalogue-filter-model';
+import type { CatalogueFilterDraft } from './catalogue-filter-validation';
 
-export function CatalogueFiltersSection() {
-  const [addModalOpen, setAddModalOpen] = useState(false);
+export type CatalogueFiltersSectionProps = {
+  filterAddModalOpen: boolean;
+  onOpenFilterAddModal: () => void;
+  onCloseFilterAddModal: () => void;
+  appliedFilters: AppliedFilter[];
+  removeFilter: (id: string) => void;
+  addFilter: () => boolean;
+  filterDraft: CatalogueFilterDraft;
+  setFilterDraft: Dispatch<SetStateAction<CatalogueFilterDraft>>;
+};
 
+export function CatalogueFiltersSection({
+  filterAddModalOpen,
+  onOpenFilterAddModal,
+  onCloseFilterAddModal,
+  appliedFilters,
+  removeFilter,
+  addFilter,
+  filterDraft,
+  setFilterDraft,
+}: CatalogueFiltersSectionProps) {
   return (
     <div className="flow-root">
       <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -23,7 +43,7 @@ export function CatalogueFiltersSection() {
                   </div>
                   <Button
                     type="button"
-                    onClick={() => setAddModalOpen(true)}
+                    onClick={onOpenFilterAddModal}
                     className="shrink-0"
                   >
                     Add filter
@@ -31,15 +51,21 @@ export function CatalogueFiltersSection() {
                 </div>
               </div>
               <div className="px-4 py-4 sm:px-6 lg:px-8">
-                <CatalogueAppliedFiltersList />
+                <CatalogueAppliedFiltersList
+                  appliedFilters={appliedFilters}
+                  removeFilter={removeFilter}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
       <CatalogueAddFilterModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        open={filterAddModalOpen}
+        onClose={onCloseFilterAddModal}
+        addFilter={addFilter}
+        filterDraft={filterDraft}
+        setFilterDraft={setFilterDraft}
       />
     </div>
   );
