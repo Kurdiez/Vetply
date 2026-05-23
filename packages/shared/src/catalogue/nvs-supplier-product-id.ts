@@ -12,11 +12,11 @@ const NVS_SUPPLIER_PRODUCT_ID_PAD_LENGTH = 8;
  */
 export function canonicalizeNvsSupplierProductId(raw: string): string {
   const t = raw.trim();
-  if (t === "" || t.length >= NVS_SUPPLIER_PRODUCT_ID_PAD_LENGTH) {
+  if (t === '' || t.length >= NVS_SUPPLIER_PRODUCT_ID_PAD_LENGTH) {
     return t;
   }
   if (!/^\d+$/.test(t)) {
     return t;
   }
-  return t.padStart(NVS_SUPPLIER_PRODUCT_ID_PAD_LENGTH, "0");
+  return t.padStart(NVS_SUPPLIER_PRODUCT_ID_PAD_LENGTH, '0');
 }

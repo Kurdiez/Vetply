@@ -1,4 +1,4 @@
-import { canonicalizeNvsSupplierProductId } from "./nvs-supplier-product-id";
+import { canonicalizeNvsSupplierProductId } from './nvs-supplier-product-id';
 
 /**
  * Parses one line from the NVS "All products" fixed-layout file (not CSV).
@@ -11,7 +11,7 @@ export function parseNvsAllProductsLine(line: string): {
   listedPrice: string;
 } | null {
   const trimmed = line.trim();
-  if (trimmed === "") {
+  if (trimmed === '') {
     return null;
   }
   const head = /^(\d{8})\s+(.+)$/.exec(trimmed);
@@ -26,7 +26,7 @@ export function parseNvsAllProductsLine(line: string): {
   }
   const listedPrice = priceM[1];
   rest = rest.slice(0, priceM.index).trimEnd();
-  if (rest === "") {
+  if (rest === '') {
     return null;
   }
 
@@ -40,18 +40,18 @@ export function parseNvsAllProductsLine(line: string): {
     if (m && m.index > 0) {
       const pack = rest.slice(m.index);
       const name = rest.slice(0, m.index).trimEnd();
-      if (name !== "" && pack !== "") {
+      if (name !== '' && pack !== '') {
         return { supplierProductId, name, pack, listedPrice };
       }
     }
   }
-  const ls = rest.lastIndexOf(" ");
+  const ls = rest.lastIndexOf(' ');
   if (ls <= 0) {
     return null;
   }
   const name = rest.slice(0, ls).trimEnd();
   const pack = rest.slice(ls + 1).trim();
-  if (name === "" || pack === "") {
+  if (name === '' || pack === '') {
     return null;
   }
   return { supplierProductId, name, pack, listedPrice };

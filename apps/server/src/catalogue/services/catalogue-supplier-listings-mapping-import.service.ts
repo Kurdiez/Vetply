@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { CatalogueCsvImportRowFailure } from '@vetply/shared';
 import type { Supplier } from '@vetply/shared';
 import {
+  DUPLICATE_CATALOGUE_PRODUCT_MAPPING_FAIL_REASON,
+  findDuplicateCatalogueProductIdInSupplierListingsMappingRows,
   SupplierListingsMappingImportBatchReq,
   SupplierListingsMappingImportBatchRes,
+  type SupplierListingsMappingImportRow,
   supplierListingsMappingImportBatchResSchema,
 } from '@vetply/shared';
 import type { EntityManager } from 'typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
@@ -24,6 +27,12 @@ export class CatalogueSupplierListingsMappingImportService {
   async importBatch(
     body: SupplierListingsMappingImportBatchReq,
   ): Promise<SupplierListingsMappingImportBatchRes> {
+    const duplicateFailReason =
+      findDuplicateCatalogueProductIdInSupplierListingsMappingRows(body.rows);
+    if (duplicateFailReason !== null) {
+      throw new BadRequestException({ failReason: duplicateFailReason });
+    }
+
     const failures: CatalogueCsvImportRowFailure[] = [];
     let rowsUpdated = 0;
 
@@ -40,6 +49,12 @@ export class CatalogueSupplierListingsMappingImportService {
         }
         return;
       }
+
+      await this.assertNoExistingSupplierProductConflict(
+        body.rows,
+        supplierId,
+        manager,
+      );
 
       const listingRepo = manager.getRepository(
         CatalogueProductSupplierListingEntity,
@@ -144,6 +159,44 @@ export class CatalogueSupplierListingsMappingImportService {
       raw,
       supplierListingsMappingImportBatchResSchema,
     ) as SupplierListingsMappingImportBatchRes;
+  }
+
+  private async assertNoExistingSupplierProductConflict(
+    rows: SupplierListingsMappingImportRow[],
+    supplierId: string,
+    manager: EntityManager,
+  ): Promise<void> {
+    const listingRepo = manager.getRepository(
+      CatalogueProductSupplierListingEntity,
+    );
+
+    for (const row of rows) {
+      const trimmed = row.catalogue_product_id.trim();
+      if (trimmed.length === 0) {
+        continue;
+      }
+      const parsed = this.parseProductId(
+        trimmed,
+        row.rowNumber,
+        row.catalogue_product_id,
+      );
+      if (parsed.outcome === 'failure' || parsed.value === null) {
+        continue;
+      }
+
+      const blocking = await listingRepo.findOne({
+        where: {
+          supplierId,
+          productId: parsed.value,
+          id: Not(row.id),
+        },
+      });
+      if (blocking) {
+        throw new BadRequestException({
+          failReason: DUPLICATE_CATALOGUE_PRODUCT_MAPPING_FAIL_REASON,
+        });
+      }
+    }
   }
 
   private async resolveSupplierId(

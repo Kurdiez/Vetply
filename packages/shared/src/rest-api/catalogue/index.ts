@@ -8,3 +8,4 @@ export * from './catalogue-product-update.schemas';
 export * from './catalogue-products-list.schemas';
 export * from './import-supplier-prices.schemas';
 export * from './supplier-listings-list.schemas';
+export * from './supplier-listings-mapping-import-fail-reason.schemas';

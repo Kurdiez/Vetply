@@ -7,15 +7,30 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "check-all": "yarn lint && yarn format && yarn build && yarn test",
     "clean": "rm -rf dist",
-    "lint": "tsc --noEmit",
-    "prepublishOnly": "yarn build"
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "lint:check": "eslint \"src/**/*.ts\"",
+    "prepublishOnly": "yarn build",
+    "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch --passWithNoTests"
   },
   "dependencies": {
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.19.7",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "jest": "^30.3.0",
+    "prettier": "^3.8.1",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   },
   "volta": {

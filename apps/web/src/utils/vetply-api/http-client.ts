@@ -1,4 +1,4 @@
-import { createAccountBusinessErrorBodySchema } from '@vetply/shared';
+import { vetplyBusinessErrorBodySchema } from '@vetply/shared';
 import axios, { isAxiosError } from 'axios';
 import { toast } from 'sonner';
 import { getPublicApiBaseUrl } from './base-url';
@@ -15,7 +15,7 @@ export function vetplyApiUnexpectedErrorToastShown(err: unknown): boolean {
   const status = err.response?.status;
   const data = err.response?.data;
   if (status === 400 && data !== undefined && typeof data === 'object') {
-    const parsed = createAccountBusinessErrorBodySchema.safeParse(data);
+    const parsed = vetplyBusinessErrorBodySchema.safeParse(data);
     if (parsed.success) {
       return false;
     }
@@ -60,7 +60,7 @@ vetplyApiClient.interceptors.response.use(
     const data = error.response?.data;
 
     if (status === 400 && data !== undefined && typeof data === 'object') {
-      const parsed = createAccountBusinessErrorBodySchema.safeParse(data);
+      const parsed = vetplyBusinessErrorBodySchema.safeParse(data);
       if (parsed.success) {
         return Promise.reject(
           new VetplyBadRequestError(parsed.data.failReason),

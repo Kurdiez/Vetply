@@ -22,6 +22,8 @@ import {
   type ReactNode,
 } from 'react';
 import { toast } from 'sonner';
+import { messageForVetplyFailReason } from '@/utils/vetply-api/fail-reason-messages';
+import { isVetplyBadRequestError } from '@/utils/vetply-api/vetply-bad-request-error';
 
 export type CatalogueMappingExportKey =
   | 'products'
@@ -245,7 +247,9 @@ export function CatalogueMappingExportsImportsProvider({
           setImportReportOpen(true);
         }
       } catch (err: unknown) {
-        if (err instanceof Error && err.message === 'NO_DATA_ROWS') {
+        if (isVetplyBadRequestError(err)) {
+          toast.error(messageForVetplyFailReason(err.failReason));
+        } else if (err instanceof Error && err.message === 'NO_DATA_ROWS') {
           toast.error('No importable data rows found in this file.');
         } else if (
           err instanceof Error &&

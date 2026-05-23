@@ -9,3 +9,4 @@ export * from './supplier';
 export * from './supplier-listing-filter.enums';
 export * from './supplier-listing-sort.enums';
 export * from './supplier-listings-list-filters.schemas';
+export * from './supplier-listings-mapping-import.validation';

@@ -1,6 +1,7 @@
 import {
   CATALOGUE_PRODUCTS_IMPORT_BATCH_MAX,
   SUPPLIER_LISTINGS_MAPPING_IMPORT_BATCH_MAX,
+  findDuplicateCatalogueProductIdInSupplierListingsMappingRows,
   type CatalogueCsvImportRowFailure,
   type Supplier,
 } from '@vetply/shared';
@@ -11,6 +12,7 @@ import {
   postCatalogueProductsImportDeleteMissing,
   postSupplierListingsMappingImportBatch,
 } from '@/utils/vetply-api/catalogue-api';
+import { VetplyBadRequestError } from '@/utils/vetply-api/vetply-bad-request-error';
 import { chunkArray, runPoolMapBatches } from '@/utils/run-pool-batches';
 
 const IMPORT_PARALLEL_CONCURRENCY = 6;
@@ -93,6 +95,13 @@ export async function runSupplierListingsMappingImport(
   const parsed = await parseSupplierListingsMappingCsv(file);
   const failures: CatalogueCsvImportRowFailure[] = [...parsed.parseFailures];
   const rows = parsed.rows;
+
+  const duplicateFailReason =
+    findDuplicateCatalogueProductIdInSupplierListingsMappingRows(rows);
+  if (duplicateFailReason !== null) {
+    throw new VetplyBadRequestError(duplicateFailReason);
+  }
+
   const batches = chunkArray(rows, SUPPLIER_LISTINGS_MAPPING_IMPORT_BATCH_MAX);
   const totalBatches = batches.length;
   const totalDataRows = rows.length;

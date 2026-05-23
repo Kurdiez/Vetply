@@ -1,5 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import {
+  DUPLICATE_CATALOGUE_PRODUCT_MAPPING_FAIL_REASON,
   LegalCategory,
   SalesCategory,
   Supplier,
@@ -448,6 +449,117 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
       expect((await listingRepo.findOne({ where: { id: ok.id } }))!.name).toBe(
         'Updated',
       );
+    });
+  });
+
+  describe('importBatch — duplicate catalogue product mapping', () => {
+    it('throws BadRequest with failReason when two rows map to the same catalogue product', async () => {
+      const nvs = await ensureSupplier(Supplier.NVS);
+      const product = await saveCatalogueProduct(productRepo, {
+        name: 'Shared target',
+        image: null,
+        salesCategory: SalesCategory.Consumables,
+        legalCategory: LegalCategory.Consumables,
+        pom: false,
+      });
+      const l1 = await listingRepo.save(
+        listingRepo.create({
+          productId: null,
+          supplierId: nvs.id,
+          supplierProductId: 'DUP-1',
+          name: 'Listing one',
+          listedPrice: null,
+        }),
+      );
+      const l2 = await listingRepo.save(
+        listingRepo.create({
+          productId: null,
+          supplierId: nvs.id,
+          supplierProductId: 'DUP-2',
+          name: 'Listing two',
+          listedPrice: null,
+        }),
+      );
+
+      await expect(
+        service.importBatch({
+          supplier: Supplier.NVS,
+          ...batchMeta(2),
+          rows: [
+            mappingRow({
+              rowNumber: 1,
+              id: l1.id,
+              catalogue_product_id: product.id,
+            }),
+            mappingRow({
+              rowNumber: 2,
+              id: l2.id,
+              catalogue_product_id: product.id,
+            }),
+          ],
+        }),
+      ).rejects.toMatchObject({
+        response: {
+          failReason: DUPLICATE_CATALOGUE_PRODUCT_MAPPING_FAIL_REASON,
+        },
+      });
+
+      expect(
+        (await listingRepo.findOne({ where: { id: l1.id } }))!.productId,
+      ).toBeNull();
+      expect(
+        (await listingRepo.findOne({ where: { id: l2.id } }))!.productId,
+      ).toBeNull();
+    });
+
+    it('throws BadRequest with failReason when import conflicts with an existing linked listing', async () => {
+      const nvs = await ensureSupplier(Supplier.NVS);
+      const product = await saveCatalogueProduct(productRepo, {
+        name: 'Occupied',
+        image: null,
+        salesCategory: SalesCategory.Consumables,
+        legalCategory: LegalCategory.Consumables,
+        pom: false,
+      });
+      await listingRepo.save(
+        listingRepo.create({
+          productId: product.id,
+          supplierId: nvs.id,
+          supplierProductId: 'OCC-1',
+          name: 'Already linked',
+          listedPrice: '1.0000',
+        }),
+      );
+      const orphan = await listingRepo.save(
+        listingRepo.create({
+          productId: null,
+          supplierId: nvs.id,
+          supplierProductId: 'OCC-2',
+          name: 'Orphan',
+          listedPrice: null,
+        }),
+      );
+
+      await expect(
+        service.importBatch({
+          supplier: Supplier.NVS,
+          ...batchMeta(1),
+          rows: [
+            mappingRow({
+              id: orphan.id,
+              catalogue_product_id: product.id,
+            }),
+          ],
+        }),
+      ).rejects.toMatchObject({
+        response: {
+          failReason: DUPLICATE_CATALOGUE_PRODUCT_MAPPING_FAIL_REASON,
+        },
+      });
+
+      expect(
+        (await listingRepo.findOne({ where: { id: orphan.id } }))!.productId,
+      ).toBeNull();
     });
   });
 });

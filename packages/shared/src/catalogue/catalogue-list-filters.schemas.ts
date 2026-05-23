@@ -1,9 +1,9 @@
-import { z } from "zod";
+import { z } from 'zod';
 import {
   CatalogueFilterFieldId,
   CatalogueFilterOperator,
-} from "./catalogue-filter.enums";
-import { CatalogueListSortFieldId } from "./catalogue-sort.enums";
+} from './catalogue-filter.enums';
+import { CatalogueListSortFieldId } from './catalogue-sort.enums';
 
 const catalogueListSortFieldIdSchema = z.enum(
   Object.values(CatalogueListSortFieldId) as [
@@ -20,16 +20,13 @@ const stringMultiOperators: readonly CatalogueFilterOperator[] = [
 export const catalogueProductFilterStringSchema = z
   .object({
     id: z.string().optional(),
-    kind: z.literal("string"),
+    kind: z.literal('string'),
     fieldId: z.union([
       z.literal(CatalogueFilterFieldId.ManufacturerName),
       z.literal(CatalogueFilterFieldId.Supplier),
     ]),
     operator: z.nativeEnum(CatalogueFilterOperator),
-    value: z.union([
-      z.string().min(1),
-      z.array(z.string().min(1)).min(1),
-    ]),
+    value: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]),
   })
   .superRefine((f, ctx) => {
     const multi = stringMultiOperators.includes(f.operator);
@@ -37,26 +34,28 @@ export const catalogueProductFilterStringSchema = z
       if (!Array.isArray(f.value)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "This operator requires multiple values",
-          path: ["value"],
+          message: 'This operator requires multiple values',
+          path: ['value'],
         });
       }
     } else if (Array.isArray(f.value)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "This operator requires a single value",
-        path: ["value"],
+        message: 'This operator requires a single value',
+        path: ['value'],
       });
     }
   });
 
 export const catalogueProductFilterSchema = catalogueProductFilterStringSchema;
 
-export type CatalogueProductFilter = z.infer<typeof catalogueProductFilterSchema>;
+export type CatalogueProductFilter = z.infer<
+  typeof catalogueProductFilterSchema
+>;
 
 export const catalogueSortSchema = z.object({
   fieldId: catalogueListSortFieldIdSchema,
-  direction: z.enum(["asc", "desc"]),
+  direction: z.enum(['asc', 'desc']),
 });
 
 export type CatalogueSort = z.infer<typeof catalogueSortSchema>;

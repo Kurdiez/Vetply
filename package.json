@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "check-all": "yarn workspace @vetply/server check-all && yarn workspace @vetply/web check-all",
+    "check-all": "yarn workspace @vetply/shared check-all && yarn workspace @vetply/server check-all && yarn workspace @vetply/web check-all",
     "dev": "turbo run dev",
     "format": "prettier --write \"apps/server/src\" \"apps/web/src\" \"apps/web/scripts\" \"packages/shared/src\"",
     "format:check": "prettier --check \"apps/server/src\" \"apps/web/src\" \"apps/web/scripts\" \"packages/shared/src\"",

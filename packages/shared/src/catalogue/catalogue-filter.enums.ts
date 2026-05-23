@@ -1,18 +1,18 @@
 export const CatalogueFilterFieldId = {
-  ManufacturerName: "manufacturerName",
-  Supplier: "supplier",
+  ManufacturerName: 'manufacturerName',
+  Supplier: 'supplier',
 } as const;
 
 export type CatalogueFilterFieldId =
   (typeof CatalogueFilterFieldId)[keyof typeof CatalogueFilterFieldId];
 
 export const CatalogueFilterOperator = {
-  IsExactly: "isExactly",
-  IsDistinctFrom: "isDistinctFrom",
-  Contains: "contains",
-  DoesNotContain: "doesNotContain",
-  ContainsAnyOf: "containsAnyOf",
-  DoesNotContainAnyOf: "doesNotContainAnyOf",
+  IsExactly: 'isExactly',
+  IsDistinctFrom: 'isDistinctFrom',
+  Contains: 'contains',
+  DoesNotContain: 'doesNotContain',
+  ContainsAnyOf: 'containsAnyOf',
+  DoesNotContainAnyOf: 'doesNotContainAnyOf',
 } as const;
 
 export type CatalogueFilterOperator =
