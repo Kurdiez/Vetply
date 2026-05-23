@@ -30,7 +30,20 @@ yarn workspace @vetply/server playwright:install
 
 1. Set `COVETRUS_USERNAME` and `COVETRUS_PASSWORD` in `.env`. Optional: `COVETRUS_LOGIN_URL`, `COVETRUS_ORDER_DETAIL_URL`. Defaults use `connect.covetrus.co.uk` for both URLs so the session targets that host.
 2. Run API (`yarn dev:api` or `yarn dev`) and worker (`yarn dev:worker`) with Redis available.
-3. Call **`POST /system/jobs/covetrus/enqueue`** (system-guarded; uses `SYSTEM_SECRET`). The API enqueues six **`COVETRUS_SCRAPE.SCRAPE_CATEGORY`** jobs—one per `SalesCategory` in `@vetply/shared`.
+3. Call **`POST /system/jobs/covetrus/enqueue`** (system-guarded; uses `SYSTEM_SECRET`). The API enqueues **`COVETRUS_SCRAPE.SCRAPE_CATEGORY`** jobs—one per `SalesCategory` in `@vetply/shared` when no body is sent. Optional JSON body:
+
+   ```json
+   { "categories": ["Pharmaceutical"] }
+   ```
+
+   Omit `categories`, pass `{}`, or pass an empty array to enqueue all six categories. Response includes `categoryLabels` and `jobIds`.
+
+   ```bash
+   curl -X POST http://localhost:8580/system/jobs/covetrus/enqueue \
+     -H "x-system-secret: $SYSTEM_SECRET" \
+     -H "Content-Type: application/json" \
+     -d '{"categories":["Pharmaceutical"]}'
+   ```
 4. The worker runs each scrape job in its own browser session (login, open catalog tree for that label, scroll grid, import from UIDL). Optional: Bull Board at [`/jobs`](http://localhost:8580/jobs) (`admin` / `SYSTEM_SECRET`).
 
 ## Examples

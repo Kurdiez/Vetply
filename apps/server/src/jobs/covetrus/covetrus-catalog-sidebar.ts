@@ -436,6 +436,15 @@ function browserSidebarReady(): boolean {
   return false;
 }
 
+export function findCategoryCountInSidebar(
+  rows: CovetrusCategoryRow[],
+  categoryLabel: string,
+): number | undefined {
+  const target = categoryLabel.trim().toLowerCase();
+  const match = rows.find((row) => row.label.trim().toLowerCase() === target);
+  return match?.count;
+}
+
 export async function extractCategoriesFromSidebar(
   page: Page,
 ): Promise<CovetrusCategoryRow[]> {
