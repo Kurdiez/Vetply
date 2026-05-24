@@ -7,7 +7,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CatalogUnitType,
-  CatalogueManufacturerOption,
   CatalogueProductDetail,
   CatalogueProductUpdateBody,
   LinkSupplierListingsBody,
@@ -108,13 +107,6 @@ export class CatalogueProductDetailService {
     });
     const saved = await this.productRepository.save(draft);
     return this.getProductDetail(saved.id);
-  }
-
-  async listManufacturers(): Promise<CatalogueManufacturerOption[]> {
-    const rows = await this.manufacturerRepository.find({
-      order: { name: 'ASC' },
-    });
-    return rows.map((r) => ({ id: r.id, name: r.name }));
   }
 
   async updateProduct(

@@ -3,12 +3,16 @@
 import { SidebarNavButton } from '@/components/ui/SidebarNavButton';
 import {
   isUnderAdminCatalogue,
+  isUnderAdminManufacturers,
   parseCatalogueProductDetailId,
   routes,
 } from '@/constants/routes';
 import { pathWithoutQueryAndTrailingSlash } from '@/utils/admin-path';
 import { ChevronRightIcon } from '@heroicons/react/20/solid';
-import { RectangleStackIcon } from '@heroicons/react/24/outline';
+import {
+  BuildingOffice2Icon,
+  RectangleStackIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
@@ -54,26 +58,32 @@ function NavLink({
 
 export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
   const router = useRouter();
-  const panelId = useId();
+  const cataloguePanelId = useId();
+  const manufacturersPanelId = useId();
   const [catalogueOpen, setCatalogueOpen] = useState(true);
+  const [manufacturersOpen, setManufacturersOpen] = useState(true);
   const path = pathWithoutQueryAndTrailingSlash(router.asPath);
 
   useEffect(() => {
     if (isUnderAdminCatalogue(path)) {
       setCatalogueOpen(true);
     }
+    if (isUnderAdminManufacturers(path)) {
+      setManufacturersOpen(true);
+    }
   }, [path]);
 
   const isCatalogueActive = isUnderAdminCatalogue(path);
+  const isManufacturersActive = isUnderAdminManufacturers(path);
 
   return (
     <nav className="relative flex flex-1 flex-col" aria-label="Admin">
       <ul role="list" className="flex flex-1 flex-col gap-y-1">
         <li>
           <SidebarNavButton
-            id={`${panelId}-trigger`}
+            id={`${cataloguePanelId}-trigger`}
             aria-expanded={catalogueOpen}
-            aria-controls={panelId}
+            aria-controls={cataloguePanelId}
             active={isCatalogueActive}
             onClick={() => setCatalogueOpen((o) => !o)}
           >
@@ -91,7 +101,7 @@ export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
             />
           </SidebarNavButton>
           <ul
-            id={panelId}
+            id={cataloguePanelId}
             role="list"
             hidden={!catalogueOpen}
             className="mt-1 space-y-0.5"
@@ -133,6 +143,44 @@ export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
                 onNavigate={onNavigate}
               >
                 Import supplier listing files
+              </NavLink>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <SidebarNavButton
+            id={`${manufacturersPanelId}-trigger`}
+            aria-expanded={manufacturersOpen}
+            aria-controls={manufacturersPanelId}
+            active={isManufacturersActive}
+            onClick={() => setManufacturersOpen((o) => !o)}
+          >
+            <BuildingOffice2Icon
+              aria-hidden
+              className="size-5 shrink-0 text-gray-400 group-hover:text-white"
+            />
+            <span className="flex-1">Manufacturers</span>
+            <ChevronRightIcon
+              aria-hidden
+              className={classNames(
+                'size-4 shrink-0 text-gray-500 transition duration-200',
+                manufacturersOpen ? 'rotate-90' : '',
+              )}
+            />
+          </SidebarNavButton>
+          <ul
+            id={manufacturersPanelId}
+            role="list"
+            hidden={!manufacturersOpen}
+            className="mt-1 space-y-0.5"
+          >
+            <li>
+              <NavLink
+                href={routes.admin.manufacturers.view}
+                active={path === routes.admin.manufacturers.view}
+                onNavigate={onNavigate}
+              >
+                View Manufacturers
               </NavLink>
             </li>
           </ul>

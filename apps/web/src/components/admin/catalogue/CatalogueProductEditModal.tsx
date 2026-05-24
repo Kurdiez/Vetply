@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { TextInput } from '@/components/ui/TextInput';
-import { fetchCatalogueManufacturers } from '@/utils/vetply-api/catalogue-api';
+import { fetchCatalogueManufacturers } from '@/utils/vetply-api/catalogue-manufacturers-api';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Modal } from '@/components/ui/Modal';
 import {

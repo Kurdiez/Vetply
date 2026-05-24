@@ -1,6 +1,5 @@
 import {
   catalogueBulkDeleteProductsResSchema,
-  catalogueManufacturersListResSchema,
   catalogueProductDetailSchema,
   catalogueProductPickerListResSchema,
   catalogueProductPickerQueryInputSchema,
@@ -16,7 +15,6 @@ import {
   unlinkSupplierListingsResSchema,
   type CatalogueBulkDeleteProductsBody,
   type CatalogueBulkDeleteProductsRes,
-  type CatalogueManufacturerOption,
   type CatalogueProductDetail,
   type CatalogueProductPickerListRes,
   type CatalogueProductPickerQueryInput,
@@ -195,15 +193,6 @@ export async function fetchCatalogueProductDetail(
     `/admin/catalogue/products/${productId}`,
   );
   return catalogueProductDetailSchema.parse(data);
-}
-
-export async function fetchCatalogueManufacturers(): Promise<
-  CatalogueManufacturerOption[]
-> {
-  const { data } = await vetplyApiClient.get<unknown>(
-    '/admin/catalogue/manufacturers',
-  );
-  return catalogueManufacturersListResSchema.parse(data);
 }
 
 export async function patchCatalogueProduct(

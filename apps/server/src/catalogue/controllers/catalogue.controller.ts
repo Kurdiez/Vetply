@@ -17,6 +17,8 @@ import {
 import {
   ImportSupplierPricesBatchReq,
   catalogueBulkDeleteProductsBodySchema,
+  catalogueManufacturerCreateBodySchema,
+  catalogueManufacturerUpdateBodySchema,
   catalogueProductPickerQuerySchema,
   catalogueProductUpdateBodySchema,
   catalogueProductsImportBatchReqSchema,
@@ -29,6 +31,8 @@ import {
   supplierListingsMappingImportBatchReqSchema,
   unlinkSupplierListingsBodySchema,
   type CatalogueBulkDeleteProductsBody,
+  type CatalogueManufacturerCreateBody,
+  type CatalogueManufacturerUpdateBody,
   type CatalogueProductUpdateBody,
   type CatalogueProductsImportBatchReq,
   type CatalogueProductsImportDeleteMissingBody,
@@ -41,6 +45,7 @@ import { ZodError } from 'zod';
 import { ZodValidationPipe } from '~/commons/validations';
 import { SuperUserGuard } from '../guards/super-user.guard';
 import { CatalogueCsvExportService } from '../services/catalogue-csv-export.service';
+import { CatalogueManufacturerService } from '../services/catalogue-manufacturer.service';
 import { CatalogueImportService } from '../services/catalogue-import.service';
 import { CatalogueProductDetailService } from '../services/catalogue-product-detail.service';
 import { CatalogueProductListService } from '../services/catalogue-product-list.service';
@@ -56,6 +61,7 @@ export class CatalogueController {
     private readonly catalogueProductListService: CatalogueProductListService,
     private readonly catalogueSupplierListingListService: CatalogueSupplierListingListService,
     private readonly catalogueProductDetailService: CatalogueProductDetailService,
+    private readonly catalogueManufacturerService: CatalogueManufacturerService,
     private readonly catalogueCsvExportService: CatalogueCsvExportService,
     private readonly catalogueProductsCsvImportService: CatalogueProductsCsvImportService,
     private readonly catalogueSupplierListingsMappingImportService: CatalogueSupplierListingsMappingImportService,
@@ -171,7 +177,25 @@ export class CatalogueController {
 
   @Get('manufacturers')
   listManufacturers() {
-    return this.catalogueProductDetailService.listManufacturers();
+    return this.catalogueManufacturerService.list();
+  }
+
+  @Post('manufacturers')
+  @HttpCode(HttpStatus.CREATED)
+  createManufacturer(
+    @Body(new ZodValidationPipe(catalogueManufacturerCreateBodySchema))
+    body: CatalogueManufacturerCreateBody,
+  ) {
+    return this.catalogueManufacturerService.create(body);
+  }
+
+  @Patch('manufacturers/:id')
+  patchManufacturer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(catalogueManufacturerUpdateBodySchema))
+    body: CatalogueManufacturerUpdateBody,
+  ) {
+    return this.catalogueManufacturerService.update(id, body);
   }
 
   @Get('supplier-listings/export')

@@ -6,6 +6,7 @@ import { CatalogueViewPage } from '@/components/admin/catalogue/CatalogueViewPag
 import { CatalogueMappingExportsImportsPage } from '@/components/admin/catalogue/CatalogueMappingExportsImportsPage';
 import { SupplierListingsViewPage } from '@/components/admin/supplier-listings/SupplierListingsViewPage';
 import { ImportSupplierPricesPage } from '@/components/admin/catalogue/ImportSupplierPricesPage';
+import { ManufacturersViewPage } from '@/components/admin/manufacturers/ManufacturersViewPage';
 import {
   isValidAdminPath,
   parseCatalogueProductDetailId,
@@ -56,6 +57,10 @@ function AdminMain() {
 
   if (path === routes.admin.catalogue.supplierListings) {
     return <SupplierListingsViewPage />;
+  }
+
+  if (path === routes.admin.manufacturers.view) {
+    return <ManufacturersViewPage />;
   }
 
   return null;

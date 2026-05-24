@@ -13,6 +13,9 @@ export const routes = {
       productDetail: (productId: string) =>
         `/admin/catalogue/product/${productId}`,
     },
+    manufacturers: {
+      view: '/admin/manufacturers',
+    },
   },
 } as const;
 
@@ -37,6 +40,7 @@ export function isValidAdminPath(path: string): boolean {
     path === routes.admin.catalogue.supplierListings ||
     path === routes.admin.catalogue.mappingExportsImports ||
     path === routes.admin.catalogue.importSupplierPrices ||
+    path === routes.admin.manufacturers.view ||
     parseCatalogueProductDetailId(path) !== null
   );
 }
@@ -56,5 +60,12 @@ export function isUnderAdminCatalogue(pathname: string): boolean {
   return (
     pathname === routes.admin.catalogue.view ||
     pathname.startsWith(`${routes.admin.catalogue.view}/`)
+  );
+}
+
+export function isUnderAdminManufacturers(pathname: string): boolean {
+  return (
+    pathname === routes.admin.manufacturers.view ||
+    pathname.startsWith(`${routes.admin.manufacturers.view}/`)
   );
 }

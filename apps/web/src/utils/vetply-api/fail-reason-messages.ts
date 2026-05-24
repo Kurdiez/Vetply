@@ -6,6 +6,7 @@ const FAIL_REASON_MESSAGES: Record<VetplyFailReason, string> = {
     'This email is registered with Google. Sign in with Google instead.',
   DUPLICATE_CATALOGUE_PRODUCT_MAPPING:
     'Multiple listings map to the same catalogue product. Only one listing per supplier can use each product ID.',
+  DUPLICATE_MANUFACTURER_NAME: 'A manufacturer with this name already exists.',
 };
 
 export function messageForVetplyFailReason(reason: VetplyFailReason): string {
