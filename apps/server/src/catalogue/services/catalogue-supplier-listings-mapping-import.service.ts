@@ -82,6 +82,18 @@ export class CatalogueSupplierListingsMappingImportService {
           continue;
         }
 
+        const supplierSkuTrim = row.supplier_product_id.trim();
+        if (supplierSkuTrim !== listing.supplierProductId) {
+          failures.push({
+            rowNumber: row.rowNumber,
+            column: 'supplier_product_id',
+            value: row.supplier_product_id,
+            message:
+              'supplier_product_id must match the listing (export fresh CSV)',
+          });
+          continue;
+        }
+
         const nameTrim = row.name.trim();
         if (nameTrim.length === 0) {
           failures.push({

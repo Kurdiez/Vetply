@@ -37,6 +37,7 @@ function mappingRow(
     id: '00000000-0000-4000-8000-000000000099',
     catalogue_product_id: '',
     name: 'Listing Name',
+    supplier_product_id: '',
     listed_price: '10.50',
     ...overrides,
   };
@@ -132,6 +133,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
           mappingRow({
             id: listing.id,
             name: 'After',
+            supplier_product_id: 'SP-1',
             listed_price: '',
             catalogue_product_id: '',
           }),
@@ -177,7 +179,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
       const res = await service.importBatch({
         supplier: Supplier.VEENAK,
         ...batchMeta(1),
-        rows: [mappingRow({ id: listing.id })],
+        rows: [mappingRow({ id: listing.id, supplier_product_id: 'NV-1' })],
       });
       expect(res.rowsUpdated).toBe(0);
       expect(res.failures[0]).toMatchObject({
@@ -188,6 +190,40 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
         where: { id: listing.id },
       });
       expect(unchanged!.supplierId).toBe(nvs.id);
+    });
+
+    it('fails when supplier_product_id does not match the listing', async () => {
+      const nvs = await ensureSupplier(Supplier.NVS);
+      const listing = await listingRepo.save(
+        listingRepo.create({
+          productId: null,
+          supplierId: nvs.id,
+          supplierProductId: 'SKU-REAL',
+          name: 'X',
+          listedPrice: null,
+        }),
+      );
+      const res = await service.importBatch({
+        supplier: Supplier.NVS,
+        ...batchMeta(1),
+        rows: [
+          mappingRow({
+            id: listing.id,
+            supplier_product_id: 'SKU-TAMPERED',
+            name: 'Y',
+          }),
+        ],
+      });
+      expect(res.rowsUpdated).toBe(0);
+      expect(res.failures[0]).toMatchObject({
+        column: 'supplier_product_id',
+        message:
+          'supplier_product_id must match the listing (export fresh CSV)',
+      });
+      const unchanged = await listingRepo.findOne({
+        where: { id: listing.id },
+      });
+      expect(unchanged!.name).toBe('X');
     });
   });
 
@@ -206,7 +242,13 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
       const res = await service.importBatch({
         supplier: Supplier.NVS,
         ...batchMeta(1),
-        rows: [mappingRow({ id: listing.id, name: '   ' })],
+        rows: [
+          mappingRow({
+            id: listing.id,
+            name: '   ',
+            supplier_product_id: 'SP-2',
+          }),
+        ],
       });
       expect(res.rowsUpdated).toBe(0);
       expect(res.failures[0]).toMatchObject({
@@ -243,6 +285,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
             id: listing.id,
             catalogue_product_id: ' \t',
             name: 'Unlinked',
+            supplier_product_id: 'SP-3',
           }),
         ],
       });
@@ -270,6 +313,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
           mappingRow({
             id: listing.id,
             catalogue_product_id: 'not-a-uuid',
+            supplier_product_id: 'SP-4',
           }),
         ],
       });
@@ -299,6 +343,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
           mappingRow({
             id: listing.id,
             catalogue_product_id: missingId,
+            supplier_product_id: 'SP-5',
           }),
         ],
       });
@@ -335,6 +380,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
             id: listing.id,
             catalogue_product_id: product.id,
             name: 'Mapped',
+            supplier_product_id: 'SP-6',
           }),
         ],
       });
@@ -363,6 +409,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
           mappingRow({
             id: listing.id,
             listed_price: '',
+            supplier_product_id: 'SP-7',
           }),
         ],
       });
@@ -386,7 +433,13 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
       const res = await service.importBatch({
         supplier: Supplier.NVS,
         ...batchMeta(1),
-        rows: [mappingRow({ id: listing.id, listed_price: '0' })],
+        rows: [
+          mappingRow({
+            id: listing.id,
+            listed_price: '0',
+            supplier_product_id: 'SP-8',
+          }),
+        ],
       });
       expect(res.rowsUpdated).toBe(1);
       const row = await listingRepo.findOne({ where: { id: listing.id } });
@@ -408,7 +461,13 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
         const res = await service.importBatch({
           supplier: Supplier.NVS,
           ...batchMeta(1),
-          rows: [mappingRow({ id: listing.id, listed_price })],
+          rows: [
+            mappingRow({
+              id: listing.id,
+              supplier_product_id: 'SP-9',
+              listed_price,
+            }),
+          ],
         });
         expect(res.rowsFailed).toBe(1);
         expect(res.failures[0].column).toBe('listed_price');
@@ -435,6 +494,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
           mappingRow({
             rowNumber: 1,
             id: ok.id,
+            supplier_product_id: 'SP-ok',
             name: 'Updated',
           }),
           mappingRow({
@@ -489,11 +549,13 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
             mappingRow({
               rowNumber: 1,
               id: l1.id,
+              supplier_product_id: 'DUP-1',
               catalogue_product_id: product.id,
             }),
             mappingRow({
               rowNumber: 2,
               id: l2.id,
+              supplier_product_id: 'DUP-2',
               catalogue_product_id: product.id,
             }),
           ],
@@ -547,6 +609,7 @@ describe('CatalogueSupplierListingsMappingImportService', () => {
           rows: [
             mappingRow({
               id: orphan.id,
+              supplier_product_id: 'OCC-2',
               catalogue_product_id: product.id,
             }),
           ],

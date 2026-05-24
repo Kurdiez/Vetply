@@ -92,6 +92,7 @@ export const supplierListingsMappingImportRowSchema = z.object({
   rowNumber: z.number().int().positive(),
   catalogue_product_id: z.string(),
   name: z.string(),
+  supplier_product_id: z.string(),
   listed_price: z.string(),
   id: z.string().uuid(),
 });

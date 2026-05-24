@@ -10,6 +10,7 @@ const UUID_SCHEMA = z.string().uuid();
 const LISTING_HEADER_ORDER = [
   'catalogue_product_id',
   'name',
+  'supplier_product_id',
   'listed_price',
   'id',
 ] as const;
@@ -85,6 +86,7 @@ export function parseSupplierListingsMappingCsv(
             rowNumber: dataRowNumber,
             catalogue_product_id: m.catalogue_product_id ?? '',
             name: m.name ?? '',
+            supplier_product_id: m.supplier_product_id ?? '',
             listed_price: m.listed_price ?? '',
             id: idParsed.data,
           });
