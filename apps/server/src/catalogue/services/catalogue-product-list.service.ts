@@ -70,9 +70,15 @@ export class CatalogueProductListService {
          FROM catalogue_product_supplier_listings l
          INNER JOIN catalogue_suppliers s ON s.id = l.supplier_id
          WHERE l.product_id IN (${inPlaceholders})
-           AND s.name IN ($${n + 1}, $${n + 2}, $${n + 3})
+           AND s.name IN ($${n + 1}, $${n + 2}, $${n + 3}, $${n + 4})
            AND l.listed_price IS NOT NULL`,
-        [...ids, Supplier.COVETRUS, Supplier.NVS, Supplier.VEENAK],
+        [
+          ...ids,
+          Supplier.COVETRUS,
+          Supplier.NVS,
+          Supplier.VEENAK,
+          Supplier.MWIAH,
+        ],
       );
 
       for (const row of priceRows) {
@@ -80,7 +86,8 @@ export class CatalogueProductListService {
         if (
           supplier !== Supplier.COVETRUS &&
           supplier !== Supplier.NVS &&
-          supplier !== Supplier.VEENAK
+          supplier !== Supplier.VEENAK &&
+          supplier !== Supplier.MWIAH
         ) {
           continue;
         }
@@ -103,6 +110,7 @@ export class CatalogueProductListService {
         covetrusPrice: m?.[Supplier.COVETRUS] ?? null,
         nvsPrice: m?.[Supplier.NVS] ?? null,
         veenakPrice: m?.[Supplier.VEENAK] ?? null,
+        mwiahPrice: m?.[Supplier.MWIAH] ?? null,
       };
     });
 

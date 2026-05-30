@@ -107,6 +107,7 @@ export const catalogueProductListItemSchema = z.object({
   covetrusPrice: z.string().nullable(),
   nvsPrice: z.string().nullable(),
   veenakPrice: z.string().nullable(),
+  mwiahPrice: z.string().nullable(),
 });
 
 export type CatalogueProductListItem = z.infer<

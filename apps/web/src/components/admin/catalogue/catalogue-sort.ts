@@ -65,6 +65,9 @@ export function sortCatalogueItems(
       case CatalogueListSortFieldId.VeenakPrice:
         cmp = compareNullableNumberStrings(a.veenakPrice, b.veenakPrice);
         break;
+      case CatalogueListSortFieldId.MwiahPrice:
+        cmp = compareNullableNumberStrings(a.mwiahPrice, b.mwiahPrice);
+        break;
       case CatalogueListSortFieldId.Supplier:
       default:
         cmp = 0;

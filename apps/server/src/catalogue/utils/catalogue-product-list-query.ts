@@ -311,6 +311,14 @@ export function applyCatalogueProductSort(
         dir,
       );
       break;
+    case CatalogueListSortFieldId.MwiahPrice:
+      orderBySelectAlias(
+        qb,
+        minListedPriceScalarSql(Supplier.MWIAH),
+        'catalogue_sort_mwiah',
+        dir,
+      );
+      break;
     default:
       qb.orderBy('product.updatedAt', 'DESC');
   }

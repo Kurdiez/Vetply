@@ -118,6 +118,7 @@ describe('CatalogueProductListService', () => {
     expect(row!.covetrusPrice).toBeNull();
     expect(row!.nvsPrice).toBeNull();
     expect(row!.veenakPrice).toBeNull();
+    expect(row!.mwiahPrice).toBeNull();
   });
 
   it('name search q matches product.name as ILIKE substring', async () => {
@@ -359,7 +360,7 @@ describe('CatalogueProductListService', () => {
     expect(res.items[0].id).toBe(productNvs.id);
   });
 
-  it('returns per-supplier NVS, Veenak, and Covetrus prices on list items', async () => {
+  it('returns per-supplier NVS, Veenak, Covetrus, and MWIAH prices on list items', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const listingRepo = getTestRepository(
       dbContext,
@@ -377,6 +378,7 @@ describe('CatalogueProductListService', () => {
     const nvsSupplier = await ensureSupplier(Supplier.NVS);
     const veenakSupplier = await ensureSupplier(Supplier.VEENAK);
     const covetrusSupplier = await ensureSupplier(Supplier.COVETRUS);
+    const mwiahSupplier = await ensureSupplier(Supplier.MWIAH);
 
     const alpha = await saveCatalogueManufacturer(
       manufacturerRepo,
@@ -414,6 +416,15 @@ describe('CatalogueProductListService', () => {
         listedPrice: '12.3400',
       }),
     );
+    await listingRepo.save(
+      listingRepo.create({
+        productId: product.id,
+        supplierId: mwiahSupplier.id,
+        supplierProductId: 'REF-MWIAH',
+        name: 'Multi-supplier product',
+        listedPrice: '7.8900',
+      }),
+    );
 
     const res = await service.listProducts({ page: 1, pageSize: 50 });
     const row = res.items.find((i) => i.id === product.id);
@@ -421,6 +432,7 @@ describe('CatalogueProductListService', () => {
     expect(row!.nvsPrice).toBe('99.00');
     expect(row!.veenakPrice).toBe('5.50');
     expect(row!.covetrusPrice).toBe('12.34');
+    expect(row!.mwiahPrice).toBe('7.89');
   });
 
   it('sorts by nvsPrice ascending', async () => {

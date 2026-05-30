@@ -5,6 +5,7 @@ export const CatalogueListSortFieldId = {
   CovetrusPrice: 'covetrusPrice',
   NvsPrice: 'nvsPrice',
   VeenakPrice: 'veenakPrice',
+  MwiahPrice: 'mwiahPrice',
 } as const;
 
 export type CatalogueListSortFieldId =

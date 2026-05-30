@@ -22,6 +22,7 @@ const SORTABLE_COLUMN_IDS: CatalogueSortFieldId[] = [
   CatalogueListSortFieldId.CovetrusPrice,
   CatalogueListSortFieldId.NvsPrice,
   CatalogueListSortFieldId.VeenakPrice,
+  CatalogueListSortFieldId.MwiahPrice,
 ];
 
 const COLUMNS: DataTableColumn[] = [
@@ -36,6 +37,7 @@ const COLUMNS: DataTableColumn[] = [
   { id: CatalogueListSortFieldId.CovetrusPrice, header: 'Covetrus price' },
   { id: CatalogueListSortFieldId.NvsPrice, header: 'NVS price' },
   { id: CatalogueListSortFieldId.VeenakPrice, header: 'Veenak price' },
+  { id: CatalogueListSortFieldId.MwiahPrice, header: 'MWIAH price' },
 ];
 
 function formatPriceCell(value: string | null): string {
@@ -148,6 +150,9 @@ export function CatalogueProductsTable({
         }
         if (columnId === CatalogueListSortFieldId.VeenakPrice) {
           return formatPriceCell(row.veenakPrice);
+        }
+        if (columnId === CatalogueListSortFieldId.MwiahPrice) {
+          return formatPriceCell(row.mwiahPrice);
         }
         const v = row[columnId as keyof CatalogueProductListItem];
         if (v === null || v === undefined) {
