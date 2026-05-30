@@ -29,7 +29,8 @@ export type CatalogueMappingExportKey =
   | 'products'
   | 'nvs'
   | 'veenak'
-  | 'covetrus';
+  | 'covetrus'
+  | 'mwiah';
 
 type MappingCardDefinition = {
   key: CatalogueMappingExportKey;
@@ -62,6 +63,12 @@ export const MAPPING_IMPORT_EXPORT_PAGE_CARDS: readonly MappingCardDefinition[] 
       title: 'Covetrus listings',
       logo: { src: '/suppliers/covetrus.png', alt: 'Covetrus' },
       supplier: Supplier.COVETRUS,
+    },
+    {
+      key: 'mwiah',
+      title: 'MWIAH listings',
+      logo: { src: '/suppliers/mwiah.png', alt: 'MWI Animal Health' },
+      supplier: Supplier.MWIAH,
     },
   ];
 
@@ -122,17 +129,27 @@ function exportKeyToSupplier(
   if (key === 'covetrus') {
     return Supplier.COVETRUS;
   }
+  if (key === 'mwiah') {
+    return Supplier.MWIAH;
+  }
   return undefined;
 }
 
 function supplierToCardKey(supplier: Supplier): CatalogueMappingExportKey {
-  if (supplier === Supplier.NVS) {
-    return 'nvs';
+  switch (supplier) {
+    case Supplier.NVS:
+      return 'nvs';
+    case Supplier.VEENAK:
+      return 'veenak';
+    case Supplier.COVETRUS:
+      return 'covetrus';
+    case Supplier.MWIAH:
+      return 'mwiah';
+    default: {
+      const _exhaustive: never = supplier;
+      throw new Error(`Unknown supplier: ${String(_exhaustive)}`);
+    }
   }
-  if (supplier === Supplier.VEENAK) {
-    return 'veenak';
-  }
-  return 'covetrus';
 }
 
 export function CatalogueMappingExportsImportsProvider({
