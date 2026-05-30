@@ -98,7 +98,7 @@ describe('importNvsCatalogueRow', () => {
     expect(listings[0].productId).toBe(products[0].id);
   });
 
-  it('updates product and listing when part number already exists', async () => {
+  it('updates listed price only when part number already exists', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const nvs = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.NVS }),
@@ -130,17 +130,14 @@ describe('importNvsCatalogueRow', () => {
     );
     const products = await productRepo.find();
     expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('Updated name');
-    expect(products[0].unitType).toBe(CatalogUnitType.ML);
-    expect(products[0].unitQuantity).toBe('250.000000');
-    expect(products[0].pom).toBe(true);
-    expect(products[0].salesCategory).toBe(SalesCategory.Consumables);
-    expect(products[0].legalCategory).toBe(LegalCategory.GSL_GeneralSalesList);
+    expect(products[0].name).toBe('Test product');
+    expect(products[0].unitType).toBe(CatalogUnitType.EA);
+    expect(products[0].unitQuantity).toBe('1.000000');
 
     const listings = await listingRepo.find();
     expect(listings).toHaveLength(1);
     expect(listings[0].listedPrice).toBe('20.5000');
-    expect(listings[0].name).toBe('Updated name');
+    expect(listings[0].name).toBe('Test product');
   });
 
   it('stores numeric Part No with leading zeros so it matches all-products ids', async () => {
@@ -177,7 +174,8 @@ describe('importNvsCatalogueRow', () => {
     const after = await listingRepo.find();
     expect(after).toHaveLength(1);
     expect(after[0].supplierProductId).toBe('00719870');
-    expect(after[0].name).toBe('Same line different padding');
+    expect(after[0].name).toBe('Test product');
+    expect(after[0].listedPrice).toBe('10.0000');
   });
 
   it('calls smart match only when creating the first listing for a part number', async () => {

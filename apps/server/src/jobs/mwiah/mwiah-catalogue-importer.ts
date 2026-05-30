@@ -5,13 +5,12 @@ import { findExistingCatalogueProductIdForSupplierImport } from '~/catalogue/uti
 import {
   parseNvsVpp,
   resolveLegalCategory,
-  resolveSalesCategory,
 } from '~/catalogue/utils/nvs-csv-parsers';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { updateExistingSupplierListingListedPriceOnly } from '~/catalogue/utils/existing-supplier-listing-reimport';
-import type { CovetrusProductPreview } from './covetrus-uidl-parse';
+import type { MwiahProductPreview } from './mwiah-product.types';
 
 async function resolveManufacturerId(
   manager: EntityManager,
@@ -30,19 +29,35 @@ async function resolveManufacturerId(
   return manufacturer.id;
 }
 
-function resolveLegalCategoryForCovetrus(
+function resolveLegalCategoryForMwiah(
   legalGroupRaw: string | null,
-): LegalCategory {
+): LegalCategory | null {
   const t = legalGroupRaw?.trim() ?? '';
-  if (t === '' || t === 'N/A') {
-    return LegalCategory.InstrumentsEquip;
+  if (t === '' || t.toUpperCase() === 'N/A') {
+    return null;
   }
-  return resolveLegalCategory(t) ?? LegalCategory.InstrumentsEquip;
+  return resolveLegalCategory(t);
 }
 
-export async function importCovetrusPreviewRow(
+function resolveUnitFieldsForMwiah(row: MwiahProductPreview): {
+  unitType: CatalogUnitType;
+  unitQuantity: string;
+} {
+  if (row.unitTypeTarget != null && row.unitQuantityTarget != null) {
+    return {
+      unitType: row.unitTypeTarget,
+      unitQuantity: row.unitQuantityTarget,
+    };
+  }
+  return {
+    unitType: CatalogUnitType.EA,
+    unitQuantity: '1.000000',
+  };
+}
+
+export async function importMwiahPreviewRow(
   manager: EntityManager,
-  row: CovetrusProductPreview,
+  row: MwiahProductPreview,
   supplierId: string,
 ): Promise<'imported' | string> {
   const supplierProductId = row.supplierProductId.trim();
@@ -56,10 +71,10 @@ export async function importCovetrusPreviewRow(
 
   const listedPrice =
     row.listedPrice != null ? parseNvsVpp(row.listedPrice) : null;
-  const salesCategory =
-    resolveSalesCategory(row.salesCategoryTarget) ?? SalesCategory.Instruments;
-  const legalCategory = resolveLegalCategoryForCovetrus(row.legalGroupRaw);
+  const salesCategory = row.salesCategoryTarget ?? SalesCategory.Consumables;
+  const legalCategory = resolveLegalCategoryForMwiah(row.legalGroupRaw);
   const manufacturerId = await resolveManufacturerId(manager, row.supplierName);
+  const unitFields = resolveUnitFieldsForMwiah(row);
 
   const listingRepo = manager.getRepository(
     CatalogueProductSupplierListingEntity,
@@ -102,9 +117,9 @@ export async function importCovetrusPreviewRow(
     salesCategory,
     legalCategory,
     pom: null,
-    image: null,
-    unitType: CatalogUnitType.EA,
-    unitQuantity: '1.000000',
+    image: row.image,
+    unitType: unitFields.unitType,
+    unitQuantity: unitFields.unitQuantity,
   });
   const savedProduct = await productRepo.save(product);
 

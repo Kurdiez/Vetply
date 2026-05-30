@@ -7,7 +7,9 @@ import { config } from 'dotenv';
 import { ConfigModule, ConfigService } from '~/config';
 import { Environment, ServerType } from '~/config/types';
 import { CovetrusScrapeConsumer } from './consumers/covetrus-scrape.consumer';
+import { MwiahScrapeConsumer } from './consumers/mwiah-scrape.consumer';
 import { CovetrusModule } from './covetrus/covetrus.module';
+import { MwiahModule } from './mwiah/mwiah.module';
 import { PRODUCER_OPTIONS, QUEUES } from './const';
 import basicAuth = require('express-basic-auth');
 
@@ -53,25 +55,18 @@ function getBullBoardImports(): DynamicModule[] {
       useFactory: (configService: ConfigService) => {
         const env = configService.get('ENVIRONMENT');
         const secret = configService.get('SYSTEM_SECRET');
-        const requireAuth =
+        const useAuth =
           env === Environment.Staging || env === Environment.Production;
-        if (requireAuth && !secret) {
-          throw new Error(
-            'SYSTEM_SECRET is required for Bull Board dashboard in staging and production. Set it in env.',
-          );
-        }
-        const useAuth = Boolean(secret);
         return {
           route: '/jobs',
           adapter: ExpressAdapter,
-          middleware:
-            useAuth && secret
-              ? basicAuth({
-                  challenge: true,
-                  users: { admin: secret },
-                  realm: 'Bull Board',
-                })
-              : (_req: unknown, _res: unknown, next: () => void) => next(),
+          middleware: useAuth
+            ? basicAuth({
+                challenge: true,
+                users: { admin: secret },
+                realm: 'Bull Board',
+              })
+            : (_req: unknown, _res: unknown, next: () => void) => next(),
         };
       },
       inject: [ConfigService],
@@ -87,16 +82,22 @@ function getBullBoardImports(): DynamicModule[] {
 
 function getConsumers(): Provider[] {
   if (process.env.SERVER_TYPE === ServerType.WORKER) {
-    return [CovetrusScrapeConsumer];
+    return [CovetrusScrapeConsumer, MwiahScrapeConsumer];
   }
   return [];
 }
 
 @Module({
-  imports: [...getBullMQImports(), ...getBullBoardImports(), CovetrusModule],
+  imports: [
+    ...getBullMQImports(),
+    ...getBullBoardImports(),
+    CovetrusModule,
+    MwiahModule,
+  ],
   providers: [...getConsumers()],
   exports: [
     CovetrusModule,
+    MwiahModule,
     ...QUEUE_CONFIGS.map((queueConfig) =>
       BullModule.registerQueue(queueConfig),
     ),

@@ -5,6 +5,7 @@ import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catal
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
+import { updateExistingSupplierListingListedPriceOnly } from '~/catalogue/utils/existing-supplier-listing-reimport';
 import { resolveNvsSalesCategory } from '../utils/nvs-sales-group-to-sales-category';
 import {
   parseNvsUom,
@@ -82,39 +83,17 @@ export async function importNvsCatalogueRow(
   });
 
   if (existingListing) {
-    if (existingListing.product) {
-      const manufacturerRepo = manager.getRepository(
-        CatalogueManufacturerEntity,
-      );
-      let manufacturer = await manufacturerRepo.findOne({
-        where: { name: manufacturerName },
-      });
-      if (!manufacturer) {
-        manufacturer = manufacturerRepo.create({ name: manufacturerName });
-        manufacturer = await manufacturerRepo.save(manufacturer);
-      }
-
-      const productRepo = manager.getRepository(CatalogueProductEntity);
-      const product = existingListing.product;
-      product.manufacturerId = manufacturer.id;
-      product.salesCategory = salesCategory;
-      product.legalCategory = legalCategory;
-      product.pom = pom;
-      product.unitType = uom.unitType;
-      product.unitQuantity = uom.unitQuantity;
-      product.name = canonicalCatalogueImportProductName(description);
-      await productRepo.save(product);
-
-      existingListing.name = description;
-      existingListing.listedPrice = listedPrice;
-      await listingRepo.save(existingListing);
-      return { ok: true, outcome: 'updated_existing_listing' };
-    }
-
-    existingListing.name = description;
-    existingListing.listedPrice = listedPrice;
-    await listingRepo.save(existingListing);
-    return { ok: true, outcome: 'updated_orphan_listing' };
+    await updateExistingSupplierListingListedPriceOnly(
+      listingRepo,
+      existingListing,
+      listedPrice,
+    );
+    return {
+      ok: true,
+      outcome: existingListing.product
+        ? 'updated_existing_listing'
+        : 'updated_orphan_listing',
+    };
   }
 
   const matchedProductId =

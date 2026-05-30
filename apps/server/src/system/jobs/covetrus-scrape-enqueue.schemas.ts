@@ -1,5 +1,5 @@
+import { SalesCategory } from '@vetply/shared';
 import { z } from 'zod';
-import { SalesCategory } from '../../catalogue/enums';
 
 export const salesCategoryEnum = z.nativeEnum(SalesCategory);
 

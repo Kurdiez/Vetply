@@ -4,11 +4,12 @@ import { JobsModule } from '~/jobs/jobs.module';
 
 import { SystemGuard } from './auth/system.guard';
 import { CovetrusJobsController } from './jobs/covetrus-jobs.controller';
+import { MwiahJobsController } from './jobs/mwiah-jobs.controller';
 import { MonitorController } from './monitor/monitor.controller';
 
 @Module({
   imports: [JobsModule],
-  controllers: [MonitorController, CovetrusJobsController],
+  controllers: [MonitorController, CovetrusJobsController, MwiahJobsController],
   providers: [SystemGuard],
 })
 export class SystemModule {}

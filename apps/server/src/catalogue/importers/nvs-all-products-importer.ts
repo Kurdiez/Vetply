@@ -7,6 +7,7 @@ import { canonicalCatalogueImportProductName } from '../utils/catalogue-product-
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
+import { updateExistingSupplierListingListedPriceOnly } from '~/catalogue/utils/existing-supplier-listing-reimport';
 import { parseNvsUom, parseNvsVpp } from '../utils/nvs-csv-parsers';
 
 export async function importNvsAllProductsRow(
@@ -38,27 +39,14 @@ export async function importNvsAllProductsRow(
 
   const existingListing = await listingRepo.findOne({
     where: { supplierId, supplierProductId },
-    relations: ['product'],
   });
 
   if (existingListing) {
-    if (existingListing.product) {
-      const productRepo = manager.getRepository(CatalogueProductEntity);
-      const product = existingListing.product;
-      product.unitType = uom.unitType;
-      product.unitQuantity = uom.unitQuantity;
-      product.name = canonicalCatalogueImportProductName(name);
-      await productRepo.save(product);
-
-      existingListing.name = name;
-      existingListing.listedPrice = listedPrice;
-      await listingRepo.save(existingListing);
-      return 'imported';
-    }
-
-    existingListing.name = name;
-    existingListing.listedPrice = listedPrice;
-    await listingRepo.save(existingListing);
+    await updateExistingSupplierListingListedPriceOnly(
+      listingRepo,
+      existingListing,
+      listedPrice,
+    );
     return 'imported';
   }
 

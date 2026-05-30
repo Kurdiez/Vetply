@@ -1,6 +1,6 @@
 import type { JobsOptions } from 'bullmq';
 
-export const QUEUES = ['COVETRUS_SCRAPE'] as const;
+export const QUEUES = ['COVETRUS_SCRAPE', 'MWIAH_SCRAPE'] as const;
 
 export type QueueName = (typeof QUEUES)[number];
 
@@ -37,5 +37,10 @@ export const CONSUMER_OPTIONS = Object.freeze({
 export const JOBS = {
   [QUEUE.COVETRUS_SCRAPE]: {
     SCRAPE_CATEGORY: 'COVETRUS_SCRAPE.SCRAPE_CATEGORY',
+  },
+  [QUEUE.MWIAH_SCRAPE]: {
+    DISCOVER_CATEGORIES_AND_ENQUEUE:
+      'MWIAH_SCRAPE.DISCOVER_CATEGORIES_AND_ENQUEUE',
+    SCRAPE_CATEGORY_PRODUCTS: 'MWIAH_SCRAPE.SCRAPE_CATEGORY_PRODUCTS',
   },
 } as const;

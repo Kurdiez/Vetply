@@ -1,4 +1,5 @@
-import { SalesCategory } from '../../../catalogue/enums';
+import { SalesCategory } from '@vetply/shared';
+
 import { resolveCovetrusScrapeCategoryLabels } from '../covetrus-scrape-enqueue.schemas';
 
 describe('resolveCovetrusScrapeCategoryLabels', () => {

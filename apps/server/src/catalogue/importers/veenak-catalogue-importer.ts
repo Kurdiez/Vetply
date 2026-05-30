@@ -4,6 +4,7 @@ import { canonicalCatalogueImportProductName } from '~/catalogue/utils/catalogue
 import { findExistingCatalogueProductIdForSupplierImport } from '~/catalogue/utils/catalogue-product-import-match';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
+import { updateExistingSupplierListingListedPriceOnly } from '~/catalogue/utils/existing-supplier-listing-reimport';
 import { parseNvsUom, parseNvsVpp } from '../utils/nvs-csv-parsers';
 
 export async function importVeenakCatalogueRow(
@@ -33,20 +34,14 @@ export async function importVeenakCatalogueRow(
 
   const existingListing = await listingRepo.findOne({
     where: { supplierId, supplierProductId },
-    relations: ['product'],
   });
 
   if (existingListing) {
-    if (existingListing.product) {
-      existingListing.name = productName;
-      existingListing.listedPrice = listedPrice;
-      await listingRepo.save(existingListing);
-      return 'imported';
-    }
-
-    existingListing.name = productName;
-    existingListing.listedPrice = listedPrice;
-    await listingRepo.save(existingListing);
+    await updateExistingSupplierListingListedPriceOnly(
+      listingRepo,
+      existingListing,
+      listedPrice,
+    );
     return 'imported';
   }
 

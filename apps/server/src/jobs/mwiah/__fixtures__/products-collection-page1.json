@@ -1,0 +1,24 @@
+{
+  "uri": "https://onlinestore.mwiah.co.uk/api/v2/products",
+  "products": [
+    {
+      "uri": "https://onlinestore.mwiah.co.uk/api/v2/products/30315838",
+      "id": "00000000-0000-0000-0000-000000000001",
+      "erpNumber": "30315838",
+      "productNumber": "30315838",
+      "shortDescription": "Applaws Adult Cat Chicken Breast and Asparagus Pouch - 12 x 70g",
+      "canonicalUrl": "/Product/applaws-adult-cat-chicken-breast-and-asparagus-pouch-12-x-70g-30315838",
+      "brand": { "name": "Applaws" },
+      "pricing": { "unitNetPrice": 12.5, "unitListPrice": 14.99 },
+      "smallImagePath": "/userfiles/product_images/small/30/31/58/30315838_2000x2000_small.jpg"
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "page": 1,
+    "pageSize": 12,
+    "totalItemCount": 24,
+    "numberOfPages": 2,
+    "defaultPageSize": 12
+  }
+}

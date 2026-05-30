@@ -1,18 +1,18 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import {
-  covetrusScrapeEnqueueBodySchema,
-  resolveCovetrusScrapeCategoryLabels,
-  type CovetrusScrapeEnqueueBody,
-  type CovetrusScrapeEnqueueRes,
-} from '@vetply/shared';
 import { Queue } from 'bullmq';
 
 import { ZodValidationPipe } from '~/commons/validations';
 import { JOBS, PRODUCER_OPTIONS, QUEUE } from '~/jobs/const';
 import type { CovetrusScrapeCategoryJobData } from '~/jobs/covetrus/covetrus-job.types';
-
 import { SystemGuard } from '~/system/auth/system.guard';
+
+import {
+  covetrusScrapeEnqueueBodySchema,
+  resolveCovetrusScrapeCategoryLabels,
+  type CovetrusScrapeEnqueueBody,
+  type CovetrusScrapeEnqueueRes,
+} from './covetrus-scrape-enqueue.schemas';
 
 @Controller('system/jobs/covetrus')
 @UseGuards(SystemGuard)
@@ -22,7 +22,7 @@ export class CovetrusJobsController {
     private readonly covetrusQueue: Queue,
   ) {}
 
-  @Post('enqueue')
+  @Post('enqueue-all-scrape')
   async enqueueCovetrusScrape(
     @Body(new ZodValidationPipe(covetrusScrapeEnqueueBodySchema))
     body: CovetrusScrapeEnqueueBody = {},

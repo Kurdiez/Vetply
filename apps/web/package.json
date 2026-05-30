@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "check-all": "yarn format && yarn lint",
+    "check-all": "yarn format && yarn lint && yarn build",
     "dev": "node ./scripts/dev-restart.mjs",
     "dev:next": "next dev --port 6238",
     "dev:turbo": "node ./scripts/dev-restart-turbo.mjs",

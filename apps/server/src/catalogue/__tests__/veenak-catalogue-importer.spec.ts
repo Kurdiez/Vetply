@@ -156,7 +156,7 @@ describe('importVeenakCatalogueRow', () => {
     expect(await productRepo.count()).toBe(1);
     const listings = await listingRepo.find();
     expect(listings).toHaveLength(1);
-    expect(listings[0].name).toBe('Second');
+    expect(listings[0].name).toBe('First');
     expect(listings[0].listedPrice).toBe('9.9900');
     const products = await productRepo.find();
     expect(products[0].name).toBe('First');

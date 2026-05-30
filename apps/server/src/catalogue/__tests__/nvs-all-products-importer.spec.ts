@@ -78,7 +78,7 @@ describe('importNvsAllProductsRow', () => {
     expect(listings[0].listedPrice).toBe('12.5000');
   });
 
-  it('updates existing listing without clearing rich product metadata', async () => {
+  it('updates listed price only without changing product or listing name', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const nvs = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.NVS }),
@@ -110,16 +110,17 @@ describe('importNvsAllProductsRow', () => {
 
     products = await productRepo.find();
     expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('Second');
+    expect(products[0].name).toBe('First');
     expect(products[0].salesCategory).toBe(SalesCategory.Consumables);
-    expect(products[0].unitType).toBe(CatalogUnitType.PK);
+    expect(products[0].unitType).toBe(CatalogUnitType.EA);
 
     const listingRepo = getTestRepository(
       dbContext,
       CatalogueProductSupplierListingEntity,
     );
     const listings = await listingRepo.find();
-    expect(listings[0].name).toBe('Second');
+    expect(listings[0].name).toBe('First');
+    expect(listings[0].listedPrice).toBe('3.0000');
   });
 
   it('updates orphan listing only when product was deleted (no relink)', async () => {
@@ -149,6 +150,7 @@ describe('importNvsAllProductsRow', () => {
       where: { supplierProductId: '00008888', supplierId: nvs.id },
     });
     expect(orphan?.productId).toBeNull();
+    const orphanNameBefore = orphan?.name;
 
     const second = await importNvsAllProductsRow(
       dbContext.manager,
@@ -156,6 +158,7 @@ describe('importNvsAllProductsRow', () => {
         supplierProductId: '00008888',
         pack: 'EA',
         name: 'After orphan',
+        listedPrice: '3.00',
       }),
       nvs.id,
     );
@@ -164,7 +167,8 @@ describe('importNvsAllProductsRow', () => {
     const listings = await listingRepo.find();
     expect(listings).toHaveLength(1);
     expect(listings[0].productId).toBeNull();
-    expect(listings[0].name).toBe('After orphan');
+    expect(listings[0].name).toBe(orphanNameBefore);
+    expect(listings[0].listedPrice).toBe('3.0000');
   });
 
   it('calls smart match only when creating the first listing for a supplier SKU', async () => {

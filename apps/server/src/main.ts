@@ -53,7 +53,7 @@ async function setupServer() {
 
   app.use(json({ limit: '10mb' }));
 
-  const port = configService.get('PORT') ?? 8580;
+  const port = configService.get('PORT');
   await app.listen(port, '::');
 }
 
