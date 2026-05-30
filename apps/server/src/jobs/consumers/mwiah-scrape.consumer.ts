@@ -6,7 +6,12 @@ import { Job, Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
-import { CONSUMER_OPTIONS, JOBS, PRODUCER_OPTIONS, QUEUE } from '../const';
+import {
+  JOBS,
+  MWIAH_CONSUMER_OPTIONS,
+  PRODUCER_OPTIONS,
+  QUEUE,
+} from '../const';
 import { importMwiahPreviewRow } from '../mwiah/mwiah-catalogue-importer';
 import {
   createMwiahProductApiCapture,
@@ -26,7 +31,7 @@ import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
 const SKIP_REASONS_LOG_CAP = 10;
 
-@Processor(QUEUE.MWIAH_SCRAPE, CONSUMER_OPTIONS)
+@Processor(QUEUE.MWIAH_SCRAPE, MWIAH_CONSUMER_OPTIONS)
 export class MwiahScrapeConsumer extends WorkerHost {
   private readonly logger = new Logger(MwiahScrapeConsumer.name);
 

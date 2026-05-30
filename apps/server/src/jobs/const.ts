@@ -34,6 +34,11 @@ export const CONSUMER_OPTIONS = Object.freeze({
   concurrency: 10,
 });
 
+export const MWIAH_CONSUMER_OPTIONS = Object.freeze({
+  ...CONSUMER_OPTIONS,
+  concurrency: 2,
+});
+
 export const JOBS = {
   [QUEUE.COVETRUS_SCRAPE]: {
     SCRAPE_CATEGORY: 'COVETRUS_SCRAPE.SCRAPE_CATEGORY',
