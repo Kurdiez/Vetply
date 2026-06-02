@@ -53,13 +53,28 @@ describe('collectMwiahMenuCategoryUrls', () => {
     ],
   };
 
-  it('includes every node with href', () => {
+  it('includes only leaf menu nodes that have an href', () => {
     const urls = collectMwiahMenuCategoryUrls(sampleTree, STORE_ORIGIN);
     expect(urls).toEqual([
-      'https://onlinestore.mwiah.co.uk/Catalog/consumables',
       'https://onlinestore.mwiah.co.uk/Catalog/consumables/animal-identification',
       'https://onlinestore.mwiah.co.uk/Catalog/Clearance-sale',
     ]);
+  });
+
+  it('excludes parent nodes that still have submenu children', () => {
+    const urls = collectMwiahMenuCategoryUrls(sampleTree, STORE_ORIGIN);
+    expect(urls).not.toContain(
+      'https://onlinestore.mwiah.co.uk/Catalog/consumables',
+    );
+  });
+
+  it('skips leaf nodes without href', () => {
+    const tree: MwiahMenuNode = {
+      label: 'Products',
+      href: null,
+      children: [{ label: 'Empty leaf', href: null, children: [] }],
+    };
+    expect(collectMwiahMenuCategoryUrls(tree, STORE_ORIGIN)).toEqual([]);
   });
 });
 

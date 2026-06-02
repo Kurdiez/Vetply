@@ -28,15 +28,18 @@ export function collectMwiahMenuCategoryUrls(
   storeOrigin: string,
   ancestorPath: string[] = [],
 ): string[] {
-  const urls: string[] = [];
   const menuPath = [...ancestorPath, tree.label].filter(
     (s, i, arr) => i === 0 || s !== arr[i - 1],
   );
 
-  if (tree.href?.trim()) {
-    urls.push(resolveMwiahCategoryUrl(tree.href.trim(), storeOrigin));
+  if (tree.children.length === 0) {
+    if (!tree.href?.trim()) {
+      return [];
+    }
+    return [resolveMwiahCategoryUrl(tree.href.trim(), storeOrigin)];
   }
 
+  const urls: string[] = [];
   for (const child of tree.children) {
     urls.push(...collectMwiahMenuCategoryUrls(child, storeOrigin, menuPath));
   }
