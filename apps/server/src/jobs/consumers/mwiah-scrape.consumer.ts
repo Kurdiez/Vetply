@@ -8,7 +8,7 @@ import { DataSource } from 'typeorm';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CustomException } from '~/commons/errors/custom-exception';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
-import { JOBS, CONSUMER_OPTIONS, PRODUCER_OPTIONS, QUEUE } from '../const';
+import { CONSUMER_OPTIONS, JOBS, PRODUCER_OPTIONS, QUEUE } from '../const';
 import { importMwiahPreviewRow } from '../mwiah/mwiah-catalogue-importer';
 import {
   createMwiahProductApiCapture,
@@ -28,7 +28,7 @@ import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
 const SKIP_REASONS_LOG_CAP = 10;
 
-@Processor(QUEUE.MWIAH_SCRAPE, CONSUMER_OPTIONS)
+@Processor(QUEUE.MWIAH_SCRAPE, { ...CONSUMER_OPTIONS, concurrency: 4 })
 export class MwiahScrapeConsumer extends WorkerHost {
   private readonly logger = new Logger(MwiahScrapeConsumer.name);
 
