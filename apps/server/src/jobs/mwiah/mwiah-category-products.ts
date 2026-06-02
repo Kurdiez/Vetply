@@ -1,8 +1,8 @@
 import type { Page } from 'playwright';
 
 import {
-  parseSupplierProductIdFromProductUrl,
   isMwiahProductDetailHref,
+  parseSupplierProductIdFromProductUrl,
 } from './mwiah-category-product-href';
 import {
   collectMwiahProductUrlsFromDom,
@@ -13,10 +13,10 @@ import {
   fetchMwiahProductDetailBody,
   resolveMwiahProductDetailApiUrl,
 } from './mwiah-product-detail-api';
+import type { MwiahProductPreview } from './mwiah-product.types';
+import { resolveMwiahCategoryUrl } from './mwiah-products-menu';
 import { buildMwiahSupplierListingPreview } from './mwiah-supplier-listing-rest-parse';
 import { normalizeMwiahSupplierProductId } from './mwiah-supplier-product-id';
-import { resolveMwiahCategoryUrl } from './mwiah-products-menu';
-import type { MwiahProductPreview } from './mwiah-product.types';
 
 function resolveListItemProductUrl(
   item: Record<string, unknown>,
@@ -71,10 +71,10 @@ async function fetchListingPreviewFromRest(
 function collectCategoryWorkItems(
   listProducts: Record<string, unknown>[],
   storeOrigin: string,
+  seenSupplierProductIds: Set<string>,
 ): { listItem: Record<string, unknown>; productUrl: string }[] {
   const workItems: { listItem: Record<string, unknown>; productUrl: string }[] =
     [];
-  const seenSupplierProductIds = new Set<string>();
 
   for (const item of listProducts) {
     const productUrl = resolveListItemProductUrl(item, storeOrigin);
@@ -95,6 +95,33 @@ function collectCategoryWorkItems(
   return workItems;
 }
 
+async function fetchListingPreviewsForWorkItems(
+  page: Page,
+  categoryUrl: string,
+  storeOrigin: string,
+  workItems: { listItem: Record<string, unknown>; productUrl: string }[],
+): Promise<MwiahProductPreview[]> {
+  const results = await Promise.all(
+    workItems.map(({ listItem, productUrl }) =>
+      fetchListingPreviewFromRest(
+        page,
+        categoryUrl,
+        storeOrigin,
+        listItem,
+        productUrl,
+      ),
+    ),
+  );
+
+  const previews: MwiahProductPreview[] = [];
+  for (const result of results) {
+    if (typeof result !== 'string') {
+      previews.push(result);
+    }
+  }
+  return previews;
+}
+
 export async function scrapeMwiahCategoryProducts(
   page: Page,
   categoryUrl: string,
@@ -111,33 +138,40 @@ export async function scrapeMwiahCategoryProducts(
     capture,
   );
 
-  let listProducts = capture.drainCollectionProducts();
-  if (listProducts.length === 0) {
-    const domUrls = await collectMwiahProductUrlsFromDom(page, storeOrigin);
-    listProducts = domUrls.map((url) => ({ canonicalUrl: url }));
-  }
+  const listProductPages = capture.drainCollectionProductPages();
+  const domFallbackPages =
+    listProductPages.length === 0
+      ? [
+          (await collectMwiahProductUrlsFromDom(page, storeOrigin)).map(
+            (url) => ({ canonicalUrl: url }),
+          ),
+        ]
+      : listProductPages;
 
-  const workItems = collectCategoryWorkItems(listProducts, storeOrigin);
-
+  const seenSupplierProductIds = new Set<string>();
   const previews: MwiahProductPreview[] = [];
-  for (const { listItem, productUrl } of workItems) {
-    const result = await fetchListingPreviewFromRest(
+  let productsDiscovered = 0;
+
+  for (const listProducts of domFallbackPages) {
+    const workItems = collectCategoryWorkItems(
+      listProducts,
+      storeOrigin,
+      seenSupplierProductIds,
+    );
+    productsDiscovered += workItems.length;
+    const pagePreviews = await fetchListingPreviewsForWorkItems(
       page,
       categoryUrl,
       storeOrigin,
-      listItem,
-      productUrl,
+      workItems,
     );
-    if (typeof result === 'string') {
-      continue;
-    }
-    previews.push(result);
+    previews.push(...pagePreviews);
   }
 
   return {
     previews,
     listPagesVisited,
-    productsDiscovered: workItems.length,
+    productsDiscovered,
   };
 }
 

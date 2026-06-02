@@ -45,22 +45,30 @@ export class MwiahProductApiCapture {
     return this.latestPagination;
   }
 
-  drainCollectionProducts(): Record<string, unknown>[] {
-    const bySupplierProductId = new Map<string, Record<string, unknown>>();
-    for (const body of this.collectionBodies) {
-      const { products } = parseMwiahProductsCollectionBody(body);
-      for (const product of products) {
+  drainCollectionProductPages(): Record<string, unknown>[][] {
+    const pages = this.collectionBodies.map((body) =>
+      parseMwiahProductsCollectionBody(body).products.filter((product) => {
         const erpRaw = String(
           product.erpNumber ?? product.productNumber ?? '',
         ).trim();
-        if (erpRaw === '') {
-          continue;
-        }
+        return erpRaw !== '';
+      }),
+    );
+    this.collectionBodies.length = 0;
+    return pages;
+  }
+
+  drainCollectionProducts(): Record<string, unknown>[] {
+    const bySupplierProductId = new Map<string, Record<string, unknown>>();
+    for (const pageProducts of this.drainCollectionProductPages()) {
+      for (const product of pageProducts) {
+        const erpRaw = String(
+          product.erpNumber ?? product.productNumber ?? '',
+        ).trim();
         const key = normalizeMwiahSupplierProductId(erpRaw);
         bySupplierProductId.set(key, product);
       }
     }
-    this.collectionBodies.length = 0;
     return [...bySupplierProductId.values()];
   }
 }

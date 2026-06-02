@@ -5,13 +5,10 @@ import { Supplier } from '@vetply/shared';
 import { Job, Queue } from 'bullmq';
 import { DataSource } from 'typeorm';
 
+import { captureException } from '~/commons/error-handlers/capture-exception';
+import { CustomException } from '~/commons/errors/custom-exception';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
-import {
-  JOBS,
-  MWIAH_CONSUMER_OPTIONS,
-  PRODUCER_OPTIONS,
-  QUEUE,
-} from '../const';
+import { JOBS, CONSUMER_OPTIONS, PRODUCER_OPTIONS, QUEUE } from '../const';
 import { importMwiahPreviewRow } from '../mwiah/mwiah-catalogue-importer';
 import {
   createMwiahProductApiCapture,
@@ -31,7 +28,7 @@ import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
 const SKIP_REASONS_LOG_CAP = 10;
 
-@Processor(QUEUE.MWIAH_SCRAPE, MWIAH_CONSUMER_OPTIONS)
+@Processor(QUEUE.MWIAH_SCRAPE, CONSUMER_OPTIONS)
 export class MwiahScrapeConsumer extends WorkerHost {
   private readonly logger = new Logger(MwiahScrapeConsumer.name);
 
@@ -49,21 +46,45 @@ export class MwiahScrapeConsumer extends WorkerHost {
       MwiahDiscoverCategoriesJobData | MwiahScrapeCategoryProductsJobData
     >,
   ): Promise<void> {
-    if (job.name === JOBS[QUEUE.MWIAH_SCRAPE].DISCOVER_CATEGORIES_AND_ENQUEUE) {
-      await this.processDiscoverCategoriesAndEnqueue(
-        job as Job<MwiahDiscoverCategoriesJobData>,
+    try {
+      if (
+        job.name === JOBS[QUEUE.MWIAH_SCRAPE].DISCOVER_CATEGORIES_AND_ENQUEUE
+      ) {
+        await this.processDiscoverCategoriesAndEnqueue(
+          job as Job<MwiahDiscoverCategoriesJobData>,
+        );
+        return;
+      }
+      if (job.name === JOBS[QUEUE.MWIAH_SCRAPE].SCRAPE_CATEGORY_PRODUCTS) {
+        await this.processScrapeCategoryProducts(
+          job as Job<MwiahScrapeCategoryProductsJobData>,
+        );
+        return;
+      }
+      throw new Error(
+        `Unsupported MWIAH job name "${job.name}". Expected ${JOBS[QUEUE.MWIAH_SCRAPE].DISCOVER_CATEGORIES_AND_ENQUEUE} or ${JOBS[QUEUE.MWIAH_SCRAPE].SCRAPE_CATEGORY_PRODUCTS}.`,
       );
-      return;
+    } catch (error) {
+      const wrapped = this.wrapMwiahJobError(job, error);
+      captureException({ error: wrapped, logger: this.logger });
+      throw wrapped;
     }
-    if (job.name === JOBS[QUEUE.MWIAH_SCRAPE].SCRAPE_CATEGORY_PRODUCTS) {
-      await this.processScrapeCategoryProducts(
-        job as Job<MwiahScrapeCategoryProductsJobData>,
-      );
-      return;
-    }
-    throw new Error(
-      `Unsupported MWIAH job name "${job.name}". Expected ${JOBS[QUEUE.MWIAH_SCRAPE].DISCOVER_CATEGORIES_AND_ENQUEUE} or ${JOBS[QUEUE.MWIAH_SCRAPE].SCRAPE_CATEGORY_PRODUCTS}.`,
-    );
+  }
+
+  private wrapMwiahJobError(
+    job: Job<
+      MwiahDiscoverCategoriesJobData | MwiahScrapeCategoryProductsJobData
+    >,
+    error: unknown,
+  ): CustomException {
+    return new CustomException('MWIAH scrape job failed', {
+      error,
+      queue: QUEUE.MWIAH_SCRAPE,
+      jobId: job.id?.toString() ?? null,
+      jobName: job.name,
+      attemptsMade: job.attemptsMade,
+      jobData: job.data,
+    });
   }
 
   private async processDiscoverCategoriesAndEnqueue(
