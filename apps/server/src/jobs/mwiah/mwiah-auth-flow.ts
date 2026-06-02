@@ -1,7 +1,15 @@
-import type { Page } from 'playwright';
+import type { Page, Response } from 'playwright';
 
 import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
 import { dismissMwiahCookieConsentIfPresent } from './mwiah-cookie-consent';
+import {
+  collectLoginPageState,
+  extractCfRayFromResponse,
+  inferHypothesesFromPageState,
+  logMwiahLoginDebug,
+  MWIAH_LOGIN_HYPOTHESES,
+  type MwiahLoginDebugContext,
+} from './mwiah-login-debug';
 import { MWIAH_SIGN_IN_URL } from './mwiah-urls';
 
 function sleep(ms: number): Promise<void> {
@@ -17,55 +25,127 @@ export function isSignInPath(url: string): boolean {
   }
 }
 
-async function collectLoginDiagnostics(page: Page): Promise<string> {
-  const info = await page.evaluate(() => {
-    const submitCandidates = Array.from(
-      document.querySelectorAll(
-        'button, input[type="submit"], [role="button"], a[role="button"]',
-      ),
-    )
-      .map((el) => {
-        const htmlEl = el as HTMLElement;
-        const text = (htmlEl.textContent || '').replace(/\s+/g, ' ').trim();
-        const value = (el as HTMLInputElement).value || '';
-        return text || value || htmlEl.getAttribute('aria-label') || '';
-      })
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0)
-      .slice(0, 20);
+async function ensureOnSignInPage(
+  page: Page,
+  debugContext: MwiahLoginDebugContext,
+): Promise<void> {
+  const currentUrl = page.url();
+  const alreadyOnSignIn = isSignInPath(currentUrl);
 
-    return {
-      href: location.href,
-      title: document.title,
-      hasPasswordInput: !!document.querySelector('input[type="password"]'),
-      hasUserInput: !!document.querySelector(
-        'input[type="email"], input[name*="user" i], input[name="UserName"], input[name*="login" i], input[autocomplete="username"], input#username',
-      ),
-      submitCandidates,
-    };
+  logMwiahLoginDebug({
+    event: 'signin_check',
+    hypotheses: [
+      MWIAH_LOGIN_HYPOTHESES.NAV_RACE,
+      MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+    ],
+    context: debugContext,
+    data: { currentUrl, alreadyOnSignIn },
   });
 
-  return JSON.stringify(info);
-}
-
-async function ensureOnSignInPage(page: Page): Promise<void> {
-  if (isSignInPath(page.url())) {
+  if (alreadyOnSignIn) {
     return;
   }
-  await page.goto(MWIAH_SIGN_IN_URL, {
-    waitUntil: 'domcontentloaded',
-    timeout: 60_000,
-  });
+
+  let signInResponse: Response | null = null;
+  try {
+    signInResponse = await page.goto(MWIAH_SIGN_IN_URL, {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
+  } catch (err) {
+    const pageState = await collectLoginPageState(page).catch(() => null);
+    logMwiahLoginDebug({
+      event: 'signin_nav_failed',
+      hypotheses: [
+        MWIAH_LOGIN_HYPOTHESES.NAV_RACE,
+        MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+        MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+      ],
+      context: debugContext,
+      data: {
+        targetUrl: MWIAH_SIGN_IN_URL,
+        error: String(err),
+        pageState,
+      },
+    });
+    throw err;
+  }
+
   await sleep(BROWSER_NAVIGATION_DELAY_MS);
+
+  const pageState = await collectLoginPageState(page);
+  logMwiahLoginDebug({
+    event: 'signin_nav_complete',
+    hypotheses: [
+      MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+      MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+      MWIAH_LOGIN_HYPOTHESES.COOKIE_BANNER,
+      MWIAH_LOGIN_HYPOTHESES.SLOW_HYDRATION,
+    ],
+    context: debugContext,
+    data: {
+      targetUrl: MWIAH_SIGN_IN_URL,
+      responseStatus: signInResponse?.status() ?? null,
+      cfRay: extractCfRayFromResponse(signInResponse),
+      pageState,
+      inferredHypotheses: inferHypothesesFromPageState(
+        pageState,
+        isSignInPath(page.url()),
+      ),
+    },
+  });
 }
 
 async function fillCredentialsAndSubmit(
   page: Page,
   username: string,
   password: string,
+  debugContext: MwiahLoginDebugContext,
 ): Promise<void> {
   const passwordInput = page.locator('input[type="password"]').first();
-  await passwordInput.waitFor({ state: 'visible', timeout: 20_000 });
+
+  logMwiahLoginDebug({
+    event: 'password_wait_start',
+    hypotheses: [
+      MWIAH_LOGIN_HYPOTHESES.SLOW_HYDRATION,
+      MWIAH_LOGIN_HYPOTHESES.COOKIE_BANNER,
+      MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+    ],
+    context: debugContext,
+    data: { url: page.url() },
+  });
+
+  try {
+    await passwordInput.waitFor({ state: 'visible', timeout: 20_000 });
+  } catch (err) {
+    const pageState = await collectLoginPageState(page);
+    const inferredHypotheses = inferHypothesesFromPageState(
+      pageState,
+      isSignInPath(page.url()),
+    );
+
+    logMwiahLoginDebug({
+      event: 'password_wait_failed',
+      hypotheses: inferredHypotheses.length
+        ? inferredHypotheses
+        : [
+            MWIAH_LOGIN_HYPOTHESES.SLOW_HYDRATION,
+            MWIAH_LOGIN_HYPOTHESES.COOKIE_BANNER,
+            MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+            MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+          ],
+      context: debugContext,
+      data: {
+        error: String(err),
+        pageState,
+        inferredHypotheses,
+      },
+    });
+
+    throw new Error(
+      `MWIAH password field not visible. ${String(err)} diagnostics=${JSON.stringify(pageState)}`,
+    );
+  }
 
   const userInput = page
     .locator(
@@ -102,18 +182,43 @@ async function fillCredentialsAndSubmit(
     try {
       await passwordInput.press('Enter', { timeout: 5_000 });
     } catch {
-      const details = await collectLoginDiagnostics(page);
+      const pageState = await collectLoginPageState(page);
       throw new Error(
-        `MWIAH login submit not found/clickable. ${String(clickErr)} diagnostics=${details}`,
+        `MWIAH login submit not found/clickable. ${String(clickErr)} diagnostics=${JSON.stringify(pageState)}`,
       );
     }
   }
 }
 
-async function waitForPostLoginNavigation(page: Page): Promise<void> {
-  await page.waitForURL((url) => !isSignInPath(url.toString()), {
-    timeout: 60_000,
-  });
+async function waitForPostLoginNavigation(
+  page: Page,
+  debugContext: MwiahLoginDebugContext,
+): Promise<void> {
+  try {
+    await page.waitForURL((url) => !isSignInPath(url.toString()), {
+      timeout: 60_000,
+    });
+  } catch (err) {
+    const pageState = await collectLoginPageState(page);
+    logMwiahLoginDebug({
+      event: 'post_login_nav_failed',
+      hypotheses: [
+        MWIAH_LOGIN_HYPOTHESES.AUTH_PROVIDER,
+        MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+      ],
+      context: debugContext,
+      data: {
+        error: String(err),
+        pageState,
+        inferredHypotheses: inferHypothesesFromPageState(
+          pageState,
+          isSignInPath(page.url()),
+        ),
+      },
+    });
+    throw err;
+  }
+
   await page
     .waitForLoadState('networkidle', { timeout: 30_000 })
     .catch(() => undefined);
@@ -127,11 +232,31 @@ export async function performMwiahLogin(params: {
   page: Page;
   username: string;
   password: string;
+  debugContext?: MwiahLoginDebugContext;
 }): Promise<void> {
   const { page, username, password } = params;
+  const debugContext = params.debugContext ?? {};
+  const loginStartedAt = Date.now();
 
-  await ensureOnSignInPage(page);
-  await fillCredentialsAndSubmit(page, username, password);
-  await waitForPostLoginNavigation(page);
+  logMwiahLoginDebug({
+    event: 'login_start',
+    hypotheses: [MWIAH_LOGIN_HYPOTHESES.CONCURRENT_LOGIN],
+    context: debugContext,
+    data: { url: page.url() },
+  });
+
+  await ensureOnSignInPage(page, debugContext);
+  await fillCredentialsAndSubmit(page, username, password, debugContext);
+  await waitForPostLoginNavigation(page, debugContext);
   await dismissMwiahCookieConsentIfPresent(page);
+
+  logMwiahLoginDebug({
+    event: 'login_complete',
+    hypotheses: [MWIAH_LOGIN_HYPOTHESES.CONCURRENT_LOGIN],
+    context: debugContext,
+    data: {
+      url: page.url(),
+      durationMs: Date.now() - loginStartedAt,
+    },
+  });
 }

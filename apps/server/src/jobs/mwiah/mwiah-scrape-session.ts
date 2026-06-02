@@ -3,6 +3,7 @@ import type { Page } from 'playwright';
 import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
 import { performMwiahLogin } from './mwiah-auth-flow';
 import { dismissMwiahCookieConsentIfPresent } from './mwiah-cookie-consent';
+import type { MwiahLoginDebugContext } from './mwiah-login-debug';
 import type { MwiahSessionService } from './mwiah-session.service';
 
 function sleep(ms: number): Promise<void> {
@@ -13,18 +14,24 @@ export async function runWithAuthenticatedMwiahPage<T>(
   session: MwiahSessionService,
   storeUrl: string,
   run: (page: Page) => Promise<T>,
+  debugContext?: MwiahLoginDebugContext,
 ): Promise<T> {
   const { username, password } = session.getCredentials();
 
-  return session.withStorePage(storeUrl, async (page) => {
-    await performMwiahLogin({
-      page,
-      username,
-      password,
-    });
-    await dismissMwiahCookieConsentIfPresent(page);
-    return run(page);
-  });
+  return session.withStorePage(
+    storeUrl,
+    async (page) => {
+      await performMwiahLogin({
+        page,
+        username,
+        password,
+        debugContext,
+      });
+      await dismissMwiahCookieConsentIfPresent(page);
+      return run(page);
+    },
+    debugContext,
+  );
 }
 
 export async function gotoMwiahCategoryPage(

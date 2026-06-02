@@ -3,7 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { Injectable, Logger } from '@nestjs/common';
-import type { BrowserContext, Page } from 'playwright';
+import type { BrowserContext, Page, Response } from 'playwright';
 import { chromium } from 'playwright';
 
 import { ConfigService } from '~/config';
@@ -13,6 +13,15 @@ import {
   buildPersistentContextOptions,
   installAntiDetectionInitScript,
 } from '../covetrus/covetrus-browser-launch';
+import {
+  collectLoginPageState,
+  extractCfRayFromResponse,
+  inferHypothesesFromPageState,
+  logMwiahLoginDebug,
+  MWIAH_LOGIN_HYPOTHESES,
+  type MwiahLoginDebugContext,
+} from './mwiah-login-debug';
+import { isSignInPath } from './mwiah-auth-flow';
 
 const MAX_NAV_ATTEMPTS = 3;
 const NAV_RETRY_BASE_MS = 2000;
@@ -49,6 +58,7 @@ export class MwiahSessionService {
   async withStorePage<T>(
     storeUrl: string,
     run: (page: Page) => Promise<T>,
+    debugContext: MwiahLoginDebugContext = {},
   ): Promise<T> {
     const ephemeralProfileDir = await fs.mkdtemp(
       path.join(os.tmpdir(), 'vetply-mwiah-'),
@@ -56,6 +66,13 @@ export class MwiahSessionService {
 
     let context: BrowserContext | undefined;
     try {
+      logMwiahLoginDebug({
+        event: 'browser_session_start',
+        hypotheses: [MWIAH_LOGIN_HYPOTHESES.CONCURRENT_LOGIN],
+        context: debugContext,
+        data: { storeUrl },
+      });
+
       try {
         context = await chromium.launchPersistentContext(
           ephemeralProfileDir,
@@ -75,18 +92,43 @@ export class MwiahSessionService {
         await installAntiDetectionInitScript(context);
         const page = context.pages()[0] ?? (await context.newPage());
 
+        let storeResponse: Response | null = null;
         for (let attempt = 1; attempt <= MAX_NAV_ATTEMPTS; attempt += 1) {
           try {
-            const res = await page.goto(storeUrl, {
+            storeResponse = await page.goto(storeUrl, {
               waitUntil: 'domcontentloaded',
               timeout: 60_000,
             });
-            if (res && !res.ok() && res.status() >= 500) {
-              throw new Error(`HTTP ${res.status()} loading MWIAH store page`);
+            if (
+              storeResponse &&
+              !storeResponse.ok() &&
+              storeResponse.status() >= 500
+            ) {
+              throw new Error(
+                `HTTP ${storeResponse.status()} loading MWIAH store page`,
+              );
             }
             break;
           } catch (err) {
             if (attempt === MAX_NAV_ATTEMPTS) {
+              const pageState = await collectLoginPageState(page).catch(
+                () => null,
+              );
+              logMwiahLoginDebug({
+                event: 'store_nav_failed',
+                hypotheses: [
+                  MWIAH_LOGIN_HYPOTHESES.NAV_RACE,
+                  MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+                  MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+                ],
+                context: debugContext,
+                data: {
+                  storeUrl,
+                  attempt,
+                  error: String(err),
+                  pageState,
+                },
+              });
               throw err;
             }
             const delay = NAV_RETRY_BASE_MS * attempt;
@@ -97,6 +139,29 @@ export class MwiahSessionService {
           }
         }
         await sleep(BROWSER_NAVIGATION_DELAY_MS);
+
+        const pageState = await collectLoginPageState(page);
+        logMwiahLoginDebug({
+          event: 'store_nav_complete',
+          hypotheses: [
+            MWIAH_LOGIN_HYPOTHESES.NAV_RACE,
+            MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+            MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+          ],
+          context: debugContext,
+          data: {
+            storeUrl,
+            currentUrl: page.url(),
+            responseStatus: storeResponse?.status() ?? null,
+            cfRay: extractCfRayFromResponse(storeResponse),
+            onSignInPath: isSignInPath(page.url()),
+            pageState,
+            inferredHypotheses: inferHypothesesFromPageState(
+              pageState,
+              isSignInPath(page.url()),
+            ),
+          },
+        });
 
         return await run(page);
       } finally {

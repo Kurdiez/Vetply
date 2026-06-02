@@ -122,6 +122,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
 
         return { categoryJobsQueued: urls.length, categoryJobIds: jobIds };
       },
+      { jobId: job.id?.toString() ?? null },
     );
 
     this.logger.log(
@@ -186,6 +187,10 @@ export class MwiahScrapeConsumer extends WorkerHost {
             }
           }
         }
+      },
+      {
+        jobId: job.id?.toString() ?? null,
+        categoryUrl,
       },
     );
 
