@@ -2,6 +2,7 @@ import type { Page } from 'playwright';
 
 import { MwiahProductApiCapture } from '../mwiah-product-api-capture';
 import { scrapeMwiahCategoryProducts } from '../mwiah-category-products';
+import { noopMwiahCategoryScrapeTracer } from '../mwiah-category-scrape-trace';
 import * as categoryProductLinks from '../mwiah-category-product-links';
 import * as productDetailApi from '../mwiah-product-detail-api';
 
@@ -72,6 +73,7 @@ describe('scrapeMwiahCategoryProducts', () => {
       categoryUrl,
       1,
       capture,
+      noopMwiahCategoryScrapeTracer,
     );
     expect(openMwiahCategoryListPage).toHaveBeenNthCalledWith(
       2,
@@ -79,6 +81,7 @@ describe('scrapeMwiahCategoryProducts', () => {
       categoryUrl,
       2,
       capture,
+      noopMwiahCategoryScrapeTracer,
     );
     expect(persistPagePreviews).toHaveBeenCalledTimes(2);
     expect(onListPageProcessed).toHaveBeenCalledTimes(2);

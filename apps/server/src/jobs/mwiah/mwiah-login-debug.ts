@@ -1,6 +1,8 @@
 import { Logger } from '@nestjs/common';
 import type { Page, Response } from 'playwright';
 
+import type { MwiahCategoryScrapeTracer } from './mwiah-category-scrape-trace';
+
 const logger = new Logger('MwiahLoginDebug');
 
 const BODY_TEXT_PREVIEW_MAX = 600;
@@ -22,6 +24,7 @@ export type MwiahLoginHypothesis =
 export type MwiahLoginDebugContext = {
   jobId?: string | null;
   categoryUrl?: string;
+  trace?: MwiahCategoryScrapeTracer;
 };
 
 export type MwiahLoginPageState = {

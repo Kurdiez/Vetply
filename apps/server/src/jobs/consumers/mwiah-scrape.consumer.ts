@@ -14,6 +14,7 @@ import {
   createMwiahProductApiCapture,
   scrapeMwiahCategoryProducts,
 } from '../mwiah/mwiah-category-products';
+import { createMwiahCategoryScrapeTracer } from '../mwiah/mwiah-category-scrape-trace';
 import type {
   MwiahDiscoverCategoriesJobData,
   MwiahScrapeCategoryProductsJobData,
@@ -28,7 +29,7 @@ import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
 @Processor(QUEUE.MWIAH_SCRAPE, {
   ...CONSUMER_OPTIONS,
-  concurrency: 4,
+  concurrency: 1,
   stalledInterval: 60_000,
   maxStalledCount: 1,
 })
@@ -140,6 +141,12 @@ export class MwiahScrapeConsumer extends WorkerHost {
     const storeUrl = this.mwiahSession.getDefaultStoreUrl();
     const storeOrigin = this.mwiahSession.getStoreOrigin();
 
+    const logCtx = `MWIAH category scrape jobId=${job.id} url=${categoryUrl}`;
+    const trace = createMwiahCategoryScrapeTracer(this.logger, logCtx);
+
+    trace.step('job_start', { attemptsMade: job.attemptsMade });
+
+    trace.step('supplier_lookup_start');
     const supplier = await this.dataSource
       .getRepository(CatalogueSupplierEntity)
       .findOne({ where: { name: Supplier.MWIAH } });
@@ -149,9 +156,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
       );
       return;
     }
-
-    const logCtx = `MWIAH category scrape jobId=${job.id} url=${categoryUrl}`;
-    this.logger.log(`${logCtx} starting`);
+    trace.step('supplier_lookup_done', { supplierId: supplier.id });
 
     let jobTotals = {
       listPagesVisited: 0,
@@ -160,12 +165,15 @@ export class MwiahScrapeConsumer extends WorkerHost {
       skipped: 0,
     };
 
+    trace.step('authenticated_session_start', { storeUrl });
     await runWithAuthenticatedMwiahPage(
       this.mwiahSession,
       storeUrl,
       async (page) => {
+        trace.step('api_capture_attach_start');
         const capture = createMwiahProductApiCapture();
         capture.attach(page);
+        trace.step('api_capture_attach_done');
 
         jobTotals = await scrapeMwiahCategoryProducts(
           page,
@@ -173,6 +181,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
           storeOrigin,
           capture,
           {
+            trace,
             persistPagePreviews: async (previews) => {
               let imported = 0;
               let skipped = 0;
@@ -203,9 +212,12 @@ export class MwiahScrapeConsumer extends WorkerHost {
       {
         jobId: job.id?.toString() ?? null,
         categoryUrl,
+        trace,
       },
     );
+    trace.step('authenticated_session_done');
 
+    trace.step('job_done', jobTotals);
     this.logger.log(
       `${logCtx} finished totalPages=${jobTotals.listPagesVisited} productsProcessed=${jobTotals.productsProcessed} imported=${jobTotals.imported} skipped=${jobTotals.skipped}`,
     );

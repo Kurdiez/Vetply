@@ -4,6 +4,8 @@ import {
   isMwiahProductDetailHref,
   parseSupplierProductIdFromProductUrl,
 } from './mwiah-category-product-href';
+import type { MwiahCategoryScrapeTracer } from './mwiah-category-scrape-trace';
+import { noopMwiahCategoryScrapeTracer } from './mwiah-category-scrape-trace';
 import {
   openMwiahCategoryListPage,
   resolveListProductsForCurrentPage,
@@ -138,6 +140,7 @@ export type ScrapeMwiahCategoryProductsOptions = {
     imported: number;
     skipped: number;
   }) => void;
+  trace?: MwiahCategoryScrapeTracer;
 };
 
 export async function scrapeMwiahCategoryProducts(
@@ -152,8 +155,12 @@ export async function scrapeMwiahCategoryProducts(
   imported: number;
   skipped: number;
 }> {
-  await openMwiahCategoryListPage(page, categoryUrl, 1, capture);
+  const trace = options.trace ?? noopMwiahCategoryScrapeTracer;
+
+  trace.step('list_page_open_start', { pageNumber: 1 });
+  await openMwiahCategoryListPage(page, categoryUrl, 1, capture, trace);
   let totalPages = capture.getPagination()?.totalPages ?? 1;
+  trace.step('list_page_open_done', { pageNumber: 1, totalPages });
 
   const seenSupplierProductIds = new Set<string>();
   let listPagesVisited = 0;
@@ -163,28 +170,63 @@ export async function scrapeMwiahCategoryProducts(
 
   for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
     if (pageNumber > 1) {
-      await openMwiahCategoryListPage(page, categoryUrl, pageNumber, capture);
+      trace.step('list_page_open_start', { pageNumber });
+      await openMwiahCategoryListPage(
+        page,
+        categoryUrl,
+        pageNumber,
+        capture,
+        trace,
+      );
       totalPages = capture.getPagination()?.totalPages ?? totalPages;
+      trace.step('list_page_open_done', { pageNumber, totalPages });
     }
 
+    trace.step('list_products_resolve_start', { pageNumber });
     const listProducts = await resolveListProductsForCurrentPage(
       page,
       capture,
       storeOrigin,
+      trace,
+      pageNumber,
     );
+
     const workItems = collectCategoryWorkItems(
       listProducts,
       storeOrigin,
       seenSupplierProductIds,
     );
+    trace.step('work_items_collected', {
+      pageNumber,
+      count: workItems.length,
+    });
+
+    trace.step('product_details_fetch_start', {
+      pageNumber,
+      count: workItems.length,
+    });
     const pagePreviews = await fetchListingPreviewsForWorkItems(
       page,
       categoryUrl,
       storeOrigin,
       workItems,
     );
+    trace.step('product_details_fetch_done', {
+      pageNumber,
+      previewCount: pagePreviews.length,
+    });
 
+    trace.step('persist_start', {
+      pageNumber,
+      previewCount: pagePreviews.length,
+    });
     const persistResult = await options.persistPagePreviews(pagePreviews);
+    trace.step('persist_done', {
+      pageNumber,
+      imported: persistResult.imported,
+      skipped: persistResult.skipped,
+    });
+
     productsProcessed += workItems.length;
     imported += persistResult.imported;
     skipped += persistResult.skipped;

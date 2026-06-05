@@ -31,6 +31,7 @@ async function ensureOnSignInPage(
   page: Page,
   debugContext: MwiahLoginDebugContext,
 ): Promise<void> {
+  debugContext.trace?.step('signin_ensure_start', { currentUrl: page.url() });
   const currentUrl = page.url();
   const alreadyOnSignIn = isSignInPath(currentUrl);
 
@@ -45,13 +46,19 @@ async function ensureOnSignInPage(
   });
 
   if (alreadyOnSignIn) {
+    debugContext.trace?.step('signin_already_on_page', { currentUrl });
     await onMwiahPageLoaded(page);
+    debugContext.trace?.step('signin_ensure_done', { currentUrl: page.url() });
     return;
   }
 
   let signInResponse: Response | null = null;
   try {
+    debugContext.trace?.step('signin_nav_start', {
+      targetUrl: MWIAH_SIGN_IN_URL,
+    });
     signInResponse = await gotoMwiahPage(page, MWIAH_SIGN_IN_URL);
+    debugContext.trace?.step('signin_nav_done', { currentUrl: page.url() });
   } catch (err) {
     const pageState = await collectLoginPageState(page).catch(() => null);
     logMwiahLoginDebug({
@@ -94,6 +101,7 @@ async function ensureOnSignInPage(
       ),
     },
   });
+  debugContext.trace?.step('signin_ensure_done', { currentUrl: page.url() });
 }
 
 async function fillCredentialsAndSubmitOnce(
@@ -102,7 +110,11 @@ async function fillCredentialsAndSubmitOnce(
   password: string,
   debugContext: MwiahLoginDebugContext,
 ): Promise<void> {
+  debugContext.trace?.step('login_fill_start', { url: page.url() });
   await onMwiahPageLoaded(page);
+  debugContext.trace?.step('login_cookie_banner_dismissed', {
+    url: page.url(),
+  });
 
   const passwordInput = page.locator('input[type="password"]').first();
 
@@ -118,7 +130,9 @@ async function fillCredentialsAndSubmitOnce(
   });
 
   try {
+    debugContext.trace?.step('login_password_wait_start', { url: page.url() });
     await passwordInput.waitFor({ state: 'visible', timeout: 20_000 });
+    debugContext.trace?.step('login_password_wait_done', { url: page.url() });
   } catch (err) {
     const pageState = await collectLoginPageState(page);
     const inferredHypotheses = inferHypothesesFromPageState(
@@ -162,9 +176,12 @@ async function fillCredentialsAndSubmitOnce(
       ].join(', '),
     )
     .first();
+  debugContext.trace?.step('login_username_wait_start', { url: page.url() });
   await userInput.waitFor({ state: 'visible', timeout: 15_000 });
+  debugContext.trace?.step('login_credentials_fill_start', { url: page.url() });
   await userInput.fill(username, { timeout: 10_000 });
   await passwordInput.fill(password, { timeout: 10_000 });
+  debugContext.trace?.step('login_credentials_fill_done', { url: page.url() });
 
   const submitSelector = [
     'button[type="submit"]',
@@ -179,7 +196,9 @@ async function fillCredentialsAndSubmitOnce(
   ].join(', ');
   const submit = page.locator(submitSelector).first();
   try {
+    debugContext.trace?.step('login_submit_click_start', { url: page.url() });
     await submit.click({ timeout: 10_000 });
+    debugContext.trace?.step('login_submit_click_done', { url: page.url() });
   } catch (clickErr) {
     try {
       await passwordInput.press('Enter', { timeout: 5_000 });
@@ -190,16 +209,19 @@ async function fillCredentialsAndSubmitOnce(
       );
     }
   }
+  debugContext.trace?.step('login_fill_done', { url: page.url() });
 }
 
 async function waitForPostLoginNavigation(
   page: Page,
   debugContext: MwiahLoginDebugContext,
 ): Promise<void> {
+  debugContext.trace?.step('login_post_nav_wait_start', { url: page.url() });
   try {
     await page.waitForURL((url) => !isSignInPath(url.toString()), {
       timeout: 60_000,
     });
+    debugContext.trace?.step('login_post_nav_wait_done', { url: page.url() });
   } catch (err) {
     const pageState = await collectLoginPageState(page);
     logMwiahLoginDebug({
@@ -229,6 +251,7 @@ async function waitForPostLoginNavigation(
     .catch(() => undefined);
   await sleep(BROWSER_NAVIGATION_DELAY_MS);
   await onMwiahPageLoaded(page);
+  debugContext.trace?.step('login_post_nav_settle_done', { url: page.url() });
 }
 
 export async function performMwiahLogin(params: {
@@ -240,6 +263,8 @@ export async function performMwiahLogin(params: {
   const { page, username, password } = params;
   const debugContext = params.debugContext ?? {};
   const loginStartedAt = Date.now();
+
+  debugContext.trace?.step('login_start', { url: page.url() });
 
   logMwiahLoginDebug({
     event: 'login_start',
@@ -257,7 +282,11 @@ export async function performMwiahLogin(params: {
       jobId: debugContext.jobId ?? null,
       categoryUrl: debugContext.categoryUrl ?? null,
     },
-    async () => {
+    async (attempt) => {
+      debugContext.trace?.step('login_attempt_start', {
+        attempt,
+        url: page.url(),
+      });
       await fillCredentialsAndSubmitOnce(
         page,
         username,
@@ -265,8 +294,17 @@ export async function performMwiahLogin(params: {
         debugContext,
       );
       await waitForPostLoginNavigation(page, debugContext);
+      debugContext.trace?.step('login_attempt_done', {
+        attempt,
+        url: page.url(),
+      });
     },
   );
+
+  debugContext.trace?.step('login_done', {
+    url: page.url(),
+    durationMs: Date.now() - loginStartedAt,
+  });
 
   logMwiahLoginDebug({
     event: 'login_complete',

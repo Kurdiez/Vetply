@@ -65,6 +65,8 @@ export class MwiahSessionService {
 
     let context: BrowserContext | undefined;
     try {
+      debugContext.trace?.step('browser_session_start', { storeUrl });
+
       logMwiahLoginDebug({
         event: 'browser_session_start',
         hypotheses: [MWIAH_LOGIN_HYPOTHESES.CONCURRENT_LOGIN],
@@ -73,10 +75,12 @@ export class MwiahSessionService {
       });
 
       try {
+        debugContext.trace?.step('browser_launch_start', { storeUrl });
         context = await chromium.launchPersistentContext(
           ephemeralProfileDir,
           buildPersistentContextOptions(),
         );
+        debugContext.trace?.step('browser_launch_done', { storeUrl });
       } catch (err) {
         const message = String(err);
         if (message.includes("Executable doesn't exist")) {
@@ -96,6 +100,10 @@ export class MwiahSessionService {
           'store navigation',
           { storeUrl, ...debugContext },
           async (attempt) => {
+            debugContext.trace?.step('store_nav_attempt_start', {
+              storeUrl,
+              attempt,
+            });
             try {
               const response = await gotoMwiahPage(page, storeUrl);
               if (response && !response.ok() && response.status() >= 500) {
@@ -103,6 +111,11 @@ export class MwiahSessionService {
                   `HTTP ${response.status()} loading MWIAH store page`,
                 );
               }
+              debugContext.trace?.step('store_nav_attempt_done', {
+                storeUrl,
+                attempt,
+                currentUrl: page.url(),
+              });
               return response;
             } catch (err) {
               if (attempt >= 3) {
@@ -154,6 +167,9 @@ export class MwiahSessionService {
           },
         });
 
+        debugContext.trace?.step('session_handoff_to_runner', {
+          currentUrl: page.url(),
+        });
         return await run(page);
       } finally {
         await context.close().catch((err: unknown) => {

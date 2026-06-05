@@ -19,13 +19,26 @@ export async function runWithAuthenticatedMwiahPage<T>(
   return session.withStorePage(
     storeUrl,
     async (page) => {
+      debugContext?.trace?.step('authenticated_session_login_start', {
+        currentUrl: page.url(),
+      });
       await performMwiahLogin({
         page,
         username,
         password,
         debugContext,
       });
-      return run(page);
+      debugContext?.trace?.step('authenticated_session_login_done', {
+        currentUrl: page.url(),
+      });
+      debugContext?.trace?.step('authenticated_session_scrape_start', {
+        currentUrl: page.url(),
+      });
+      const result = await run(page);
+      debugContext?.trace?.step('authenticated_session_scrape_done', {
+        currentUrl: page.url(),
+      });
+      return result;
     },
     debugContext,
   );
