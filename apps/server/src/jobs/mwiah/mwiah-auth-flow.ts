@@ -1,7 +1,7 @@
 import type { Page, Response } from 'playwright';
 
 import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
-import { dismissMwiahCookieConsentIfPresent } from './mwiah-cookie-consent';
+import { onMwiahPageLoaded } from './mwiah-cookie-consent';
 import {
   collectLoginPageState,
   extractCfRayFromResponse,
@@ -10,6 +10,8 @@ import {
   MWIAH_LOGIN_HYPOTHESES,
   type MwiahLoginDebugContext,
 } from './mwiah-login-debug';
+import { gotoMwiahPage } from './mwiah-page-navigation';
+import { withMwiahRetries } from './mwiah-playwright-retries';
 import { MWIAH_SIGN_IN_URL } from './mwiah-urls';
 
 function sleep(ms: number): Promise<void> {
@@ -43,15 +45,13 @@ async function ensureOnSignInPage(
   });
 
   if (alreadyOnSignIn) {
+    await onMwiahPageLoaded(page);
     return;
   }
 
   let signInResponse: Response | null = null;
   try {
-    signInResponse = await page.goto(MWIAH_SIGN_IN_URL, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60_000,
-    });
+    signInResponse = await gotoMwiahPage(page, MWIAH_SIGN_IN_URL);
   } catch (err) {
     const pageState = await collectLoginPageState(page).catch(() => null);
     logMwiahLoginDebug({
@@ -96,12 +96,14 @@ async function ensureOnSignInPage(
   });
 }
 
-async function fillCredentialsAndSubmit(
+async function fillCredentialsAndSubmitOnce(
   page: Page,
   username: string,
   password: string,
   debugContext: MwiahLoginDebugContext,
 ): Promise<void> {
+  await onMwiahPageLoaded(page);
+
   const passwordInput = page.locator('input[type="password"]').first();
 
   logMwiahLoginDebug({
@@ -226,6 +228,7 @@ async function waitForPostLoginNavigation(
     .waitForLoadState('domcontentloaded', { timeout: 60_000 })
     .catch(() => undefined);
   await sleep(BROWSER_NAVIGATION_DELAY_MS);
+  await onMwiahPageLoaded(page);
 }
 
 export async function performMwiahLogin(params: {
@@ -246,9 +249,24 @@ export async function performMwiahLogin(params: {
   });
 
   await ensureOnSignInPage(page, debugContext);
-  await fillCredentialsAndSubmit(page, username, password, debugContext);
-  await waitForPostLoginNavigation(page, debugContext);
-  await dismissMwiahCookieConsentIfPresent(page);
+
+  await withMwiahRetries(
+    'login',
+    {
+      url: page.url(),
+      jobId: debugContext.jobId ?? null,
+      categoryUrl: debugContext.categoryUrl ?? null,
+    },
+    async () => {
+      await fillCredentialsAndSubmitOnce(
+        page,
+        username,
+        password,
+        debugContext,
+      );
+      await waitForPostLoginNavigation(page, debugContext);
+    },
+  );
 
   logMwiahLoginDebug({
     event: 'login_complete',

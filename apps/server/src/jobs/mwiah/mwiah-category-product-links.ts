@@ -3,6 +3,8 @@ import type { Page } from 'playwright';
 import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
 import { isMwiahProductDetailHref } from './mwiah-category-product-href';
 import { isMwiahProductsCollectionResponse } from './mwiah-product-api';
+import { gotoMwiahPage } from './mwiah-page-navigation';
+import { withMwiahRetries } from './mwiah-playwright-retries';
 import { resolveMwiahCategoryUrl } from './mwiah-products-menu';
 import { gotoMwiahCategoryPage } from './mwiah-scrape-session';
 import type { MwiahProductApiCapture } from './mwiah-product-api-capture';
@@ -24,11 +26,10 @@ async function waitForMwiahCategoryListReady(
 
   const skipApiWait = capture?.hasCollectionResponses() ?? false;
   if (!skipApiWait) {
-    await page
-      .waitForResponse((res) => isMwiahProductsCollectionResponse(res), {
-        timeout: 90_000,
-      })
-      .catch(() => undefined);
+    await page.waitForResponse(
+      (res) => isMwiahProductsCollectionResponse(res),
+      { timeout: 90_000 },
+    );
   }
 
   await sleep(BROWSER_NAVIGATION_DELAY_MS);
@@ -72,15 +73,13 @@ function buildCategoryPageUrl(categoryUrl: string, pageNumber: number): string {
 }
 
 async function waitForCategoryCollectionApi(page: Page): Promise<void> {
-  await page
-    .waitForResponse((res) => isMwiahProductsCollectionResponse(res), {
-      timeout: 60_000,
-    })
-    .catch(() => undefined);
+  await page.waitForResponse((res) => isMwiahProductsCollectionResponse(res), {
+    timeout: 60_000,
+  });
   await sleep(BROWSER_NAVIGATION_DELAY_MS);
 }
 
-export async function openMwiahCategoryListPage(
+async function openMwiahCategoryListPageOnce(
   page: Page,
   categoryUrl: string,
   pageNumber: number,
@@ -93,11 +92,28 @@ export async function openMwiahCategoryListPage(
   }
 
   const nextUrl = buildCategoryPageUrl(categoryUrl, pageNumber);
-  await page.goto(nextUrl, {
-    waitUntil: 'domcontentloaded',
-    timeout: 60_000,
-  });
+  await gotoMwiahPage(page, nextUrl);
   await waitForCategoryCollectionApi(page);
+}
+
+export async function openMwiahCategoryListPage(
+  page: Page,
+  categoryUrl: string,
+  pageNumber: number,
+  capture?: MwiahProductApiCapture,
+): Promise<void> {
+  await withMwiahRetries(
+    'category list page open',
+    { categoryUrl, pageNumber, currentUrl: page.url() },
+    async () => {
+      await openMwiahCategoryListPageOnce(
+        page,
+        categoryUrl,
+        pageNumber,
+        capture,
+      );
+    },
+  );
 }
 
 export async function resolveListProductsForCurrentPage(

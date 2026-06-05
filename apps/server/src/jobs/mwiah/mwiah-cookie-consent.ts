@@ -8,6 +8,10 @@ function sleep(ms: number): Promise<void> {
 
 const COOKIE_BANNER_WAIT_MS = 5_000;
 
+export async function onMwiahPageLoaded(page: Page): Promise<void> {
+  await dismissMwiahCookieConsentIfPresent(page);
+}
+
 export async function dismissMwiahCookieConsentIfPresent(
   page: Page,
 ): Promise<void> {

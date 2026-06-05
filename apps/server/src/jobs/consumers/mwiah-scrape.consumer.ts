@@ -26,7 +26,12 @@ import {
 import { runWithAuthenticatedMwiahPage } from '../mwiah/mwiah-scrape-session';
 import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
-@Processor(QUEUE.MWIAH_SCRAPE, { ...CONSUMER_OPTIONS, concurrency: 4 })
+@Processor(QUEUE.MWIAH_SCRAPE, {
+  ...CONSUMER_OPTIONS,
+  concurrency: 4,
+  stalledInterval: 60_000,
+  maxStalledCount: 1,
+})
 export class MwiahScrapeConsumer extends WorkerHost {
   private readonly logger = new Logger(MwiahScrapeConsumer.name);
 

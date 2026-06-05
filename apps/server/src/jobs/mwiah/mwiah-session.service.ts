@@ -22,9 +22,8 @@ import {
   type MwiahLoginDebugContext,
 } from './mwiah-login-debug';
 import { isSignInPath } from './mwiah-auth-flow';
-
-const MAX_NAV_ATTEMPTS = 3;
-const NAV_RETRY_BASE_MS = 2000;
+import { gotoMwiahPage } from './mwiah-page-navigation';
+import { withMwiahRetries } from './mwiah-playwright-retries';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -93,51 +92,43 @@ export class MwiahSessionService {
         const page = context.pages()[0] ?? (await context.newPage());
 
         let storeResponse: Response | null = null;
-        for (let attempt = 1; attempt <= MAX_NAV_ATTEMPTS; attempt += 1) {
-          try {
-            storeResponse = await page.goto(storeUrl, {
-              waitUntil: 'domcontentloaded',
-              timeout: 60_000,
-            });
-            if (
-              storeResponse &&
-              !storeResponse.ok() &&
-              storeResponse.status() >= 500
-            ) {
-              throw new Error(
-                `HTTP ${storeResponse.status()} loading MWIAH store page`,
-              );
-            }
-            break;
-          } catch (err) {
-            if (attempt === MAX_NAV_ATTEMPTS) {
-              const pageState = await collectLoginPageState(page).catch(
-                () => null,
-              );
-              logMwiahLoginDebug({
-                event: 'store_nav_failed',
-                hypotheses: [
-                  MWIAH_LOGIN_HYPOTHESES.NAV_RACE,
-                  MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
-                  MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
-                ],
-                context: debugContext,
-                data: {
-                  storeUrl,
-                  attempt,
-                  error: String(err),
-                  pageState,
-                },
-              });
+        storeResponse = await withMwiahRetries(
+          'store navigation',
+          { storeUrl, ...debugContext },
+          async (attempt) => {
+            try {
+              const response = await gotoMwiahPage(page, storeUrl);
+              if (response && !response.ok() && response.status() >= 500) {
+                throw new Error(
+                  `HTTP ${response.status()} loading MWIAH store page`,
+                );
+              }
+              return response;
+            } catch (err) {
+              if (attempt >= 3) {
+                const pageState = await collectLoginPageState(page).catch(
+                  () => null,
+                );
+                logMwiahLoginDebug({
+                  event: 'store_nav_failed',
+                  hypotheses: [
+                    MWIAH_LOGIN_HYPOTHESES.NAV_RACE,
+                    MWIAH_LOGIN_HYPOTHESES.CLOUDFLARE_CHALLENGE,
+                    MWIAH_LOGIN_HYPOTHESES.WRONG_PAGE,
+                  ],
+                  context: debugContext,
+                  data: {
+                    storeUrl,
+                    attempt,
+                    error: String(err),
+                    pageState,
+                  },
+                });
+              }
               throw err;
             }
-            const delay = NAV_RETRY_BASE_MS * attempt;
-            this.logger.warn(
-              `MWIAH store navigation attempt ${attempt} failed; retrying in ${delay}ms`,
-            );
-            await sleep(delay);
-          }
-        }
+          },
+        );
         await sleep(BROWSER_NAVIGATION_DELAY_MS);
 
         const pageState = await collectLoginPageState(page);

@@ -1,8 +1,10 @@
 import type { Page } from 'playwright';
 
+import { withMwiahRetries } from './mwiah-playwright-retries';
 import { resolveMwiahCategoryUrl } from './mwiah-products-menu';
 
 const SINGLE_PRODUCT_API_PATH = /\/api\/v\d+\/products\/[^/?]+/i;
+const PRODUCT_DETAIL_REQUEST_TIMEOUT_MS = 30_000;
 
 function pickString(value: unknown): string | null {
   if (typeof value === 'string') {
@@ -61,13 +63,26 @@ export function resolveMwiahProductDetailApiUrl(
   return null;
 }
 
+async function fetchMwiahProductDetailBodyOnce(
+  page: Page,
+  apiUrl: string,
+): Promise<string | null> {
+  const res = await page.request.get(apiUrl, {
+    timeout: PRODUCT_DETAIL_REQUEST_TIMEOUT_MS,
+  });
+  if (!res.ok()) {
+    throw new Error(
+      `MWIAH product detail request failed with HTTP ${res.status()} for ${apiUrl}`,
+    );
+  }
+  return res.text();
+}
+
 export async function fetchMwiahProductDetailBody(
   page: Page,
   apiUrl: string,
 ): Promise<string | null> {
-  const res = await page.request.get(apiUrl, { timeout: 30_000 });
-  if (!res.ok()) {
-    return null;
-  }
-  return res.text();
+  return withMwiahRetries('product detail fetch', { apiUrl }, async () =>
+    fetchMwiahProductDetailBodyOnce(page, apiUrl),
+  );
 }
