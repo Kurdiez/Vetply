@@ -5,8 +5,8 @@ import {
   parseSupplierProductIdFromProductUrl,
 } from './mwiah-category-product-href';
 import {
-  collectMwiahProductUrlsFromDom,
-  loadAllMwiahCategoryListPages,
+  openMwiahCategoryListPage,
+  resolveListProductsForCurrentPage,
 } from './mwiah-category-product-links';
 import { MwiahProductApiCapture } from './mwiah-product-api-capture';
 import {
@@ -122,56 +122,88 @@ async function fetchListingPreviewsForWorkItems(
   return previews;
 }
 
+export type MwiahCategoryPagePersistResult = {
+  imported: number;
+  skipped: number;
+};
+
+export type ScrapeMwiahCategoryProductsOptions = {
+  persistPagePreviews: (
+    previews: MwiahProductPreview[],
+  ) => Promise<MwiahCategoryPagePersistResult>;
+  onListPageProcessed: (stats: {
+    pageNumber: number;
+    totalPages: number;
+    productsProcessed: number;
+    imported: number;
+    skipped: number;
+  }) => void;
+};
+
 export async function scrapeMwiahCategoryProducts(
   page: Page,
   categoryUrl: string,
   storeOrigin: string,
   capture: MwiahProductApiCapture,
+  options: ScrapeMwiahCategoryProductsOptions,
 ): Promise<{
-  previews: MwiahProductPreview[];
   listPagesVisited: number;
-  productsDiscovered: number;
+  productsProcessed: number;
+  imported: number;
+  skipped: number;
 }> {
-  const { listPagesVisited } = await loadAllMwiahCategoryListPages(
-    page,
-    categoryUrl,
-    capture,
-  );
-
-  const listProductPages = capture.drainCollectionProductPages();
-  const domFallbackPages =
-    listProductPages.length === 0
-      ? [
-          (await collectMwiahProductUrlsFromDom(page, storeOrigin)).map(
-            (url) => ({ canonicalUrl: url }),
-          ),
-        ]
-      : listProductPages;
+  await openMwiahCategoryListPage(page, categoryUrl, 1, capture);
+  let totalPages = capture.getPagination()?.totalPages ?? 1;
 
   const seenSupplierProductIds = new Set<string>();
-  const previews: MwiahProductPreview[] = [];
-  let productsDiscovered = 0;
+  let listPagesVisited = 0;
+  let productsProcessed = 0;
+  let imported = 0;
+  let skipped = 0;
 
-  for (const listProducts of domFallbackPages) {
+  for (let pageNumber = 1; pageNumber <= totalPages; pageNumber += 1) {
+    if (pageNumber > 1) {
+      await openMwiahCategoryListPage(page, categoryUrl, pageNumber, capture);
+      totalPages = capture.getPagination()?.totalPages ?? totalPages;
+    }
+
+    const listProducts = await resolveListProductsForCurrentPage(
+      page,
+      capture,
+      storeOrigin,
+    );
     const workItems = collectCategoryWorkItems(
       listProducts,
       storeOrigin,
       seenSupplierProductIds,
     );
-    productsDiscovered += workItems.length;
     const pagePreviews = await fetchListingPreviewsForWorkItems(
       page,
       categoryUrl,
       storeOrigin,
       workItems,
     );
-    previews.push(...pagePreviews);
+
+    const persistResult = await options.persistPagePreviews(pagePreviews);
+    productsProcessed += workItems.length;
+    imported += persistResult.imported;
+    skipped += persistResult.skipped;
+    listPagesVisited += 1;
+
+    options.onListPageProcessed({
+      pageNumber,
+      totalPages,
+      productsProcessed: workItems.length,
+      imported: persistResult.imported,
+      skipped: persistResult.skipped,
+    });
   }
 
   return {
-    previews,
     listPagesVisited,
-    productsDiscovered,
+    productsProcessed,
+    imported,
+    skipped,
   };
 }
 

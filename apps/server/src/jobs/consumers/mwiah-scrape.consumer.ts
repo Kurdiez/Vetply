@@ -26,8 +26,6 @@ import {
 import { runWithAuthenticatedMwiahPage } from '../mwiah/mwiah-scrape-session';
 import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
-const SKIP_REASONS_LOG_CAP = 10;
-
 @Processor(QUEUE.MWIAH_SCRAPE, { ...CONSUMER_OPTIONS, concurrency: 4 })
 export class MwiahScrapeConsumer extends WorkerHost {
   private readonly logger = new Logger(MwiahScrapeConsumer.name);
@@ -147,13 +145,15 @@ export class MwiahScrapeConsumer extends WorkerHost {
       return;
     }
 
-    this.logger.log(
-      `MWIAH category scrape starting jobId=${job.id} url=${categoryUrl}`,
-    );
+    const logCtx = `MWIAH category scrape jobId=${job.id} url=${categoryUrl}`;
+    this.logger.log(`${logCtx} starting`);
 
-    let rowsImported = 0;
-    let rowsSkipped = 0;
-    const skipReasonsSample: string[] = [];
+    let jobTotals = {
+      listPagesVisited: 0,
+      productsProcessed: 0,
+      imported: 0,
+      skipped: 0,
+    };
 
     await runWithAuthenticatedMwiahPage(
       this.mwiahSession,
@@ -162,31 +162,38 @@ export class MwiahScrapeConsumer extends WorkerHost {
         const capture = createMwiahProductApiCapture();
         capture.attach(page);
 
-        const { previews, listPagesVisited, productsDiscovered } =
-          await scrapeMwiahCategoryProducts(
-            page,
-            categoryUrl,
-            storeOrigin,
-            capture,
-          );
-
-        this.logger.log(
-          `MWIAH category products scraped jobId=${job.id} listPages=${listPagesVisited} discovered=${productsDiscovered} parsed=${previews.length}`,
+        jobTotals = await scrapeMwiahCategoryProducts(
+          page,
+          categoryUrl,
+          storeOrigin,
+          capture,
+          {
+            persistPagePreviews: async (previews) => {
+              let imported = 0;
+              let skipped = 0;
+              await this.dataSource.transaction(async (manager) => {
+                for (const preview of previews) {
+                  const result = await importMwiahPreviewRow(
+                    manager,
+                    preview,
+                    supplier.id,
+                  );
+                  if (result === 'imported') {
+                    imported += 1;
+                  } else {
+                    skipped += 1;
+                  }
+                }
+              });
+              return { imported, skipped };
+            },
+            onListPageProcessed: (stats) => {
+              this.logger.log(
+                `${logCtx} page=${stats.pageNumber}/${stats.totalPages} productsProcessed=${stats.productsProcessed} imported=${stats.imported} skipped=${stats.skipped}`,
+              );
+            },
+          },
         );
-
-        for (const preview of previews) {
-          const result = await this.dataSource.transaction((manager) =>
-            importMwiahPreviewRow(manager, preview, supplier.id),
-          );
-          if (result === 'imported') {
-            rowsImported += 1;
-          } else {
-            rowsSkipped += 1;
-            if (skipReasonsSample.length < SKIP_REASONS_LOG_CAP) {
-              skipReasonsSample.push(result);
-            }
-          }
-        }
       },
       {
         jobId: job.id?.toString() ?? null,
@@ -195,7 +202,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
     );
 
     this.logger.log(
-      `MWIAH category scrape finished jobId=${job.id} imported=${rowsImported} skipped=${rowsSkipped} skipSample=${skipReasonsSample.join('; ')}`,
+      `${logCtx} finished totalPages=${jobTotals.listPagesVisited} productsProcessed=${jobTotals.productsProcessed} imported=${jobTotals.imported} skipped=${jobTotals.skipped}`,
     );
   }
 }

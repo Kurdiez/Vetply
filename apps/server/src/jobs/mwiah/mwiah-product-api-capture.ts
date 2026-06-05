@@ -8,6 +8,17 @@ import {
 } from './mwiah-product-api';
 import { normalizeMwiahSupplierProductId } from './mwiah-supplier-product-id';
 
+function filterCollectionProducts(
+  products: Record<string, unknown>[],
+): Record<string, unknown>[] {
+  return products.filter((product) => {
+    const erpRaw = String(
+      product.erpNumber ?? product.productNumber ?? '',
+    ).trim();
+    return erpRaw !== '';
+  });
+}
+
 export class MwiahProductApiCapture {
   private readonly collectionBodies: string[] = [];
   private latestPagination: MwiahProductsPagination | null = null;
@@ -45,14 +56,19 @@ export class MwiahProductApiCapture {
     return this.latestPagination;
   }
 
+  takeLatestCollectionProductPage(): Record<string, unknown>[] {
+    const body = this.collectionBodies.pop();
+    if (!body) {
+      return [];
+    }
+    return filterCollectionProducts(
+      parseMwiahProductsCollectionBody(body).products,
+    );
+  }
+
   drainCollectionProductPages(): Record<string, unknown>[][] {
     const pages = this.collectionBodies.map((body) =>
-      parseMwiahProductsCollectionBody(body).products.filter((product) => {
-        const erpRaw = String(
-          product.erpNumber ?? product.productNumber ?? '',
-        ).trim();
-        return erpRaw !== '';
-      }),
+      filterCollectionProducts(parseMwiahProductsCollectionBody(body).products),
     );
     this.collectionBodies.length = 0;
     return pages;

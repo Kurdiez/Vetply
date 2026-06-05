@@ -6,7 +6,6 @@ import { isMwiahProductsCollectionResponse } from './mwiah-product-api';
 import { resolveMwiahCategoryUrl } from './mwiah-products-menu';
 import { gotoMwiahCategoryPage } from './mwiah-scrape-session';
 import type { MwiahProductApiCapture } from './mwiah-product-api-capture';
-import type { MwiahProductsPagination } from './mwiah-product-api';
 
 const PRODUCT_LIST_PAGE = '[data-test-selector="page_ProductListPage"]';
 
@@ -81,32 +80,36 @@ async function waitForCategoryCollectionApi(page: Page): Promise<void> {
   await sleep(BROWSER_NAVIGATION_DELAY_MS);
 }
 
-export async function loadAllMwiahCategoryListPages(
+export async function openMwiahCategoryListPage(
   page: Page,
   categoryUrl: string,
-  capture: MwiahProductApiCapture,
-): Promise<{
-  listPagesVisited: number;
-  pagination: MwiahProductsPagination | null;
-}> {
-  await gotoMwiahCategoryPage(page, categoryUrl);
-  await waitForMwiahCategoryListReady(page, capture);
-
-  let pagination = capture.getPagination();
-  let totalPages = pagination?.totalPages ?? 1;
-  let listPagesVisited = 1;
-
-  for (let pageNum = 2; pageNum <= totalPages; pageNum += 1) {
-    const nextUrl = buildCategoryPageUrl(categoryUrl, pageNum);
-    await page.goto(nextUrl, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60_000,
-    });
-    await waitForCategoryCollectionApi(page);
-    listPagesVisited += 1;
-    pagination = capture.getPagination() ?? pagination;
-    totalPages = pagination?.totalPages ?? totalPages;
+  pageNumber: number,
+  capture?: MwiahProductApiCapture,
+): Promise<void> {
+  if (pageNumber === 1) {
+    await gotoMwiahCategoryPage(page, categoryUrl);
+    await waitForMwiahCategoryListReady(page, capture);
+    return;
   }
 
-  return { listPagesVisited, pagination };
+  const nextUrl = buildCategoryPageUrl(categoryUrl, pageNumber);
+  await page.goto(nextUrl, {
+    waitUntil: 'domcontentloaded',
+    timeout: 60_000,
+  });
+  await waitForCategoryCollectionApi(page);
+}
+
+export async function resolveListProductsForCurrentPage(
+  page: Page,
+  capture: MwiahProductApiCapture,
+  storeOrigin: string,
+): Promise<Record<string, unknown>[]> {
+  const fromCapture = capture.takeLatestCollectionProductPage();
+  if (fromCapture.length > 0) {
+    return fromCapture;
+  }
+
+  const urls = await collectMwiahProductUrlsFromDom(page, storeOrigin);
+  return urls.map((url) => ({ canonicalUrl: url }));
 }
