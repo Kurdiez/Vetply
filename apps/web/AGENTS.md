@@ -1,6 +1,6 @@
-# Claude Code — Web Guidelines
+# Web Guidelines
 
-This file defines how Claude Code should behave when working in `apps/web/`. Follow the sections below that apply to your changes.
+This file defines how the AI agent should behave when working in `apps/web/`. Follow the sections below that apply to your changes.
 
 ---
 
@@ -84,4 +84,4 @@ Do not call `vetply-api` from generic UI components; keep HTTP in Context (or ra
 
 ## When in Doubt
 
-Stop and ask. For repo-wide rules (off-limits files, git, dependencies, etc.), see the root [`CLAUDE.md`](../../CLAUDE.md).
+Stop and ask. For repo-wide rules (off-limits files, git, dependencies, etc.), see the root [`AGENTS.md`](../../AGENTS.md).

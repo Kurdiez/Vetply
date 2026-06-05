@@ -1,6 +1,6 @@
-# Claude Code — Server Guidelines
+# Server Guidelines
 
-This file defines how Claude Code should behave when working in `apps/server/`. Follow the sections below that apply to your changes.
+This file defines how the AI agent should behave when working in `apps/server/`. Follow the sections below that apply to your changes.
 
 ---
 
@@ -59,7 +59,7 @@ System endpoints (e.g. under `system/`, job enqueue, internal ops) differ from p
   yarn migration:generate whatever-migration-title
   ```
 
-- Do not run migration commands unless explicitly instructed (see repo root [`CLAUDE.md`](../../CLAUDE.md)).
+- Do not run migration commands unless explicitly instructed (see repo root [`AGENTS.md`](../../AGENTS.md)).
 
 ---
 
@@ -87,4 +87,4 @@ System endpoints (e.g. under `system/`, job enqueue, internal ops) differ from p
 
 ## When in Doubt
 
-Stop and ask. For repo-wide rules (off-limits files, git, dependencies, etc.), see the root [`CLAUDE.md`](../../CLAUDE.md).
+Stop and ask. For repo-wide rules (off-limits files, git, dependencies, etc.), see the root [`AGENTS.md`](../../AGENTS.md).

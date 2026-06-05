@@ -1,6 +1,6 @@
-# Claude Code — Team Guidelines
+# Team Guidelines
 
-This file defines how Claude Code should behave in this monorepo. All contributors should treat these as the team standard.
+This file defines how the AI agent should behave in this monorepo. All contributors should treat these as the team standard.
 
 ---
 
