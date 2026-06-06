@@ -15,6 +15,7 @@ import {
   scrapeMwiahCategoryProducts,
 } from '../mwiah/mwiah-category-products';
 import { createMwiahCategoryScrapeTracer } from '../mwiah/mwiah-category-scrape-trace';
+import { createMwiahJobWatchdog } from '../mwiah/mwiah-hang-forensics';
 import type {
   MwiahDiscoverCategoriesJobData,
   MwiahScrapeCategoryProductsJobData,
@@ -27,9 +28,14 @@ import {
 import { runWithAuthenticatedMwiahPage } from '../mwiah/mwiah-scrape-session';
 import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
+// Hard wall-clock limit per job. Playwright timeouts can fail to fire when
+// CDP/Chromium wedges; this guarantee that BullMQ marks the job failed
+// rather than leaving it Active indefinitely.
+const JOB_HARD_DEADLINE_MS = 10 * 60_000;
+
 @Processor(QUEUE.MWIAH_SCRAPE, {
   ...CONSUMER_OPTIONS,
-  concurrency: 4,
+  concurrency: 1,
   stalledInterval: 60_000,
   maxStalledCount: 1,
 })
@@ -138,12 +144,70 @@ export class MwiahScrapeConsumer extends WorkerHost {
     job: Job<MwiahScrapeCategoryProductsJobData>,
   ): Promise<void> {
     const categoryUrl = job.data.url.trim();
+    const jobId = job.id?.toString() ?? null;
     const storeUrl = this.mwiahSession.getDefaultStoreUrl();
     const storeOrigin = this.mwiahSession.getStoreOrigin();
 
-    const logCtx = `MWIAH category scrape jobId=${job.id} url=${categoryUrl}`;
-    const trace = createMwiahCategoryScrapeTracer(this.logger, logCtx);
+    const logCtx = `MWIAH category scrape jobId=${jobId} url=${categoryUrl}`;
 
+    const watchdog = createMwiahJobWatchdog({
+      jobId,
+      categoryUrl,
+      logger: this.logger,
+    });
+
+    // Composite tracer: logs the step AND keeps the watchdog's stall clock alive.
+    const baseTrace = createMwiahCategoryScrapeTracer(this.logger, logCtx);
+    const trace = {
+      step: (name: string, details?: Record<string, unknown>) => {
+        baseTrace.step(name, details);
+        watchdog.notifyStep(name);
+      },
+    };
+
+    let deadlineTimer: NodeJS.Timeout | null = null;
+    const deadlinePromise = new Promise<never>((_, reject) => {
+      deadlineTimer = setTimeout(() => {
+        reject(
+          new CustomException('MWIAH job hard deadline exceeded', {
+            jobId,
+            categoryUrl,
+            deadlineMs: JOB_HARD_DEADLINE_MS,
+          }),
+        );
+      }, JOB_HARD_DEADLINE_MS);
+    });
+
+    try {
+      await Promise.race([
+        this.runScrapeCategoryWork(
+          job,
+          jobId,
+          categoryUrl,
+          storeUrl,
+          storeOrigin,
+          logCtx,
+          trace,
+          watchdog,
+        ),
+        deadlinePromise,
+      ]);
+    } finally {
+      if (deadlineTimer !== null) clearTimeout(deadlineTimer);
+      watchdog.dispose();
+    }
+  }
+
+  private async runScrapeCategoryWork(
+    job: Job<MwiahScrapeCategoryProductsJobData>,
+    jobId: string | null,
+    categoryUrl: string,
+    storeUrl: string,
+    storeOrigin: string,
+    logCtx: string,
+    trace: { step: (name: string, details?: Record<string, unknown>) => void },
+    watchdog: ReturnType<typeof createMwiahJobWatchdog>,
+  ): Promise<void> {
     trace.step('job_start', { attemptsMade: job.attemptsMade });
 
     trace.step('supplier_lookup_start');
@@ -171,6 +235,8 @@ export class MwiahScrapeConsumer extends WorkerHost {
       this.mwiahSession,
       storeUrl,
       async (page) => {
+        watchdog.setPage(page);
+
         trace.step('api_capture_attach_start');
         const capture = createMwiahProductApiCapture();
         capture.attach(page);
@@ -211,7 +277,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
         );
       },
       {
-        jobId: job.id?.toString() ?? null,
+        jobId,
         categoryUrl,
         trace,
       },
