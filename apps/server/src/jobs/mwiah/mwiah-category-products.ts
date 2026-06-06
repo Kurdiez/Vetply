@@ -70,11 +70,11 @@ async function fetchListingPreviewFromRest(
   });
 }
 
-function collectCategoryWorkItems(
+function collectPageWorkItems(
   listProducts: Record<string, unknown>[],
   storeOrigin: string,
-  seenSupplierProductIds: Set<string>,
 ): { listItem: Record<string, unknown>; productUrl: string }[] {
+  const seenOnPage = new Set<string>();
   const workItems: { listItem: Record<string, unknown>; productUrl: string }[] =
     [];
 
@@ -87,10 +87,10 @@ function collectCategoryWorkItems(
       item,
       productUrl,
     );
-    if (!supplierProductId || seenSupplierProductIds.has(supplierProductId)) {
+    if (!supplierProductId || seenOnPage.has(supplierProductId)) {
       continue;
     }
-    seenSupplierProductIds.add(supplierProductId);
+    seenOnPage.add(supplierProductId);
     workItems.push({ listItem: item, productUrl });
   }
 
@@ -143,26 +143,119 @@ export type ScrapeMwiahCategoryProductsOptions = {
   trace?: MwiahCategoryScrapeTracer;
 };
 
-export async function scrapeMwiahCategoryProducts(
+export type ScrapeMwiahCategoryProductsResult = {
+  listPagesVisited: number;
+  productsProcessed: number;
+  imported: number;
+  skipped: number;
+  skippedCategoryDetails: boolean;
+};
+
+async function processCurrentProductListPage(
   page: Page,
   categoryUrl: string,
   storeOrigin: string,
   capture: MwiahProductApiCapture,
+  pageNumber: number,
+  totalPages: number,
   options: ScrapeMwiahCategoryProductsOptions,
 ): Promise<{
-  listPagesVisited: number;
   productsProcessed: number;
   imported: number;
   skipped: number;
 }> {
   const trace = options.trace ?? noopMwiahCategoryScrapeTracer;
 
+  trace.step('list_products_resolve_start', { pageNumber });
+  const listProducts = await resolveListProductsForCurrentPage(
+    page,
+    capture,
+    storeOrigin,
+    trace,
+    pageNumber,
+  );
+
+  const workItems = collectPageWorkItems(listProducts, storeOrigin);
+  trace.step('work_items_collected', {
+    pageNumber,
+    count: workItems.length,
+  });
+
+  trace.step('product_details_fetch_start', {
+    pageNumber,
+    count: workItems.length,
+  });
+  const pagePreviews = await fetchListingPreviewsForWorkItems(
+    page,
+    categoryUrl,
+    storeOrigin,
+    workItems,
+  );
+  trace.step('product_details_fetch_done', {
+    pageNumber,
+    previewCount: pagePreviews.length,
+  });
+
+  trace.step('persist_start', {
+    pageNumber,
+    previewCount: pagePreviews.length,
+  });
+  const persistResult = await options.persistPagePreviews(pagePreviews);
+  trace.step('persist_done', {
+    pageNumber,
+    imported: persistResult.imported,
+    skipped: persistResult.skipped,
+  });
+
+  options.onListPageProcessed({
+    pageNumber,
+    totalPages,
+    productsProcessed: workItems.length,
+    imported: persistResult.imported,
+    skipped: persistResult.skipped,
+  });
+
+  capture.clear();
+
+  return {
+    productsProcessed: workItems.length,
+    imported: persistResult.imported,
+    skipped: persistResult.skipped,
+  };
+}
+
+export async function scrapeMwiahCategoryProducts(
+  page: Page,
+  categoryUrl: string,
+  storeOrigin: string,
+  capture: MwiahProductApiCapture,
+  options: ScrapeMwiahCategoryProductsOptions,
+): Promise<ScrapeMwiahCategoryProductsResult> {
+  const trace = options.trace ?? noopMwiahCategoryScrapeTracer;
+
   trace.step('list_page_open_start', { pageNumber: 1 });
-  await openMwiahCategoryListPage(page, categoryUrl, 1, capture, trace);
+  const firstOpen = await openMwiahCategoryListPage(
+    page,
+    categoryUrl,
+    1,
+    capture,
+    trace,
+  );
+  if (firstOpen.status === 'category_details') {
+    capture.clear();
+    trace.step('job_skipped_category_details', { categoryUrl });
+    return {
+      listPagesVisited: 0,
+      productsProcessed: 0,
+      imported: 0,
+      skipped: 0,
+      skippedCategoryDetails: true,
+    };
+  }
+
   let totalPages = capture.getPagination()?.totalPages ?? 1;
   trace.step('list_page_open_done', { pageNumber: 1, totalPages });
 
-  const seenSupplierProductIds = new Set<string>();
   let listPagesVisited = 0;
   let productsProcessed = 0;
   let imported = 0;
@@ -182,63 +275,20 @@ export async function scrapeMwiahCategoryProducts(
       trace.step('list_page_open_done', { pageNumber, totalPages });
     }
 
-    trace.step('list_products_resolve_start', { pageNumber });
-    const listProducts = await resolveListProductsForCurrentPage(
-      page,
-      capture,
-      storeOrigin,
-      trace,
-      pageNumber,
-    );
-
-    const workItems = collectCategoryWorkItems(
-      listProducts,
-      storeOrigin,
-      seenSupplierProductIds,
-    );
-    trace.step('work_items_collected', {
-      pageNumber,
-      count: workItems.length,
-    });
-
-    trace.step('product_details_fetch_start', {
-      pageNumber,
-      count: workItems.length,
-    });
-    const pagePreviews = await fetchListingPreviewsForWorkItems(
+    const pageStats = await processCurrentProductListPage(
       page,
       categoryUrl,
       storeOrigin,
-      workItems,
-    );
-    trace.step('product_details_fetch_done', {
-      pageNumber,
-      previewCount: pagePreviews.length,
-    });
-
-    trace.step('persist_start', {
-      pageNumber,
-      previewCount: pagePreviews.length,
-    });
-    const persistResult = await options.persistPagePreviews(pagePreviews);
-    trace.step('persist_done', {
-      pageNumber,
-      imported: persistResult.imported,
-      skipped: persistResult.skipped,
-    });
-
-    productsProcessed += workItems.length;
-    imported += persistResult.imported;
-    skipped += persistResult.skipped;
-    listPagesVisited += 1;
-
-    options.onListPageProcessed({
+      capture,
       pageNumber,
       totalPages,
-      productsProcessed: workItems.length,
-      imported: persistResult.imported,
-      skipped: persistResult.skipped,
-    });
+      options,
+    );
+
+    productsProcessed += pageStats.productsProcessed;
+    imported += pageStats.imported;
+    skipped += pageStats.skipped;
+    listPagesVisited += 1;
   }
 
   return {
@@ -246,6 +296,7 @@ export async function scrapeMwiahCategoryProducts(
     productsProcessed,
     imported,
     skipped,
+    skippedCategoryDetails: false,
   };
 }
 

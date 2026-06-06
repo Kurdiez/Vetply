@@ -29,7 +29,7 @@ import { MwiahSessionService } from '../mwiah/mwiah-session.service';
 
 @Processor(QUEUE.MWIAH_SCRAPE, {
   ...CONSUMER_OPTIONS,
-  concurrency: 1,
+  concurrency: 4,
   stalledInterval: 60_000,
   maxStalledCount: 1,
 })
@@ -163,6 +163,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
       productsProcessed: 0,
       imported: 0,
       skipped: 0,
+      skippedCategoryDetails: false,
     };
 
     trace.step('authenticated_session_start', { storeUrl });
@@ -218,6 +219,12 @@ export class MwiahScrapeConsumer extends WorkerHost {
     trace.step('authenticated_session_done');
 
     trace.step('job_done', jobTotals);
+    if (jobTotals.skippedCategoryDetails) {
+      this.logger.log(
+        `${logCtx} skipped category details page (not a product list)`,
+      );
+      return;
+    }
     this.logger.log(
       `${logCtx} finished totalPages=${jobTotals.listPagesVisited} productsProcessed=${jobTotals.productsProcessed} imported=${jobTotals.imported} skipped=${jobTotals.skipped}`,
     );

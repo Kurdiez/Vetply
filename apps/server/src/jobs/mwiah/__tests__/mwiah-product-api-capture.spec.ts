@@ -63,4 +63,22 @@ describe('MwiahProductApiCapture', () => {
     const capture = new MwiahProductApiCapture();
     expect(capture.takeLatestCollectionProductPage()).toEqual([]);
   });
+
+  it('clear removes captured bodies and pagination', async () => {
+    const page1Body = readFileSync(
+      join(fixturesDir, 'products-collection-page1.json'),
+      'utf8',
+    );
+
+    const capture = new MwiahProductApiCapture();
+    await ingestCollectionBodies(capture, [page1Body]);
+    expect(capture.collectionResponseCount()).toBe(1);
+    expect(capture.getPagination()).not.toBeNull();
+
+    capture.clear();
+
+    expect(capture.collectionResponseCount()).toBe(0);
+    expect(capture.getPagination()).toBeNull();
+    expect(capture.takeLatestCollectionProductPage()).toEqual([]);
+  });
 });

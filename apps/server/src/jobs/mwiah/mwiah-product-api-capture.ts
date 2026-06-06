@@ -56,6 +56,11 @@ export class MwiahProductApiCapture {
     return this.latestPagination;
   }
 
+  clear(): void {
+    this.collectionBodies.length = 0;
+    this.latestPagination = null;
+  }
+
   takeLatestCollectionProductPage(): Record<string, unknown>[] {
     const body = this.collectionBodies.pop();
     if (!body) {

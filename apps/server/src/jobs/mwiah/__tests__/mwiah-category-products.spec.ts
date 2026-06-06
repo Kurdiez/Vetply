@@ -27,12 +27,48 @@ describe('scrapeMwiahCategoryProducts', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    openMwiahCategoryListPage.mockResolvedValue(undefined);
+    openMwiahCategoryListPage.mockResolvedValue({ status: 'ready' });
     fetchMwiahProductDetailBody.mockResolvedValue(null);
+  });
+
+  it('skips category details pages without scraping products', async () => {
+    openMwiahCategoryListPage.mockResolvedValueOnce({
+      status: 'category_details',
+      currentUrl:
+        'https://onlinestore.mwiah.co.uk/Catalog/Securos-surgical/Surgical-hand-instruments/Dental-instrumentation',
+    });
+
+    const capture = new MwiahProductApiCapture();
+    const clearSpy = jest.spyOn(capture, 'clear');
+    const persistPagePreviews = jest.fn();
+
+    const result = await scrapeMwiahCategoryProducts(
+      page,
+      categoryUrl,
+      storeOrigin,
+      capture,
+      {
+        persistPagePreviews,
+        onListPageProcessed: jest.fn(),
+      },
+    );
+
+    expect(result).toEqual({
+      listPagesVisited: 0,
+      productsProcessed: 0,
+      imported: 0,
+      skipped: 0,
+      skippedCategoryDetails: true,
+    });
+    expect(openMwiahCategoryListPage).toHaveBeenCalledTimes(1);
+    expect(resolveListProductsForCurrentPage).not.toHaveBeenCalled();
+    expect(persistPagePreviews).not.toHaveBeenCalled();
+    expect(clearSpy).toHaveBeenCalledTimes(1);
   });
 
   it('processes each list page end-to-end before moving to the next', async () => {
     const capture = new MwiahProductApiCapture();
+    const clearSpy = jest.spyOn(capture, 'clear');
     jest
       .spyOn(capture, 'getPagination')
       .mockReturnValue({ currentPage: 1, totalPages: 2, pageSize: 12 });
@@ -99,11 +135,13 @@ describe('scrapeMwiahCategoryProducts', () => {
       imported: 1,
       skipped: 0,
     });
+    expect(clearSpy).toHaveBeenCalledTimes(2);
     expect(result).toEqual({
       listPagesVisited: 2,
       productsProcessed: 2,
       imported: 2,
       skipped: 0,
+      skippedCategoryDetails: false,
     });
   });
 });
