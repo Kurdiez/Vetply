@@ -5,3 +5,16 @@ export type MwiahDiscoverCategoriesJobData = {
 export type MwiahScrapeCategoryProductsJobData = {
   url: string;
 };
+
+export type MwiahScrapeCategoryWorkerInput = {
+  categoryUrl: string;
+  jobId: string | null;
+};
+
+export type MwiahScrapeCategoryWorkerOutput = {
+  listPagesVisited: number;
+  productsProcessed: number;
+  imported: number;
+  skipped: number;
+  skippedCategoryDetails: boolean;
+};
