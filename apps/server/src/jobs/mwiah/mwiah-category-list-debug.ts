@@ -1,7 +1,3 @@
-import * as fs from 'node:fs/promises';
-import * as os from 'node:os';
-import * as path from 'node:path';
-
 import type { Page } from 'playwright';
 
 import { isSignInPath } from './mwiah-auth-flow';
@@ -9,7 +5,7 @@ import { detectCloudflareIndicators } from './mwiah-login-debug';
 
 const BODY_TEXT_PREVIEW_MAX = 800;
 const DATA_TEST_SELECTOR_SAMPLE_MAX = 40;
-const HTML_SNIPPET_MAX = 8_000;
+const HTML_SNIPPET_LOG_MAX = 4_000;
 
 export type MwiahCategoryListPageState = {
   href: string;
@@ -24,14 +20,10 @@ export type MwiahCategoryListPageState = {
   productDetailLinkCount: number;
 };
 
-export type MwiahCategoryListFailureArtifacts = {
-  screenshotPath: string;
-  htmlPath: string;
+export type MwiahCategoryListFailureLogContext = {
+  pageState: MwiahCategoryListPageState;
+  htmlSnippetPreview: string | null;
 };
-
-function sanitizeArtifactLabel(label: string): string {
-  return label.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(0, 120);
-}
 
 export async function collectMwiahCategoryListPageState(
   page: Page,
@@ -91,27 +83,24 @@ export async function collectMwiahCategoryListPageState(
   };
 }
 
-export async function saveMwiahCategoryListFailureArtifacts(
-  page: Page,
-  artifactLabel: string,
-): Promise<MwiahCategoryListFailureArtifacts> {
-  const dir = await fs.mkdtemp(
-    path.join(os.tmpdir(), 'vetply-mwiah-category-'),
-  );
-  const baseName = sanitizeArtifactLabel(artifactLabel);
-  const screenshotPath = path.join(dir, `${baseName}.png`);
-  const htmlPath = path.join(dir, `${baseName}.html`);
-
-  await page.screenshot({ path: screenshotPath, fullPage: true }).catch(() => {
-    // Screenshot may fail if the page is mid-navigation.
-  });
-
+async function readHtmlSnippetPreview(page: Page): Promise<string | null> {
   const html = await page.content().catch(() => '');
-  const htmlSnippet =
-    html.length > HTML_SNIPPET_MAX
-      ? `${html.slice(0, HTML_SNIPPET_MAX)}\n<!-- truncated -->`
-      : html;
-  await fs.writeFile(htmlPath, htmlSnippet, 'utf8');
+  if (html === '') {
+    return null;
+  }
+  if (html.length <= HTML_SNIPPET_LOG_MAX) {
+    return html;
+  }
+  return `${html.slice(0, HTML_SNIPPET_LOG_MAX)}\n<!-- truncated -->`;
+}
 
-  return { screenshotPath, htmlPath };
+export async function collectMwiahCategoryListFailureLogContext(
+  page: Page,
+): Promise<MwiahCategoryListFailureLogContext> {
+  const [pageState, htmlSnippetPreview] = await Promise.all([
+    collectMwiahCategoryListPageState(page),
+    readHtmlSnippetPreview(page),
+  ]);
+
+  return { pageState, htmlSnippetPreview };
 }

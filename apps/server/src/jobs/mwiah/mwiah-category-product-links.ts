@@ -1,14 +1,11 @@
 import type { Page } from 'playwright';
 
-import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
+import { BROWSER_NAVIGATION_DELAY_MS } from '../playwright/scrape-browser-launch';
 import {
   readMwiahCatalogPageKind,
   MWIAH_PRODUCT_LIST_PAGE_SELECTOR,
 } from './mwiah-catalog-page-kind';
-import {
-  collectMwiahCategoryListPageState,
-  saveMwiahCategoryListFailureArtifacts,
-} from './mwiah-category-list-debug';
+import { collectMwiahCategoryListFailureLogContext } from './mwiah-category-list-debug';
 import { isMwiahProductDetailHref } from './mwiah-category-product-href';
 import type { MwiahCategoryScrapeTracer } from './mwiah-category-scrape-trace';
 import { noopMwiahCategoryScrapeTracer } from './mwiah-category-scrape-trace';
@@ -52,16 +49,12 @@ async function waitForMwiahCatalogPageKind(
       { timeout: 60_000 },
     );
   } catch (error) {
-    const pageState = await collectMwiahCategoryListPageState(page);
-    const artifacts = await saveMwiahCategoryListFailureArtifacts(
-      page,
-      `page-${pageNumber}`,
-    );
+    const failureLogContext =
+      await collectMwiahCategoryListFailureLogContext(page);
     trace.step('catalog_page_kind_wait_failed', {
       pageNumber,
       currentUrl: page.url(),
-      pageState,
-      ...artifacts,
+      ...failureLogContext,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;

@@ -5,6 +5,10 @@ import { Job, Queue } from 'bullmq';
 import { captureException } from '~/commons/error-handlers/capture-exception';
 import { CustomException } from '~/commons/errors/custom-exception';
 import {
+  collectProcessDiagnostics,
+  formatProcessDiagnostics,
+} from '~/commons/diagnostics/process-diagnostics';
+import {
   resolveWorkerScriptPath,
   runInChildProcess,
 } from '~/commons/child-process/run-in-child-process';
@@ -81,6 +85,15 @@ export class MwiahScrapeConsumer extends WorkerHost {
     >,
     error: unknown,
   ): CustomException {
+    const childContext =
+      error instanceof Error &&
+      'childContext' in error &&
+      typeof (error as Error & { childContext?: unknown }).childContext ===
+        'object'
+        ? ((error as Error & { childContext: Record<string, unknown> })
+            .childContext ?? null)
+        : null;
+
     return new CustomException('MWIAH scrape job failed', {
       error,
       queue: QUEUE.MWIAH_SCRAPE,
@@ -88,6 +101,7 @@ export class MwiahScrapeConsumer extends WorkerHost {
       jobName: job.name,
       attemptsMade: job.attemptsMade,
       jobData: job.data,
+      childContext,
     });
   }
 
@@ -139,6 +153,11 @@ export class MwiahScrapeConsumer extends WorkerHost {
   ): Promise<void> {
     const categoryUrl = job.data.url.trim();
     const jobId = job.id?.toString() ?? null;
+    const logLabel = `MWIAH category scrape jobId=${jobId}`;
+
+    this.logger.log(
+      `MWIAH_SCRAPE_DIAG parent_start ${logLabel} url=${categoryUrl} diagnostics=${formatProcessDiagnostics(collectProcessDiagnostics())}`,
+    );
 
     const workerPath = resolveWorkerScriptPath(
       __dirname,
@@ -148,11 +167,15 @@ export class MwiahScrapeConsumer extends WorkerHost {
     const result = await runInChildProcess<
       MwiahScrapeCategoryWorkerInput,
       MwiahScrapeCategoryWorkerOutput
-    >(workerPath, { categoryUrl, jobId }, { timeoutMs: JOB_HARD_DEADLINE_MS });
+    >(
+      workerPath,
+      { categoryUrl, jobId },
+      { timeoutMs: JOB_HARD_DEADLINE_MS, label: logLabel },
+    );
 
     if (!result.skippedCategoryDetails) {
       this.logger.log(
-        `MWIAH category scrape done jobId=${jobId} url=${categoryUrl} pages=${result.listPagesVisited} processed=${result.productsProcessed} imported=${result.imported} skipped=${result.skipped}`,
+        `${logLabel} done url=${categoryUrl} pages=${result.listPagesVisited} processed=${result.productsProcessed} imported=${result.imported} skipped=${result.skipped}`,
       );
     }
   }

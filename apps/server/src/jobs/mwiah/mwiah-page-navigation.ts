@@ -1,6 +1,6 @@
 import type { Page, Response } from 'playwright';
 
-import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
+import { BROWSER_NAVIGATION_DELAY_MS } from '../playwright/scrape-browser-launch';
 import { onMwiahPageLoaded } from './mwiah-cookie-consent';
 
 export type GotoMwiahPageOptions = {

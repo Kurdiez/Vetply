@@ -11,8 +11,8 @@ import { ConfigService } from '~/config';
 import {
   BROWSER_NAVIGATION_DELAY_MS,
   buildPersistentContextOptions,
-  installAntiDetectionInitScript,
-} from '../covetrus/covetrus-browser-launch';
+  configureScrapeBrowserContext,
+} from '../playwright/scrape-browser-launch';
 import {
   collectLoginPageState,
   extractCfRayFromResponse,
@@ -92,7 +92,7 @@ export class MwiahSessionService {
       }
 
       try {
-        await installAntiDetectionInitScript(context);
+        await configureScrapeBrowserContext(context);
         const page = context.pages()[0] ?? (await context.newPage());
 
         let storeResponse: Response | null = null;

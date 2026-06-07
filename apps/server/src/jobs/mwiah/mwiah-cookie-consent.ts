@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 
-import { BROWSER_NAVIGATION_DELAY_MS } from '../covetrus/covetrus-browser-launch';
+import { BROWSER_NAVIGATION_DELAY_MS } from '../playwright/scrape-browser-launch';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

@@ -20,3 +20,13 @@ export function createMwiahCategoryScrapeTracer(
     },
   };
 }
+
+export function createConsoleMwiahCategoryScrapeTracer(
+  logCtx: string,
+): MwiahCategoryScrapeTracer {
+  return {
+    step: (name, details = {}) => {
+      console.log(`${logCtx} step=${name} ${JSON.stringify(details)}`);
+    },
+  };
+}

@@ -1,14 +1,19 @@
-import * as fs from 'node:fs/promises';
-import * as os from 'node:os';
-import * as path from 'node:path';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import type { IntervalHistogram } from 'node:perf_hooks';
 
-import type { Logger } from '@nestjs/common';
 import type { Page } from 'playwright';
 
+import {
+  collectProcessDiagnostics,
+  type ProcessDiagnostics,
+} from '~/commons/diagnostics/process-diagnostics';
+
+import {
+  collectMwiahCategoryListFailureLogContext,
+  type MwiahCategoryListPageState,
+} from './mwiah-category-list-debug';
+
 const CDP_PROBE_TIMEOUT_MS = 5_000;
-const SCREENSHOT_TIMEOUT_MS = 8_000;
 const HTML_CAPTURE_TIMEOUT_MS = 5_000;
 
 // No new tracer step for this long → watchdog fires forensics.
@@ -25,25 +30,26 @@ export type MwiahHangForensics = {
   processPid: number;
   processRssMb: number;
   processHeapUsedMb: number;
-  // null when event loop was blocked long enough that the monitor itself failed
+  processDiagnostics: ProcessDiagnostics;
   eventLoopDelayMeanMs: number | null;
   eventLoopDelayMaxMs: number | null;
-  // null when no page was registered with setPage() yet
   browserConnected: boolean | null;
   cdpProbeResult: 'ok' | 'timeout' | 'error' | 'no_page';
   cdpProbeMs: number | null;
   cdpProbeError: string | null;
   pageUrl: string | null;
-  screenshotPath: string | null;
-  htmlPath: string | null;
+  pageState: MwiahCategoryListPageState | null;
+  htmlSnippetPreview: string | null;
+};
+
+export type MwiahHangForensicsLogger = {
+  warn: (message: string) => void;
+  error: (message: string) => void;
 };
 
 export type MwiahJobWatchdog = {
-  /** Call on every tracer step so the watchdog knows progress is happening. */
   notifyStep: (name: string) => void;
-  /** Register the live Playwright page so forensics can probe it. */
   setPage: (page: Page) => void;
-  /** Stop the watchdog interval. Must be called in a finally block. */
   dispose: () => void;
 };
 
@@ -92,8 +98,8 @@ async function collectForensics(params: {
   let cdpProbeMs: number | null = null;
   let cdpProbeError: string | null = null;
   let pageUrl: string | null = null;
-  let screenshotPath: string | null = null;
-  let htmlPath: string | null = null;
+  let pageState: MwiahCategoryListPageState | null = null;
+  let htmlSnippetPreview: string | null = null;
 
   if (page) {
     try {
@@ -123,34 +129,13 @@ async function collectForensics(params: {
       cdpProbeError = cdpProbe.error;
     }
 
-    try {
-      const dir = await fs.mkdtemp(
-        path.join(os.tmpdir(), 'vetply-mwiah-hang-'),
-      );
-      const label = `${jobId ?? 'unknown'}-${lastStep}`
-        .replace(/[^a-zA-Z0-9._-]+/g, '_')
-        .slice(0, 80);
-
-      const ssPath = path.join(dir, `${label}.png`);
-      const ssResult = await withTimeout(
-        () => page.screenshot({ path: ssPath, fullPage: false }),
-        SCREENSHOT_TIMEOUT_MS,
-      );
-      if (ssResult.error === null) {
-        screenshotPath = ssPath;
-      }
-
-      const hPath = path.join(dir, `${label}.html`);
-      const htmlResult = await withTimeout(
-        () => page.content(),
-        HTML_CAPTURE_TIMEOUT_MS,
-      );
-      if (htmlResult.error === null && htmlResult.value) {
-        await fs.writeFile(hPath, htmlResult.value.slice(0, 12_000), 'utf8');
-        htmlPath = hPath;
-      }
-    } catch {
-      // ignore artifact failures
+    const pageLogContext = await withTimeout(
+      () => collectMwiahCategoryListFailureLogContext(page),
+      HTML_CAPTURE_TIMEOUT_MS,
+    );
+    if (pageLogContext.error === null && pageLogContext.value) {
+      pageState = pageLogContext.value.pageState;
+      htmlSnippetPreview = pageLogContext.value.htmlSnippetPreview;
     }
   }
 
@@ -163,6 +148,7 @@ async function collectForensics(params: {
     processPid: process.pid,
     processRssMb: Math.round(mem.rss / 1024 / 1024),
     processHeapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+    processDiagnostics: collectProcessDiagnostics(),
     eventLoopDelayMeanMs,
     eventLoopDelayMaxMs,
     browserConnected,
@@ -170,15 +156,15 @@ async function collectForensics(params: {
     cdpProbeMs,
     cdpProbeError,
     pageUrl,
-    screenshotPath,
-    htmlPath,
+    pageState,
+    htmlSnippetPreview,
   };
 }
 
 export function createMwiahJobWatchdog(params: {
   jobId: string | null;
   categoryUrl: string | null;
-  logger: Logger;
+  logger: MwiahHangForensicsLogger;
 }): MwiahJobWatchdog {
   const { jobId, categoryUrl, logger } = params;
 
@@ -198,7 +184,7 @@ export function createMwiahJobWatchdog(params: {
 
     fired = true;
     logger.warn(
-      `MWIAH hang watchdog fired jobId=${jobId} lastStep=${lastStep} msSinceLastStep=${msSinceLastStep}`,
+      `MWIAH_SCRAPE_DIAG hang_watchdog_fired jobId=${jobId} lastStep=${lastStep} msSinceLastStep=${msSinceLastStep}`,
     );
 
     void collectForensics({
@@ -210,7 +196,7 @@ export function createMwiahJobWatchdog(params: {
       monitor,
     }).then((forensics) => {
       logger.error(
-        `MWIAH hang forensics jobId=${jobId} ${JSON.stringify(forensics)}`,
+        `MWIAH_SCRAPE_DIAG hang_forensics jobId=${jobId} ${JSON.stringify(forensics)}`,
       );
     });
   }, WATCHDOG_CHECK_INTERVAL_MS);

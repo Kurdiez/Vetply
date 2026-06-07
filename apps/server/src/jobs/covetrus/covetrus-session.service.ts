@@ -12,8 +12,8 @@ import { performCovetrusLogin } from './covetrus-auth-flow';
 import {
   BROWSER_NAVIGATION_DELAY_MS,
   buildPersistentContextOptions,
-  installAntiDetectionInitScript,
-} from './covetrus-browser-launch';
+  configureScrapeBrowserContext,
+} from '../playwright/scrape-browser-launch';
 
 const MAX_NAV_ATTEMPTS = 3;
 const NAV_RETRY_BASE_MS = 2000;
@@ -63,7 +63,7 @@ export class CovetrusSessionService {
       }
 
       try {
-        await installAntiDetectionInitScript(context);
+        await configureScrapeBrowserContext(context);
         const page = context.pages()[0] ?? (await context.newPage());
 
         await performCovetrusLogin({

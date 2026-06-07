@@ -9,6 +9,10 @@ import { DataSource } from 'typeorm';
 import { Supplier } from '@vetply/shared';
 
 import type { ChildProcessResult } from '~/commons/child-process/run-in-child-process';
+import {
+  collectProcessDiagnostics,
+  formatProcessDiagnostics,
+} from '~/commons/diagnostics/process-diagnostics';
 import type { Config } from '~/config/schemas';
 import { ConfigService } from '~/config';
 import { entitiesToReigster } from '~/database/entities-registry';
@@ -18,7 +22,11 @@ import {
   createMwiahProductApiCapture,
   scrapeMwiahCategoryProducts,
 } from './mwiah-category-products';
-import { noopMwiahCategoryScrapeTracer } from './mwiah-category-scrape-trace';
+import {
+  createConsoleMwiahCategoryScrapeTracer,
+  type MwiahCategoryScrapeTracer,
+} from './mwiah-category-scrape-trace';
+import { createMwiahJobWatchdog } from './mwiah-hang-forensics';
 import { importMwiahPreviewRow } from './mwiah-catalogue-importer';
 import { runWithAuthenticatedMwiahPage } from './mwiah-scrape-session';
 import type {
@@ -43,9 +51,6 @@ function createDataSource(): DataSource {
 }
 
 function createWorkerSession(): MwiahSessionService {
-  // Build a minimal config adapter that reads directly from process.env.
-  // The cast is required because ConfigService wraps NestjsConfigService with
-  // private state; at runtime the only method we call is get().
   const workerConfig = {
     get: <T extends keyof Config>(key: T): Config[T] =>
       process.env[key as string] as Config[T],
@@ -53,14 +58,48 @@ function createWorkerSession(): MwiahSessionService {
   return new MwiahSessionService(workerConfig);
 }
 
+let lastRecordedStep = 'worker_boot';
+
+function createWorkerTrace(
+  logCtx: string,
+  watchdog: ReturnType<typeof createMwiahJobWatchdog>,
+): MwiahCategoryScrapeTracer {
+  const baseTrace = createConsoleMwiahCategoryScrapeTracer(logCtx);
+  return {
+    step: (name, details) => {
+      lastRecordedStep = name;
+      baseTrace.step(name, details);
+      watchdog.notifyStep(name);
+    },
+  };
+}
+
 async function runScrape(
   input: MwiahScrapeCategoryWorkerInput,
 ): Promise<MwiahScrapeCategoryWorkerOutput> {
   const { categoryUrl, jobId } = input;
+  const logCtx = `MWIAH category scrape jobId=${jobId} url=${categoryUrl}`;
+  const startedAt = Date.now();
+
+  console.log(
+    `MWIAH_SCRAPE_DIAG worker_start ${logCtx} diagnostics=${formatProcessDiagnostics(collectProcessDiagnostics())}`,
+  );
+
+  const watchdog = createMwiahJobWatchdog({
+    jobId,
+    categoryUrl,
+    logger: {
+      warn: (message) => console.warn(message),
+      error: (message) => console.error(message),
+    },
+  });
+  const trace = createWorkerTrace(logCtx, watchdog);
+
   const dataSource = createDataSource();
   await dataSource.initialize();
 
   try {
+    trace.step('supplier_lookup_start');
     const supplier = await dataSource
       .getRepository(CatalogueSupplierEntity)
       .findOne({ where: { name: Supplier.MWIAH } });
@@ -69,6 +108,7 @@ async function runScrape(
         `MWIAH supplier row missing (expected catalogue_suppliers.name=${Supplier.MWIAH})`,
       );
     }
+    trace.step('supplier_lookup_done', { supplierId: supplier.id });
 
     const session = createWorkerSession();
     const storeUrl = session.getDefaultStoreUrl();
@@ -82,12 +122,17 @@ async function runScrape(
       skippedCategoryDetails: false,
     };
 
+    trace.step('authenticated_session_start', { storeUrl });
     await runWithAuthenticatedMwiahPage(
       session,
       storeUrl,
       async (page) => {
+        watchdog.setPage(page);
+
+        trace.step('api_capture_attach_start');
         const capture = createMwiahProductApiCapture();
         capture.attach(page);
+        trace.step('api_capture_attach_done');
 
         totals = await scrapeMwiahCategoryProducts(
           page,
@@ -95,7 +140,7 @@ async function runScrape(
           storeOrigin,
           capture,
           {
-            trace: noopMwiahCategoryScrapeTracer,
+            trace,
             persistPagePreviews: async (previews) => {
               let imported = 0;
               let skipped = 0;
@@ -117,17 +162,31 @@ async function runScrape(
             },
             onListPageProcessed: (stats) => {
               console.log(
-                `MWIAH worker jobId=${jobId} url=${categoryUrl} page=${stats.pageNumber}/${stats.totalPages} processed=${stats.productsProcessed} imported=${stats.imported} skipped=${stats.skipped}`,
+                `${logCtx} page=${stats.pageNumber}/${stats.totalPages} productsProcessed=${stats.productsProcessed} imported=${stats.imported} skipped=${stats.skipped}`,
               );
             },
           },
         );
       },
-      { jobId, categoryUrl },
+      {
+        jobId,
+        categoryUrl,
+        trace,
+      },
+    );
+    trace.step('authenticated_session_done');
+    trace.step('job_done', {
+      ...totals,
+      elapsedMs: Date.now() - startedAt,
+    });
+
+    console.log(
+      `MWIAH_SCRAPE_DIAG worker_done ${logCtx} elapsedMs=${Date.now() - startedAt} diagnostics=${formatProcessDiagnostics(collectProcessDiagnostics())}`,
     );
 
     return totals;
   } finally {
+    watchdog.dispose();
     await dataSource.destroy().catch((err: unknown) => {
       console.warn(`MWIAH worker DB cleanup error: ${String(err)}`);
     });
@@ -156,14 +215,22 @@ process.on(
       })
       .catch((err: unknown) => {
         const error = err instanceof Error ? err : new Error(String(err));
+        console.error(
+          `MWIAH_SCRAPE_DIAG worker_failure jobId=${msg.input.jobId ?? 'unknown'} categoryUrl=${msg.input.categoryUrl} lastStep=${lastRecordedStep} diagnostics=${formatProcessDiagnostics(collectProcessDiagnostics())} error=${error.message}`,
+        );
         sendResult({
           type: 'error',
           message: error.message,
           name: error.name,
           stack: error.stack,
-          context:
-            (error as Error & { context?: Record<string, unknown> }).context ??
-            undefined,
+          lastStep: lastRecordedStep,
+          context: {
+            ...((error as Error & { context?: Record<string, unknown> })
+              .context ?? {}),
+            jobId: msg.input.jobId,
+            categoryUrl: msg.input.categoryUrl,
+            diagnostics: collectProcessDiagnostics(),
+          },
         });
       });
   },
