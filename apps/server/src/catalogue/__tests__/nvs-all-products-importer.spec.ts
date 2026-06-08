@@ -1,6 +1,6 @@
 import { TestingModule } from '@nestjs/testing';
 import type { NvsAllProductsImportRow } from '@vetply/shared';
-import { CatalogUnitType, SalesCategory, Supplier } from '@vetply/shared';
+import { Supplier } from '@vetply/shared';
 import { DataSource } from 'typeorm';
 import {
   cleanupAllTestResources,
@@ -14,7 +14,6 @@ import { CatalogueProductSupplierListingEntity } from '~/database/entities/catal
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import { importNvsAllProductsRow } from '../importers/nvs-all-products-importer';
-import * as catalogueProductImportMatch from '../utils/catalogue-product-import-match';
 
 function row(
   overrides: Partial<NvsAllProductsImportRow> = {},
@@ -44,7 +43,7 @@ describe('importNvsAllProductsRow', () => {
     await cleanupAllTestResources(dbContext, testModule);
   });
 
-  it('creates product and listing with sparse catalogue fields', async () => {
+  it('creates orphan listing without creating a catalogue product', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const nvs = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.NVS }),
@@ -62,23 +61,17 @@ describe('importNvsAllProductsRow', () => {
       dbContext,
       CatalogueProductSupplierListingEntity,
     );
-    const products = await productRepo.find();
-    expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('Test widget');
-    expect(products[0].manufacturerId).toBeNull();
-    expect(products[0].salesCategory).toBeNull();
-    expect(products[0].legalCategory).toBeNull();
-    expect(products[0].pom).toBeNull();
-    expect(products[0].unitType).toBe(CatalogUnitType.ML);
-    expect(products[0].unitQuantity).toBe('100.000000');
+    expect(await productRepo.count()).toBe(0);
 
     const listings = await listingRepo.find();
     expect(listings).toHaveLength(1);
     expect(listings[0].supplierProductId).toBe('00001111');
+    expect(listings[0].name).toBe('Test widget');
     expect(listings[0].listedPrice).toBe('12.5000');
+    expect(listings[0].productId).toBeNull();
   });
 
-  it('updates listed price only without changing product or listing name', async () => {
+  it('updates listed price only without changing listing name', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const nvs = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.NVS }),
@@ -89,12 +82,6 @@ describe('importNvsAllProductsRow', () => {
       row({ supplierProductId: '00002222', name: 'First', pack: 'EA' }),
       nvs.id,
     );
-
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
-    let products = await productRepo.find();
-    const p0 = products[0];
-    p0.salesCategory = SalesCategory.Consumables;
-    await productRepo.save(p0);
 
     const r = await importNvsAllProductsRow(
       dbContext.manager,
@@ -108,11 +95,8 @@ describe('importNvsAllProductsRow', () => {
     );
     expect(r).toBe('imported');
 
-    products = await productRepo.find();
-    expect(products).toHaveLength(1);
-    expect(products[0].name).toBe('First');
-    expect(products[0].salesCategory).toBe(SalesCategory.Consumables);
-    expect(products[0].unitType).toBe(CatalogUnitType.EA);
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+    expect(await productRepo.count()).toBe(0);
 
     const listingRepo = getTestRepository(
       dbContext,
@@ -136,16 +120,10 @@ describe('importNvsAllProductsRow', () => {
     );
     expect(first).toBe('imported');
 
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
     const listingRepo = getTestRepository(
       dbContext,
       CatalogueProductSupplierListingEntity,
     );
-    const productsAfterFirst = await productRepo.find();
-    const productId = productsAfterFirst[0].id;
-
-    await productRepo.delete({ id: productId });
-
     const orphan = await listingRepo.findOne({
       where: { supplierProductId: '00008888', supplierId: nvs.id },
     });
@@ -169,68 +147,5 @@ describe('importNvsAllProductsRow', () => {
     expect(listings[0].productId).toBeNull();
     expect(listings[0].name).toBe(orphanNameBefore);
     expect(listings[0].listedPrice).toBe('3.0000');
-  });
-
-  it('calls smart match only when creating the first listing for a supplier SKU', async () => {
-    const spy = jest.spyOn(
-      catalogueProductImportMatch,
-      'findExistingCatalogueProductIdForSupplierImport',
-    );
-    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const nvs = await supplierRepo.save(
-      supplierRepo.create({ name: Supplier.NVS }),
-    );
-
-    await importNvsAllProductsRow(
-      dbContext.manager,
-      row({ supplierProductId: '00005555', pack: 'EA' }),
-      nvs.id,
-    );
-    expect(spy).toHaveBeenCalledTimes(1);
-
-    spy.mockClear();
-    await importNvsAllProductsRow(
-      dbContext.manager,
-      row({
-        supplierProductId: '00005555',
-        pack: 'EA',
-        name: 'Updated title',
-      }),
-      nvs.id,
-    );
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it('does not call smart match when updating an orphan listing', async () => {
-    const spy = jest.spyOn(
-      catalogueProductImportMatch,
-      'findExistingCatalogueProductIdForSupplierImport',
-    );
-    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const nvs = await supplierRepo.save(
-      supplierRepo.create({ name: Supplier.NVS }),
-    );
-
-    await importNvsAllProductsRow(
-      dbContext.manager,
-      row({ supplierProductId: '00006666', pack: 'EA' }),
-      nvs.id,
-    );
-
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
-    const pid = (await productRepo.find())[0].id;
-    await productRepo.delete({ id: pid });
-
-    spy.mockClear();
-    await importNvsAllProductsRow(
-      dbContext.manager,
-      row({
-        supplierProductId: '00006666',
-        pack: 'EA',
-        name: 'Orphan refresh',
-      }),
-      nvs.id,
-    );
-    expect(spy).not.toHaveBeenCalled();
   });
 });

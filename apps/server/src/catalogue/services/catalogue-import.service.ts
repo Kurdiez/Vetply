@@ -39,8 +39,7 @@ export class CatalogueImportService {
       | {
           updatedExistingListing: number;
           updatedOrphanListing: number;
-          newListingOnMatchedProduct: number;
-          newProductWithListing: number;
+          newOrphanListing: number;
         }
       | undefined;
 
@@ -51,8 +50,7 @@ export class CatalogueImportService {
           const breakdown = {
             updatedExistingListing: 0,
             updatedOrphanListing: 0,
-            newListingOnMatchedProduct: 0,
-            newProductWithListing: 0,
+            newOrphanListing: 0,
           };
           const skipReasonCounts = new Map<string, number>();
 
@@ -71,11 +69,8 @@ export class CatalogueImportService {
                 case 'updated_orphan_listing':
                   breakdown.updatedOrphanListing += 1;
                   break;
-                case 'new_listing_matched_product':
-                  breakdown.newListingOnMatchedProduct += 1;
-                  break;
-                case 'new_product_and_listing':
-                  breakdown.newProductWithListing += 1;
+                case 'new_orphan_listing':
+                  breakdown.newOrphanListing += 1;
                   break;
               }
             } else {

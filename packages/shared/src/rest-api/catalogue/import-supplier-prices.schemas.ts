@@ -93,8 +93,7 @@ export type ImportSupplierPricesBatchReq = z.infer<
 export const nvsNonPomBatchBreakdownSchema = z.object({
   updatedExistingListing: z.number().int().nonnegative(),
   updatedOrphanListing: z.number().int().nonnegative(),
-  newListingOnMatchedProduct: z.number().int().nonnegative(),
-  newProductWithListing: z.number().int().nonnegative(),
+  newOrphanListing: z.number().int().nonnegative(),
 });
 
 export type NvsNonPomBatchBreakdown = z.infer<

@@ -1,5 +1,5 @@
 import { TestingModule } from '@nestjs/testing';
-import { CatalogUnitType, SalesCategory, Supplier } from '@vetply/shared';
+import { SalesCategory, Supplier } from '@vetply/shared';
 import { DataSource } from 'typeorm';
 import {
   cleanupAllTestResources,
@@ -12,7 +12,6 @@ import {
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
-import * as catalogueProductImportMatch from '~/catalogue/utils/catalogue-product-import-match';
 import { importMwiahPreviewRow } from '../mwiah-catalogue-importer';
 import type { MwiahProductPreview } from '../mwiah-product.types';
 
@@ -53,7 +52,35 @@ describe('importMwiahPreviewRow', () => {
     await cleanupAllTestResources(dbContext, testModule);
   });
 
-  it('updates listed price only when listing is linked to a catalogue product', async () => {
+  it('creates orphan listing for a new supplier SKU', async () => {
+    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
+    const mwiah = await supplierRepo.save(
+      supplierRepo.create({ name: Supplier.MWIAH }),
+    );
+
+    const r = await importMwiahPreviewRow(
+      dbContext.manager,
+      previewRow(),
+      mwiah.id,
+    );
+    expect(r).toBe('imported');
+
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+    expect(await productRepo.count()).toBe(0);
+
+    const listing = await listingRepo.findOne({
+      where: { supplierProductId: '30081362' },
+    });
+    expect(listing?.productId).toBeNull();
+    expect(listing?.name).toBe('Tab Band ID 20" White Collar - Box of 100');
+    expect(listing?.listedPrice).toBe('30.2400');
+  });
+
+  it('updates listed price only when listing already exists', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const mwiah = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.MWIAH }),
@@ -65,10 +92,6 @@ describe('importMwiahPreviewRow', () => {
       mwiah.id,
     );
 
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
-    const productsBefore = await productRepo.find();
-    expect(productsBefore[0].name).toBe('Original listing name');
-
     await importMwiahPreviewRow(
       dbContext.manager,
       previewRow({
@@ -79,26 +102,22 @@ describe('importMwiahPreviewRow', () => {
       mwiah.id,
     );
 
+    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
     const listingRepo = getTestRepository(
       dbContext,
       CatalogueProductSupplierListingEntity,
     );
+    expect(await productRepo.count()).toBe(0);
+
     const listing = await listingRepo.findOne({
       where: { supplierProductId: '30081362' },
     });
     expect(listing?.name).toBe('Original listing name');
     expect(listing?.listedPrice).toBe('99.9900');
-
-    const productsAfter = await productRepo.find();
-    expect(productsAfter[0].name).toBe('Original listing name');
-    expect(productsAfter[0].legalCategory).toBeNull();
+    expect(listing?.productId).toBeNull();
   });
 
-  it('does not call smart match when updating an orphan listing', async () => {
-    const spy = jest.spyOn(
-      catalogueProductImportMatch,
-      'findExistingCatalogueProductIdForSupplierImport',
-    );
+  it('updates orphan listing only when reimporting after manual product unlink', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const mwiah = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.MWIAH }),
@@ -110,11 +129,15 @@ describe('importMwiahPreviewRow', () => {
       mwiah.id,
     );
 
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
-    const productId = (await productRepo.find())[0].id;
-    await productRepo.delete({ id: productId });
+    const listingRepo = getTestRepository(
+      dbContext,
+      CatalogueProductSupplierListingEntity,
+    );
+    const listing = await listingRepo.findOne({
+      where: { supplierProductId: '30562050' },
+    });
+    expect(listing?.productId).toBeNull();
 
-    spy.mockClear();
     await importMwiahPreviewRow(
       dbContext.manager,
       previewRow({
@@ -125,89 +148,11 @@ describe('importMwiahPreviewRow', () => {
       mwiah.id,
     );
 
-    expect(spy).not.toHaveBeenCalled();
-
-    const listingRepo = getTestRepository(
-      dbContext,
-      CatalogueProductSupplierListingEntity,
-    );
-    const listing = await listingRepo.findOne({
+    const updated = await listingRepo.findOne({
       where: { supplierProductId: '30562050' },
     });
-    expect(listing?.productId).toBeNull();
-    expect(listing?.name).toBe('Tab Band ID 20" White Collar - Box of 100');
-    expect(listing?.listedPrice).toBe('12.5000');
-  });
-
-  it('calls smart match only when creating the first listing for a supplier SKU', async () => {
-    const spy = jest.spyOn(
-      catalogueProductImportMatch,
-      'findExistingCatalogueProductIdForSupplierImport',
-    );
-    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const mwiah = await supplierRepo.save(
-      supplierRepo.create({ name: Supplier.MWIAH }),
-    );
-
-    await importMwiahPreviewRow(
-      dbContext.manager,
-      previewRow({ supplierProductId: 'SMART-1' }),
-      mwiah.id,
-    );
-    expect(spy).toHaveBeenCalledTimes(1);
-
-    spy.mockClear();
-    await importMwiahPreviewRow(
-      dbContext.manager,
-      previewRow({
-        supplierProductId: 'SMART-1',
-        name: 'Second import same SKU',
-      }),
-      mwiah.id,
-    );
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it('links a new listing to an existing catalogue product when smart match finds one', async () => {
-    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const mwiah = await supplierRepo.save(
-      supplierRepo.create({ name: Supplier.MWIAH }),
-    );
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
-    const existingProduct = await productRepo.save(
-      productRepo.create({
-        manufacturerId: null,
-        name: 'Tab Band ID 20" White Collar - Box of 100',
-        salesCategory: SalesCategory.Consumables,
-        legalCategory: null,
-        pom: null,
-        image: null,
-        unitType: CatalogUnitType.EA,
-        unitQuantity: '1.000000',
-      }),
-    );
-
-    jest
-      .spyOn(
-        catalogueProductImportMatch,
-        'findExistingCatalogueProductIdForSupplierImport',
-      )
-      .mockResolvedValue(existingProduct.id);
-
-    await importMwiahPreviewRow(
-      dbContext.manager,
-      previewRow({ supplierProductId: 'NEW-SKU-99' }),
-      mwiah.id,
-    );
-
-    const listingRepo = getTestRepository(
-      dbContext,
-      CatalogueProductSupplierListingEntity,
-    );
-    const listing = await listingRepo.findOne({
-      where: { supplierProductId: 'NEW-SKU-99' },
-    });
-    expect(listing?.productId).toBe(existingProduct.id);
-    expect(await productRepo.count()).toBe(1);
+    expect(updated?.productId).toBeNull();
+    expect(updated?.name).toBe('Tab Band ID 20" White Collar - Box of 100');
+    expect(updated?.listedPrice).toBe('12.5000');
   });
 });

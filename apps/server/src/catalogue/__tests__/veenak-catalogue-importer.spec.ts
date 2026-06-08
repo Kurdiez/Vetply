@@ -20,7 +20,6 @@ import { CatalogueProductSupplierListingEntity } from '~/database/entities/catal
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import { importVeenakCatalogueRow } from '../importers/veenak-catalogue-importer';
-import * as catalogueProductImportMatch from '../utils/catalogue-product-import-match';
 
 function veenakRow(overrides: Partial<VeenakImportRow> = {}): VeenakImportRow {
   return {
@@ -49,7 +48,7 @@ describe('importVeenakCatalogueRow', () => {
     await cleanupAllTestResources(dbContext, testModule);
   });
 
-  it('creates product and listing when no listing and no name match', async () => {
+  it('creates orphan listing when no listing exists for the supplier SKU', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const veenak = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.VEENAK }),
@@ -67,16 +66,16 @@ describe('importVeenakCatalogueRow', () => {
       dbContext,
       CatalogueProductSupplierListingEntity,
     );
-    expect(await productRepo.count()).toBe(1);
+    expect(await productRepo.count()).toBe(0);
     expect(await listingRepo.count()).toBe(1);
-    const p = (await productRepo.find())[0];
-    expect(p.name).toBe('Aciclovir 200mg Tablets');
     const l = (await listingRepo.find())[0];
     expect(l.supplierProductId).toBe('UNIQUE-ID-1');
+    expect(l.name).toBe('Aciclovir 200mg Tablets');
     expect(l.listedPrice).toBe('1.4300');
+    expect(l.productId).toBeNull();
   });
 
-  it('adds listing only when product name matches existing product without this supplier listing', async () => {
+  it('creates orphan listing even when a matching catalogue product name already exists', async () => {
     const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
     const nvs = await supplierRepo.save(
       supplierRepo.create({ name: Supplier.NVS }),
@@ -121,7 +120,7 @@ describe('importVeenakCatalogueRow', () => {
       where: { supplierId: veenak.id },
     });
     expect(veenakListings).toHaveLength(1);
-    expect(veenakListings[0].productId).toBe(product.id);
+    expect(veenakListings[0].productId).toBeNull();
     expect(veenakListings[0].supplierProductId).toBe('VEE-ACIC-1');
   });
 
@@ -153,73 +152,10 @@ describe('importVeenakCatalogueRow', () => {
       dbContext,
       CatalogueProductSupplierListingEntity,
     );
-    expect(await productRepo.count()).toBe(1);
+    expect(await productRepo.count()).toBe(0);
     const listings = await listingRepo.find();
     expect(listings).toHaveLength(1);
     expect(listings[0].name).toBe('First');
     expect(listings[0].listedPrice).toBe('9.9900');
-    const products = await productRepo.find();
-    expect(products[0].name).toBe('First');
-  });
-
-  it('calls smart match only when creating the first listing for a supplier SKU', async () => {
-    const spy = jest.spyOn(
-      catalogueProductImportMatch,
-      'findExistingCatalogueProductIdForSupplierImport',
-    );
-    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const veenak = await supplierRepo.save(
-      supplierRepo.create({ name: Supplier.VEENAK }),
-    );
-
-    await importVeenakCatalogueRow(
-      dbContext.manager,
-      veenakRow({ productId: 'SMART-MATCH-SKU-1' }),
-      veenak.id,
-    );
-    expect(spy).toHaveBeenCalledTimes(1);
-
-    spy.mockClear();
-    await importVeenakCatalogueRow(
-      dbContext.manager,
-      veenakRow({
-        productId: 'SMART-MATCH-SKU-1',
-        productName: 'Renamed only on listing',
-      }),
-      veenak.id,
-    );
-    expect(spy).not.toHaveBeenCalled();
-  });
-
-  it('does not call smart match when updating an orphan listing', async () => {
-    const spy = jest.spyOn(
-      catalogueProductImportMatch,
-      'findExistingCatalogueProductIdForSupplierImport',
-    );
-    const supplierRepo = getTestRepository(dbContext, CatalogueSupplierEntity);
-    const veenak = await supplierRepo.save(
-      supplierRepo.create({ name: Supplier.VEENAK }),
-    );
-
-    await importVeenakCatalogueRow(
-      dbContext.manager,
-      veenakRow({ productId: 'ORPHAN-SKU-1' }),
-      veenak.id,
-    );
-
-    const productRepo = getTestRepository(dbContext, CatalogueProductEntity);
-    const pid = (await productRepo.find())[0].id;
-    await productRepo.delete({ id: pid });
-
-    spy.mockClear();
-    await importVeenakCatalogueRow(
-      dbContext.manager,
-      veenakRow({
-        productId: 'ORPHAN-SKU-1',
-        productName: 'Orphan row update',
-      }),
-      veenak.id,
-    );
-    expect(spy).not.toHaveBeenCalled();
   });
 });

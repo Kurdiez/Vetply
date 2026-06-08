@@ -20,7 +20,6 @@ import { CatalogueProductSupplierListingEntity } from '~/database/entities/catal
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
 import { CatalogueSupplierEntity } from '~/database/entities/catalogue/catalogue-supplier.entity';
 import {
-  CATALOGUE_PRODUCT_IMPORT_DICE_THRESHOLD,
   diceBigramScore,
   findExistingCatalogueProductIdForSupplierImport,
   normalizeCatalogueProductNameForMatch,
@@ -171,7 +170,7 @@ describe('catalogue-product-import-match', () => {
       expect(found).toBe(product.id);
     });
 
-    it('Paracetamol Covetrus listing vs plain vs SF — fuzzy Dice debug logs', async () => {
+    it('prefers plain Paracetamol product over SF variant for Covetrus listing title', async () => {
       const supplierRepo = getTestRepository(
         dbContext,
         CatalogueSupplierEntity,
@@ -195,7 +194,7 @@ describe('catalogue-product-import-match', () => {
         }),
       );
 
-      const sfProduct = await productRepo.save(
+      await productRepo.save(
         productRepo.create({
           id: '00000000-0000-4000-8000-000000000002',
           manufacturerId: null,
@@ -208,76 +207,13 @@ describe('catalogue-product-import-match', () => {
         }),
       );
 
-      const covetrusListingTitle = 'Paracetamol Susp 120mg/5ml 100ml';
-
-      const slugCand = slugForCatalogueProductMatch(covetrusListingTitle);
-      const slugPlain = slugForCatalogueProductMatch(plainProduct.name);
-      const slugSf = slugForCatalogueProductMatch(sfProduct.name);
-
-      const parts = slugCand.split(' ').filter(Boolean);
-      const longEnough = parts.filter((t) => t.length >= 4);
-      longEnough.sort((x, y) => y.length - x.length);
-      const sqlPrefilterToken =
-        longEnough.length > 0
-          ? (longEnough[0] ?? null)
-          : slugCand.length >= 4
-            ? slugCand
-            : null;
-
-      const scorePlain = diceBigramScore(slugCand, slugPlain);
-      const scoreSf = diceBigramScore(slugCand, slugSf);
-
-      /* eslint-disable no-console -- jest-setup-env stubs console.log; debug still prints */
-      console.debug(
-        '[paracetamol fuzzy debug] Covetrus listing title:',
-        covetrusListingTitle,
-      );
-      console.debug('[paracetamol fuzzy debug] slugCand:', slugCand);
-      console.debug(
-        '[paracetamol fuzzy debug] SQL position token (longest token ≥4):',
-        sqlPrefilterToken,
-      );
-      console.debug(
-        '[paracetamol fuzzy debug] slugPlain:',
-        slugPlain,
-        'score:',
-        scorePlain,
-      );
-      console.debug(
-        '[paracetamol fuzzy debug] slugSf:',
-        slugSf,
-        'score:',
-        scoreSf,
-      );
-      console.debug(
-        '[paracetamol fuzzy debug] threshold:',
-        CATALOGUE_PRODUCT_IMPORT_DICE_THRESHOLD,
-      );
-
       const found = await findExistingCatalogueProductIdForSupplierImport(
         dbContext.manager,
         {
           supplierId: covetrus.id,
-          candidateName: covetrusListingTitle,
+          candidateName: 'Paracetamol Susp 120mg/5ml 100ml',
         },
       );
-
-      const winnerLabel =
-        found === sfProduct.id
-          ? 'SF row'
-          : found === plainProduct.id
-            ? 'plain row'
-            : found === null
-              ? '(null)'
-              : 'unexpected id';
-
-      console.debug(
-        '[paracetamol fuzzy debug] winner:',
-        winnerLabel,
-        'id:',
-        found,
-      );
-      /* eslint-enable no-console */
 
       expect(found).toBe(plainProduct.id);
     });

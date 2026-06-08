@@ -104,11 +104,9 @@ export function ImportSupplierPricesProvider({
         setProgressLabel(
           `Processed ${totalDataRows.toLocaleString()} / ${totalDataRows.toLocaleString()} rows`,
         );
-        const netNewListings =
-          (nvsNonPomTotals?.newListingOnMatchedProduct ?? 0) +
-          (nvsNonPomTotals?.newProductWithListing ?? 0);
+        const netNewListings = nvsNonPomTotals?.newOrphanListing ?? 0;
         toast.success(
-          `Imported ${totalImported.toLocaleString()} rows (${netNewListings.toLocaleString()} new NVS listings, ${(nvsNonPomTotals?.updatedExistingListing ?? 0).toLocaleString()} mapped SKU updates, ${(nvsNonPomTotals?.updatedOrphanListing ?? 0).toLocaleString()} orphan listing-only updates). Skipped ${totalSkipped.toLocaleString()}.`,
+          `Imported ${totalImported.toLocaleString()} rows (${netNewListings.toLocaleString()} new NVS orphan listings, ${(nvsNonPomTotals?.updatedExistingListing ?? 0).toLocaleString()} mapped SKU updates, ${(nvsNonPomTotals?.updatedOrphanListing ?? 0).toLocaleString()} orphan listing-only updates). Skipped ${totalSkipped.toLocaleString()}.`,
         );
       } else if (uploadKind === 'nvs_all_products') {
         const totalDataRows = await countValidNvsAllProductsDataRows(file);

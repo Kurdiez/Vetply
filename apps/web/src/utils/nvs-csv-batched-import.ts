@@ -103,8 +103,7 @@ export async function runNvsCsvBatchedImport(
     const nvsTotals: NvsNonPomBatchBreakdown = {
       updatedExistingListing: 0,
       updatedOrphanListing: 0,
-      newListingOnMatchedProduct: 0,
-      newProductWithListing: 0,
+      newOrphanListing: 0,
     };
 
     const schedule = (fn: () => Promise<void>) => {
@@ -129,8 +128,7 @@ export async function runNvsCsvBatchedImport(
       if (br) {
         nvsTotals.updatedExistingListing += br.updatedExistingListing;
         nvsTotals.updatedOrphanListing += br.updatedOrphanListing;
-        nvsTotals.newListingOnMatchedProduct += br.newListingOnMatchedProduct;
-        nvsTotals.newProductWithListing += br.newProductWithListing;
+        nvsTotals.newOrphanListing += br.newOrphanListing;
       }
     };
 

@@ -3,10 +3,8 @@ import {
   type NvsAllProductsImportRow,
 } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
-import { canonicalCatalogueImportProductName } from '../utils/catalogue-product-name-aliases';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
-import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
-import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
+import { createOrphanSupplierListing } from '~/catalogue/utils/create-orphan-supplier-listing';
 import { updateExistingSupplierListingListedPriceOnly } from '~/catalogue/utils/existing-supplier-listing-reimport';
 import { parseNvsUom, parseNvsVpp } from '../utils/nvs-csv-parsers';
 
@@ -50,44 +48,12 @@ export async function importNvsAllProductsRow(
     return 'imported';
   }
 
-  const matchedProductId =
-    await findExistingCatalogueProductIdForSupplierImport(manager, {
-      supplierId,
-      candidateName: name,
-    });
-  if (matchedProductId) {
-    const listing = listingRepo.create({
-      productId: matchedProductId,
-      supplierId,
-      supplierProductId,
-      name,
-      listedPrice,
-    });
-    await listingRepo.save(listing);
-    return 'imported';
-  }
-
-  const productRepo = manager.getRepository(CatalogueProductEntity);
-  const product = productRepo.create({
-    manufacturerId: null,
-    salesCategory: null,
-    legalCategory: null,
-    pom: null,
-    name: canonicalCatalogueImportProductName(name),
-    image: null,
-    unitType: uom.unitType,
-    unitQuantity: uom.unitQuantity,
-  });
-  const savedProduct = await productRepo.save(product);
-
-  const listing = listingRepo.create({
-    productId: savedProduct.id,
+  await createOrphanSupplierListing(listingRepo, {
     supplierId,
     supplierProductId,
     name,
     listedPrice,
   });
-  await listingRepo.save(listing);
 
   return 'imported';
 }

@@ -1,10 +1,7 @@
 import { canonicalizeNvsSupplierProductId, NvsImportRow } from '@vetply/shared';
 import { EntityManager } from 'typeorm';
-import { canonicalCatalogueImportProductName } from '../utils/catalogue-product-name-aliases';
-import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductSupplierListingEntity } from '~/database/entities/catalogue/catalogue-product-supplier-listing.entity';
-import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
-import { findExistingCatalogueProductIdForSupplierImport } from '../utils/catalogue-product-import-match';
+import { createOrphanSupplierListing } from '~/catalogue/utils/create-orphan-supplier-listing';
 import { updateExistingSupplierListingListedPriceOnly } from '~/catalogue/utils/existing-supplier-listing-reimport';
 import { resolveNvsSalesCategory } from '../utils/nvs-sales-group-to-sales-category';
 import {
@@ -20,8 +17,7 @@ export type NvsCatalogueImportRowResult =
       outcome:
         | 'updated_existing_listing'
         | 'updated_orphan_listing'
-        | 'new_listing_matched_product'
-        | 'new_product_and_listing';
+        | 'new_orphan_listing';
     }
   | { ok: false; reason: string };
 
@@ -96,52 +92,12 @@ export async function importNvsCatalogueRow(
     };
   }
 
-  const matchedProductId =
-    await findExistingCatalogueProductIdForSupplierImport(manager, {
-      supplierId,
-      candidateName: description,
-    });
-  if (matchedProductId) {
-    const listing = listingRepo.create({
-      productId: matchedProductId,
-      supplierId,
-      supplierProductId: partNo,
-      name: description,
-      listedPrice,
-    });
-    await listingRepo.save(listing);
-    return { ok: true, outcome: 'new_listing_matched_product' };
-  }
-
-  const manufacturerRepo = manager.getRepository(CatalogueManufacturerEntity);
-  let manufacturer = await manufacturerRepo.findOne({
-    where: { name: manufacturerName },
-  });
-  if (!manufacturer) {
-    manufacturer = manufacturerRepo.create({ name: manufacturerName });
-    manufacturer = await manufacturerRepo.save(manufacturer);
-  }
-
-  const productRepo = manager.getRepository(CatalogueProductEntity);
-  const product = productRepo.create({
-    manufacturerId: manufacturer.id,
-    name: canonicalCatalogueImportProductName(description),
-    salesCategory,
-    legalCategory,
-    pom,
-    unitType: uom.unitType,
-    unitQuantity: uom.unitQuantity,
-  });
-  const savedProduct = await productRepo.save(product);
-
-  const listing = listingRepo.create({
-    productId: savedProduct.id,
+  await createOrphanSupplierListing(listingRepo, {
     supplierId,
     supplierProductId: partNo,
     name: description,
     listedPrice,
   });
-  await listingRepo.save(listing);
 
-  return { ok: true, outcome: 'new_product_and_listing' };
+  return { ok: true, outcome: 'new_orphan_listing' };
 }
