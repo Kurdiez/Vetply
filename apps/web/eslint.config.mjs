@@ -14,6 +14,17 @@ const eslintConfig = [
   {
     rules: {
       '@next/next/no-img-element': 'off',
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'next/image',
+              message: 'Use plain <img> instead of next/image Image.',
+            },
+          ],
+        },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
