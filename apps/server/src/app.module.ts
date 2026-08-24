@@ -12,6 +12,7 @@ import { UserModule } from '~/user/user.module';
 import { JobsModule } from '~/jobs/jobs.module';
 import { AppController } from './app.controller';
 import { CatalogueModule } from '~/catalogue/catalogue.module';
+import { AiModule } from '~/ai/ai.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CatalogueModule } from '~/catalogue/catalogue.module';
     ExampleModule,
     SystemModule,
     CatalogueModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [

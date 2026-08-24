@@ -24,6 +24,8 @@ export const configSchema = z
     MWIAH_STORE_URL: z.string().url(),
     MWIAH_USERNAME: z.string().min(1),
     MWIAH_PASSWORD: z.string().min(1),
+    OPENAI_API_KEY: z.string().default(''),
+    AI_MODEL: z.string().min(1).default('gpt-4.1-mini'),
   })
   .merge(databaseConfigSchema);
 
