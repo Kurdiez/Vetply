@@ -13,6 +13,7 @@ import { JobsModule } from '~/jobs/jobs.module';
 import { AppController } from './app.controller';
 import { CatalogueModule } from '~/catalogue/catalogue.module';
 import { AiModule } from '~/ai/ai.module';
+import { InsightsModule } from '~/insights/insights.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AiModule } from '~/ai/ai.module';
     SystemModule,
     CatalogueModule,
     AiModule,
+    InsightsModule,
   ],
   controllers: [AppController],
   providers: [
