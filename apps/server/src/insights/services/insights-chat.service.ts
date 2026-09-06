@@ -9,6 +9,8 @@ import type { AiStreamEvent } from '~/ai/types/ai-stream-event.types';
 import { InsightsPromptService } from './insights-prompt.service';
 import { InsightsToolRegistry } from '../tools/insights-tool.registry';
 
+const MAX_TOOL_ROUNDS = 4;
+
 @Injectable()
 export class InsightsChatService {
   private readonly logger = new Logger(InsightsChatService.name);
@@ -34,6 +36,7 @@ export class InsightsChatService {
         messages: agentMessages,
         tools: this.toolRegistry.getToolDefinitions(),
         executeTool: this.toolRegistry.createExecutor(),
+        maxToolRounds: MAX_TOOL_ROUNDS,
       })) {
         yield this.mapAgentEvent(event);
       }

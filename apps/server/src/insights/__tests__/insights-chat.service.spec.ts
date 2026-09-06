@@ -73,6 +73,9 @@ describe('InsightsChatService', () => {
       { type: 'text_delta', text: 'Which syringe pack?' },
       { type: 'done' },
     ]);
+    expect(agentRunner.run).toHaveBeenCalledWith(
+      expect.objectContaining({ maxToolRounds: 4 }),
+    );
   });
 
   it('emits INSIGHTS_AI_NOT_CONFIGURED when the API key is missing', async () => {

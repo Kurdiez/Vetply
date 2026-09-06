@@ -42,6 +42,11 @@ import { CatalogueSupplierListingsMappingImportService } from './services/catalo
     CatalogueSupplierListingsMappingImportService,
     SuperUserGuard,
   ],
-  exports: [CatalogueProductListService, CatalogueProductDetailService],
+  exports: [
+    CatalogueProductListService,
+    CatalogueProductDetailService,
+    CatalogueSupplierListingListService,
+    CatalogueManufacturerService,
+  ],
 })
 export class CatalogueModule {}

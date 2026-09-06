@@ -3,8 +3,10 @@ export const routes = {
   signIn: '/sign-in',
   signUp: '/sign-up',
   app: '/app',
+  appInsights: '/app/insights',
   admin: {
     root: '/admin',
+    insights: '/admin/insights',
     catalogue: {
       view: '/admin/catalogue',
       supplierListings: '/admin/catalogue/supplier-listings',
@@ -36,6 +38,7 @@ export function parseCatalogueProductDetailId(path: string): string | null {
 export function isValidAdminPath(path: string): boolean {
   return (
     path === routes.admin.root ||
+    path === routes.admin.insights ||
     path === routes.admin.catalogue.view ||
     path === routes.admin.catalogue.supplierListings ||
     path === routes.admin.catalogue.mappingExportsImports ||
@@ -53,6 +56,13 @@ export function isAdminRoutePath(pathname: string): boolean {
   return (
     pathname === routes.admin.root ||
     pathname.startsWith(`${routes.admin.root}/`)
+  );
+}
+
+export function isUnderAdminInsights(pathname: string): boolean {
+  return (
+    pathname === routes.admin.insights ||
+    pathname.startsWith(`${routes.admin.insights}/`)
   );
 }
 

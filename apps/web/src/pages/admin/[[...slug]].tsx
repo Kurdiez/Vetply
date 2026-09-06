@@ -7,6 +7,7 @@ import { CatalogueMappingExportsImportsPage } from '@/components/admin/catalogue
 import { SupplierListingsViewPage } from '@/components/admin/supplier-listings/SupplierListingsViewPage';
 import { ImportSupplierPricesPage } from '@/components/admin/catalogue/ImportSupplierPricesPage';
 import { ManufacturersViewPage } from '@/components/admin/manufacturers/ManufacturersViewPage';
+import { InsightsChatViewPage } from '@/components/insights/InsightsChatViewPage';
 import {
   isValidAdminPath,
   parseCatalogueProductDetailId,
@@ -36,6 +37,16 @@ function AdminMain() {
   const path = pathWithoutQueryAndTrailingSlash(router.asPath);
   if (!isValidAdminPath(path)) {
     return null;
+  }
+
+  if (path === routes.admin.insights) {
+    return (
+      <InsightsChatViewPage
+        resolveProductHref={(productId) =>
+          routes.admin.catalogue.productDetail(productId)
+        }
+      />
+    );
   }
 
   if (path === routes.admin.catalogue.mappingExportsImports) {

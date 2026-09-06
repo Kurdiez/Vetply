@@ -3,6 +3,7 @@
 import { SidebarNavButton } from '@/components/ui/SidebarNavButton';
 import {
   isUnderAdminCatalogue,
+  isUnderAdminInsights,
   isUnderAdminManufacturers,
   parseCatalogueProductDetailId,
   routes,
@@ -12,6 +13,7 @@ import { ChevronRightIcon } from '@heroicons/react/20/solid';
 import {
   BuildingOffice2Icon,
   RectangleStackIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -75,10 +77,29 @@ export function AdminSidebarNav({ onNavigate }: AdminSidebarNavProps) {
 
   const isCatalogueActive = isUnderAdminCatalogue(path);
   const isManufacturersActive = isUnderAdminManufacturers(path);
+  const isInsightsActive = isUnderAdminInsights(path);
 
   return (
     <nav className="relative flex flex-1 flex-col" aria-label="Admin">
       <ul role="list" className="flex flex-1 flex-col gap-y-1">
+        <li>
+          <Link
+            href={routes.admin.insights}
+            onClick={() => onNavigate?.()}
+            className={classNames(
+              'group flex w-full items-center gap-x-3 rounded-md p-2 text-sm font-semibold',
+              isInsightsActive
+                ? 'bg-white/5 text-white'
+                : 'text-gray-200 hover:bg-white/5 hover:text-white',
+            )}
+          >
+            <SparklesIcon
+              aria-hidden
+              className="size-5 shrink-0 text-gray-400 group-hover:text-white"
+            />
+            <span className="flex-1">AI Insights</span>
+          </Link>
+        </li>
         <li>
           <SidebarNavButton
             id={`${cataloguePanelId}-trigger`}

@@ -1,7 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as Sentry from '@sentry/node';
+import compression from 'compression';
 import { json } from 'express';
+import type { Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { ConfigService } from './config';
 import { Environment } from './config/types';
@@ -51,10 +53,27 @@ async function setupServer() {
 
   setupCors(app, configService);
 
-  app.use(json({ limit: '10mb' }));
+  app.use(
+    compression({
+      filter: shouldCompressHttpResponse,
+    }),
+  );
+  // inflate: true (default) accepts gzip/deflate request bodies from the web client.
+  app.use(json({ limit: '10mb', inflate: true }));
 
   const port = configService.get('PORT');
   await app.listen(port, '::');
+}
+
+function shouldCompressHttpResponse(req: Request, res: Response): boolean {
+  const contentType = res.getHeader('Content-Type');
+  if (
+    typeof contentType === 'string' &&
+    contentType.includes('text/event-stream')
+  ) {
+    return false;
+  }
+  return compression.filter(req, res);
 }
 
 async function bootstrap() {
