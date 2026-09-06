@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as Sentry from '@sentry/node';
-import compression from 'compression';
 import { json } from 'express';
 import type { Request, Response } from 'express';
+import compression = require('compression');
 import { AppModule } from './app.module';
 import { ConfigService } from './config';
 import { Environment } from './config/types';
