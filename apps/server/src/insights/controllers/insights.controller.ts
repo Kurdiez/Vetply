@@ -45,6 +45,7 @@ export class InsightsController {
 
     try {
       for await (const event of this.insightsChatService.streamChat({
+        sessionId: body.sessionId,
         userId,
         messages: body.messages,
       })) {
@@ -55,7 +56,7 @@ export class InsightsController {
       }
     } catch (error) {
       this.logger.error(
-        `Insights SSE failed for userId=${userId}`,
+        `INSIGHTS_CHAT sse_failed session=${body.sessionId} userId=${userId}`,
         error instanceof Error ? error.stack : undefined,
       );
       this.writeSseEvent(res, {

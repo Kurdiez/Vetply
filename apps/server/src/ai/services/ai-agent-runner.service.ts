@@ -84,7 +84,7 @@ export class AiAgentRunnerService {
     }
 
     this.logger.warn(
-      `AI agent reached max tool rounds (${maxToolRounds}) without a final answer`,
+      `AI_AGENT max_tool_rounds_reached maxToolRounds=${maxToolRounds}`,
     );
     yield { type: 'done' };
   }

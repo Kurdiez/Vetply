@@ -6,6 +6,7 @@ import { InsightsChatComposer } from './InsightsChatComposer';
 import { InsightsChatEmptyState } from './InsightsChatEmptyState';
 import { InsightsChatThread } from './InsightsChatThread';
 import { InsightsContextLimitBanner } from './InsightsContextLimitBanner';
+import { InsightsSessionIdBadge } from './InsightsSessionIdBadge';
 import {
   InsightsChatViewProvider,
   useInsightsChatView,
@@ -17,6 +18,7 @@ type InsightsChatViewPageProps = {
 
 function InsightsChatViewPageBody() {
   const {
+    sessionId,
     messages,
     toolActivities,
     isStreaming,
@@ -43,6 +45,7 @@ function InsightsChatViewPageBody() {
           <p className="mt-1 text-sm/6 text-gray-300">
             Catalogue buying help with listed-price comparisons from live data.
           </p>
+          <InsightsSessionIdBadge sessionId={sessionId} />
         </div>
         {hasMessages ? (
           <Button type="button" variant="secondary" onClick={startNewChat}>

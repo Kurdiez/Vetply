@@ -18,6 +18,7 @@ export const insightsChatMessageSchema = z.object({
 export type InsightsChatMessage = z.infer<typeof insightsChatMessageSchema>;
 
 export const insightsChatSendReqSchema = z.object({
+  sessionId: z.string().uuid(),
   messages: z.array(insightsChatMessageSchema).min(1).max(MAX_MESSAGES),
 });
 

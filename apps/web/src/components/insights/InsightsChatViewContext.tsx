@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import {
   createMessageId,
+  createSessionId,
   toApiMessages,
   type InsightsDisplayedMessage,
   type InsightsToolActivity,
@@ -29,6 +30,7 @@ import {
 } from './insights-context-budget';
 
 export type InsightsChatViewContextValue = {
+  sessionId: string;
   messages: InsightsDisplayedMessage[];
   toolActivities: InsightsToolActivity[];
   isStreaming: boolean;
@@ -51,6 +53,7 @@ export function InsightsChatViewProvider({
   children,
   resolveProductHref,
 }: InsightsChatViewProviderProps) {
+  const [sessionId, setSessionId] = useState(createSessionId);
   const [messages, setMessages] = useState<InsightsDisplayedMessage[]>([]);
   const [toolActivities, setToolActivities] = useState<InsightsToolActivity[]>(
     [],
@@ -74,6 +77,7 @@ export function InsightsChatViewProvider({
   const startNewChat = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
+    setSessionId(createSessionId());
     setMessages([]);
     setToolActivities([]);
     setIsStreaming(false);
@@ -109,6 +113,7 @@ export function InsightsChatViewProvider({
 
       try {
         await streamAssistantReply({
+          sessionId,
           history,
           signal: controller.signal,
           onStreamEvent: (event) =>
@@ -125,7 +130,7 @@ export function InsightsChatViewProvider({
         finishStreamingTurn(controller, abortRef, setIsStreaming, setMessages);
       }
     },
-    [isStreaming, messages],
+    [isStreaming, messages, sessionId],
   );
 
   const contextBudget = useMemo(
@@ -135,6 +140,7 @@ export function InsightsChatViewProvider({
 
   const value = useMemo<InsightsChatViewContextValue>(
     () => ({
+      sessionId,
       messages,
       toolActivities,
       isStreaming,
@@ -145,6 +151,7 @@ export function InsightsChatViewProvider({
       startNewChat,
     }),
     [
+      sessionId,
       messages,
       toolActivities,
       isStreaming,
@@ -211,12 +218,16 @@ function startStreamingTurn(
 }
 
 async function streamAssistantReply(params: {
+  sessionId: string;
   history: InsightsDisplayedMessage[];
   signal: AbortSignal;
   onStreamEvent: (event: InsightsChatStreamEvent) => void;
 }): Promise<void> {
   await streamInsightsChatSend(
-    { messages: toApiMessages(params.history) },
+    {
+      sessionId: params.sessionId,
+      messages: toApiMessages(params.history),
+    },
     {
       signal: params.signal,
       onEvent: params.onStreamEvent,

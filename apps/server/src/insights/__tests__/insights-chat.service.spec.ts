@@ -11,6 +11,7 @@ async function collectEvents(
 ): Promise<InsightsChatStreamEvent[]> {
   const events: InsightsChatStreamEvent[] = [];
   for await (const event of service.streamChat({
+    sessionId: '11111111-1111-1111-1111-111111111111',
     userId: 'user-1',
     messages,
   })) {
