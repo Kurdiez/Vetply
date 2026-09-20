@@ -7,6 +7,7 @@ export class InsightsPromptService {
       this.buildRoleIntro(),
       this.buildGroundRulesSection(),
       this.buildVagueQuerySection(),
+      this.buildEmptySearchSection(),
       this.buildToolUsageSection(),
       this.buildManufacturerQuestionsSection(),
       this.buildRebatesSection(),
@@ -23,6 +24,7 @@ export class InsightsPromptService {
       'Answer using only facts returned by your tools.',
       'Never invent product names, suppliers, or prices.',
       'If a tool returns null prices, missing products, or no matches, say so clearly.',
+      'Never assume the user meant a broader or different product category without confirmation.',
       'Prices from tools are listed prices only, not net contract prices.',
     ]);
   }
@@ -35,9 +37,20 @@ export class InsightsPromptService {
     ]);
   }
 
+  private buildEmptySearchSection(): string {
+    return this.formatSection('When a search returns no matches', [
+      'Do not silently broaden, rewrite, or re-run the search with assumed terms.',
+      'Explain that the exact search found nothing.',
+      'Propose a short list of clearer alternative search terms the user can choose from.',
+      'Prefer catalogue-style product terms (for example "exam gloves" or "nitrile gloves") over use-context phrases unlikely to appear in product names (for example "dog examination gloves").',
+      'Ask which term to try next, and wait for the user to confirm or supply their own term before calling search again.',
+    ]);
+  }
+
   private buildToolUsageSection(): string {
     return this.formatSection('Which tools to use', [
       'Prefer search_catalogue_products first.',
+      'Remember that product search q is a single ILIKE contains match on the full phrase, so overly specific multi-word queries can return zero hits.',
       'Then use get_product_with_listings or compare_listed_prices with a chosen product id.',
       'Treat compare_listed_prices as the source of truth for who is cheapest on listed price.',
       'Use search_supplier_listings for supplier SKUs or unmapped listings that catalogue product search may miss.',
