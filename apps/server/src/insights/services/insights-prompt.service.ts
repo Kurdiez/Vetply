@@ -2,9 +2,21 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class InsightsPromptService {
-  getSystemPrompt(): string {
+  getPreProcessPrompt(): string {
     return [
       this.buildRoleIntro(),
+      this.buildPreProcessPhaseSection(),
+      this.buildGroundRulesSection(),
+    ].join('\n\n');
+  }
+
+  getCataloguePhasePrompt(input: {
+    searchHints: string[];
+    activatedModuleNames: string[];
+  }): string {
+    return [
+      this.buildRoleIntro(),
+      this.buildCataloguePhaseSection(input),
       this.buildGroundRulesSection(),
       this.buildVagueQuerySection(),
       this.buildEmptySearchSection(),
@@ -15,8 +27,81 @@ export class InsightsPromptService {
     ].join('\n\n');
   }
 
+  getPostProcessPrompt(input: {
+    searchHints: string[];
+    catalogueReplyDraft: string;
+  }): string {
+    return [
+      this.buildRoleIntro(),
+      this.buildPostProcessPhaseSection(input),
+      this.buildGroundRulesSection(),
+      this.buildCitationSection(),
+    ].join('\n\n');
+  }
+
+  /** @deprecated Prefer phase-specific prompts via the chat pipeline. */
+  getSystemPrompt(): string {
+    return this.getCataloguePhasePrompt({
+      searchHints: [],
+      activatedModuleNames: [],
+    });
+  }
+
   private buildRoleIntro(): string {
     return 'You are Vetply AI Insights, a buying assistant for veterinary catalogue products.';
+  }
+
+  private buildPreProcessPhaseSection(): string {
+    return this.formatSection('Pre-process phase', [
+      'You only have pre-process tools in this phase — do not invent catalogue facts.',
+      'Inspect each pre-process tool description and call every module that applies to the latest user prompt.',
+      'Aggregate activated module outputs, then you MUST call pre_decide_turn_action.',
+      'If clarification or search-term confirmation is needed, decide ask_user and either stream a clear question or put it in clarifyingMessage — do not search yet.',
+      'Never assume a broader product category or search term without user confirmation.',
+      'Only decide proceed_to_search when the request is clear enough to search with confirmed or unambiguous terms.',
+    ]);
+  }
+
+  private buildCataloguePhaseSection(input: {
+    searchHints: string[];
+    activatedModuleNames: string[];
+  }): string {
+    const hints =
+      input.searchHints.length > 0
+        ? `Pre-process search hints: ${input.searchHints.join('; ')}.`
+        : 'No pre-process search hints.';
+    const activated =
+      input.activatedModuleNames.length > 0
+        ? `Activated pre-modules: ${input.activatedModuleNames.join(', ')}.`
+        : 'No pre-modules were marked activated.';
+
+    return this.formatSection('Catalogue phase', [
+      'Pre-process already approved continuing to search.',
+      hints,
+      activated,
+      'Use catalogue tools to gather facts. Prefer the approved search hints when present.',
+      'If a search returns zero matches, stop broadening on your own — note the empty result for post-process.',
+      'Produce a concise draft answer grounded only in tool results; post-process will finalize user-facing wording.',
+    ]);
+  }
+
+  private buildPostProcessPhaseSection(input: {
+    searchHints: string[];
+    catalogueReplyDraft: string;
+  }): string {
+    const draft =
+      input.catalogueReplyDraft.trim().length > 0
+        ? input.catalogueReplyDraft.trim()
+        : '(no catalogue draft text — rely on prior tool results in the conversation)';
+
+    return this.formatSection('Post-process phase', [
+      'You only have post-process tools in this phase.',
+      'Inspect each post-process tool description and call every module that applies to the catalogue results.',
+      'Combine activated module outputs with the catalogue draft into the final user-facing answer.',
+      'If truncation or pack-mix caveats activate, include those disclosures.',
+      'If empty-search suggestions activate, ask the user to confirm a term before implying another search.',
+      `Catalogue draft to refine:\n${draft}`,
+    ]);
   }
 
   private buildGroundRulesSection(): string {

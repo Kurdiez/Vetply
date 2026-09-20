@@ -3,18 +3,26 @@ import { InsightsPromptService } from '../services/insights-prompt.service';
 describe('InsightsPromptService', () => {
   const promptService = new InsightsPromptService();
 
-  it('instructs confirmation before retrying empty searches', () => {
-    const prompt = promptService.getSystemPrompt();
+  it('builds a pre-process prompt that requires decide_turn_action', () => {
+    const prompt = promptService.getPreProcessPrompt();
+    expect(prompt).toContain('## Pre-process phase');
+    expect(prompt).toContain('pre_decide_turn_action');
+    expect(prompt).toContain('ask_user');
+  });
 
-    expect(prompt).toContain('## When a search returns no matches');
-    expect(prompt).toContain(
-      'Do not silently broaden, rewrite, or re-run the search with assumed terms.',
-    );
-    expect(prompt).toContain(
-      'Ask which term to try next, and wait for the user to confirm or supply their own term before calling search again.',
-    );
-    expect(prompt).toContain(
-      'Never assume the user meant a broader or different product category without confirmation.',
-    );
+  it('builds catalogue and post prompts with phase guidance', () => {
+    const catalogue = promptService.getCataloguePhasePrompt({
+      searchHints: ['exam gloves'],
+      activatedModuleNames: ['pre_suggest_search_terms'],
+    });
+    expect(catalogue).toContain('exam gloves');
+    expect(catalogue).toContain('## When a search returns no matches');
+
+    const post = promptService.getPostProcessPrompt({
+      searchHints: [],
+      catalogueReplyDraft: 'Draft answer',
+    });
+    expect(post).toContain('## Post-process phase');
+    expect(post).toContain('Draft answer');
   });
 });

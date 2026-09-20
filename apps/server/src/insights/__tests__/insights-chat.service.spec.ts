@@ -1,9 +1,6 @@
 import type { InsightsChatStreamEvent } from '@vetply/shared';
+import { InsightsChatPipelineService } from '../processing/insights-chat-pipeline.service';
 import { InsightsChatService } from '../services/insights-chat.service';
-import { InsightsPromptService } from '../services/insights-prompt.service';
-import type { InsightsToolRegistry } from '../tools/insights-tool.registry';
-import type { AiAgentRunnerService } from '~/ai/services/ai-agent-runner.service';
-import type { AiStreamEvent } from '~/ai/types/ai-stream-event.types';
 
 async function collectEvents(
   service: InsightsChatService,
@@ -21,41 +18,27 @@ async function collectEvents(
 }
 
 describe('InsightsChatService', () => {
-  const promptService = new InsightsPromptService();
-  const executeTool = jest.fn();
-  const toolRegistry = {
-    getToolDefinitions: jest.fn().mockReturnValue([]),
-    createExecutor: jest.fn().mockReturnValue(executeTool),
-  } as unknown as InsightsToolRegistry;
-
-  it('maps agent stream events to insights SSE events', async () => {
-    async function* run(): AsyncGenerator<AiStreamEvent> {
+  it('streams pipeline events and logs tool activity', async () => {
+    async function* run() {
       yield {
-        type: 'tool_call',
-        id: 'c1',
-        name: 'search_catalogue_products',
-        arguments: { q: 'syringe' },
+        type: 'tool_status' as const,
+        name: 'pre_assess_vague_query',
+        status: 'started' as const,
       };
       yield {
-        type: 'tool_result',
-        id: 'c1',
-        name: 'search_catalogue_products',
-        result: { products: [] },
+        type: 'tool_status' as const,
+        name: 'pre_assess_vague_query',
+        status: 'completed' as const,
       };
-      yield { type: 'text_delta', text: 'Which syringe pack?' };
-      yield { type: 'done' };
+      yield { type: 'text_delta' as const, text: 'Which pack size?' };
+      yield { type: 'done' as const };
     }
 
-    const agentRunner = {
+    const pipeline = {
       run: jest.fn().mockReturnValue(run()),
-    } as unknown as AiAgentRunnerService;
+    } as unknown as InsightsChatPipelineService;
 
-    const service = new InsightsChatService(
-      promptService,
-      toolRegistry,
-      agentRunner,
-    );
-
+    const service = new InsightsChatService(pipeline);
     const events = await collectEvents(service, [
       { role: 'user', content: 'cheapest syringe?' },
     ]);
@@ -63,37 +46,35 @@ describe('InsightsChatService', () => {
     expect(events).toEqual([
       {
         type: 'tool_status',
-        name: 'search_catalogue_products',
+        name: 'pre_assess_vague_query',
         status: 'started',
       },
       {
         type: 'tool_status',
-        name: 'search_catalogue_products',
+        name: 'pre_assess_vague_query',
         status: 'completed',
       },
-      { type: 'text_delta', text: 'Which syringe pack?' },
+      { type: 'text_delta', text: 'Which pack size?' },
       { type: 'done' },
     ]);
-    expect(agentRunner.run).toHaveBeenCalledWith(
-      expect.objectContaining({ maxToolRounds: 4 }),
+    expect(pipeline.run).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: '11111111-1111-1111-1111-111111111111',
+        userId: 'user-1',
+      }),
     );
   });
 
   it('emits INSIGHTS_AI_NOT_CONFIGURED when the API key is missing', async () => {
-    const agentRunner = {
+    const pipeline = {
       run: jest.fn().mockImplementation(async function* () {
         throw new Error(
           'OPENAI_API_KEY is not configured; set it in the server environment',
         );
       }),
-    } as unknown as AiAgentRunnerService;
+    } as unknown as InsightsChatPipelineService;
 
-    const service = new InsightsChatService(
-      promptService,
-      toolRegistry,
-      agentRunner,
-    );
-
+    const service = new InsightsChatService(pipeline);
     const events = await collectEvents(service, [
       { role: 'user', content: 'hi' },
     ]);

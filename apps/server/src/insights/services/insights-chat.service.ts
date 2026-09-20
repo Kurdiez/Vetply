@@ -4,17 +4,11 @@ import type {
   InsightsChatMessage,
   InsightsChatStreamEvent,
 } from '@vetply/shared';
-import { AiAgentRunnerService } from '~/ai/services/ai-agent-runner.service';
-import type { AiMessage } from '~/ai/types/ai-message.types';
-import type { AiStreamEvent } from '~/ai/types/ai-stream-event.types';
-import { InsightsPromptService } from './insights-prompt.service';
-import { InsightsToolRegistry } from '../tools/insights-tool.registry';
+import { InsightsChatPipelineService } from '../processing/insights-chat-pipeline.service';
 
-const MAX_TOOL_ROUNDS = 4;
 /** Filter server logs with this prefix during QA / iteration. */
 const LOG_PREFIX = 'INSIGHTS_CHAT';
 const LOG_TEXT_PREVIEW_CHARS = 120;
-const LOG_PAYLOAD_PREVIEW_CHARS = 240;
 
 type TurnLogStats = {
   toolCallCount: number;
@@ -31,38 +25,28 @@ type ChatTurnContext = {
 export class InsightsChatService {
   private readonly logger = new Logger(InsightsChatService.name);
 
-  constructor(
-    private readonly promptService: InsightsPromptService,
-    private readonly toolRegistry: InsightsToolRegistry,
-    private readonly agentRunner: AiAgentRunnerService,
-  ) {}
+  constructor(private readonly pipeline: InsightsChatPipelineService) {}
 
   async *streamChat(params: {
     sessionId: string;
     userId: string;
     messages: InsightsChatMessage[];
   }): AsyncGenerator<InsightsChatStreamEvent> {
-    const turn: ChatTurnContext = {
-      sessionId: params.sessionId,
-      turnId: this.createTurnId(),
-      userId: params.userId,
-    };
+    const turn = this.createTurnContext(params);
     const startedAtMs = Date.now();
     const stats: TurnLogStats = { toolCallCount: 0, replyChars: 0 };
 
     this.logTurnStart(turn, params.messages);
 
-    const agentMessages = this.buildAgentMessages(params.messages);
-
     try {
-      for await (const event of this.agentRunner.run({
-        messages: agentMessages,
-        tools: this.toolRegistry.getToolDefinitions(),
-        executeTool: this.toolRegistry.createExecutor(),
-        maxToolRounds: MAX_TOOL_ROUNDS,
+      for await (const event of this.pipeline.run({
+        sessionId: turn.sessionId,
+        turnId: turn.turnId,
+        userId: turn.userId,
+        messages: params.messages,
       })) {
-        this.logAgentEvent(turn, event, stats);
-        yield this.mapAgentEvent(event);
+        this.trackStreamEvent(turn, event, stats);
+        yield event;
       }
       this.logTurnDone(turn, startedAtMs, stats);
     } catch (error) {
@@ -76,6 +60,17 @@ export class InsightsChatService {
       }
       throw error;
     }
+  }
+
+  private createTurnContext(params: {
+    sessionId: string;
+    userId: string;
+  }): ChatTurnContext {
+    return {
+      sessionId: params.sessionId,
+      turnId: this.createTurnId(),
+      userId: params.userId,
+    };
   }
 
   private createTurnId(): string {
@@ -98,21 +93,21 @@ export class InsightsChatService {
     );
   }
 
-  private logAgentEvent(
+  private trackStreamEvent(
     turn: ChatTurnContext,
-    event: AiStreamEvent,
+    event: InsightsChatStreamEvent,
     stats: TurnLogStats,
   ): void {
-    if (event.type === 'tool_call') {
+    if (event.type === 'tool_status' && event.status === 'started') {
       stats.toolCallCount += 1;
       this.logger.log(
-        `${LOG_PREFIX} tool_start ${this.formatLogContext(turn)} name=${event.name} args=${this.previewPayload(event.arguments)}`,
+        `${LOG_PREFIX} tool_start ${this.formatLogContext(turn)} name=${event.name}`,
       );
       return;
     }
-    if (event.type === 'tool_result') {
+    if (event.type === 'tool_status' && event.status === 'completed') {
       this.logger.log(
-        `${LOG_PREFIX} tool_done ${this.formatLogContext(turn)} name=${event.name} result=${this.previewPayload(event.result)}`,
+        `${LOG_PREFIX} tool_done ${this.formatLogContext(turn)} name=${event.name}`,
       );
       return;
     }
@@ -150,57 +145,6 @@ export class InsightsChatService {
       return normalized;
     }
     return `${normalized.slice(0, LOG_TEXT_PREVIEW_CHARS)}…`;
-  }
-
-  private previewPayload(value: unknown): string {
-    try {
-      const json = JSON.stringify(value);
-      if (json === undefined) {
-        return 'undefined';
-      }
-      if (json.length <= LOG_PAYLOAD_PREVIEW_CHARS) {
-        return json;
-      }
-      return `${json.slice(0, LOG_PAYLOAD_PREVIEW_CHARS)}…`;
-    } catch {
-      return '[unserializable]';
-    }
-  }
-
-  private buildAgentMessages(messages: InsightsChatMessage[]): AiMessage[] {
-    return [
-      {
-        role: 'system',
-        content: this.promptService.getSystemPrompt(),
-      },
-      ...messages.map(
-        (message): AiMessage => ({
-          role: message.role,
-          content: message.content,
-        }),
-      ),
-    ];
-  }
-
-  private mapAgentEvent(event: AiStreamEvent): InsightsChatStreamEvent {
-    if (event.type === 'text_delta') {
-      return { type: 'text_delta', text: event.text };
-    }
-    if (event.type === 'tool_call') {
-      return {
-        type: 'tool_status',
-        name: event.name,
-        status: 'started',
-      };
-    }
-    if (event.type === 'tool_result') {
-      return {
-        type: 'tool_status',
-        name: event.name,
-        status: 'completed',
-      };
-    }
-    return { type: 'done' };
   }
 
   private isMissingApiKeyError(error: unknown): boolean {
