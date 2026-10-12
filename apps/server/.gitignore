@@ -6,6 +6,9 @@
 # Logs
 logs
 *.log
+
+# Local Covetrus category-page HTML dumps from scrape-product-categories
+/covetrus-product-category-debug/
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
