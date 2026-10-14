@@ -6,8 +6,11 @@ import { FilterStringTagList } from '@/components/ui/filters/FilterStringTagList
 import { FilterTextInput } from '@/components/ui/filters/FilterTextInput';
 import { Select } from '@/components/ui/Select';
 import {
+  ProductCategoryMappingDisplayLabel,
+  ProductCategoryStatus,
   SupplierListingFilterFieldId,
   SupplierListingPriceOperator,
+  SupplierListingProductCategoryStatusOperator,
   SupplierListingStringOperator,
   SupplierListingSupplierOperator,
 } from '@vetply/shared';
@@ -17,7 +20,10 @@ import {
   type Dispatch,
   type SetStateAction,
 } from 'react';
-import { SUPPLIER_OPTIONS } from './supplier-listing-filter-model';
+import {
+  PRODUCT_CATEGORY_MAPPING_OPTIONS,
+  SUPPLIER_OPTIONS,
+} from './supplier-listing-filter-model';
 import {
   CATALOG_PRODUCT_FILTER_NOT_LINKED_OPERATOR,
   createEmptySupplierListingsDraft,
@@ -35,6 +41,14 @@ const FIELD_OPTIONS: FilterSelectOption[] = [
     value: SupplierListingFilterFieldId.CatalogProductName,
     label: 'Catalogue product',
   },
+  {
+    value: SupplierListingFilterFieldId.ProductCategory,
+    label: 'Category',
+  },
+  {
+    value: SupplierListingFilterFieldId.ProductCategoryMapping,
+    label: 'Category mapping',
+  },
 ];
 
 const STRING_OP_LABEL: Record<SupplierListingStringOperator, string> = {
@@ -50,6 +64,15 @@ const STRING_OP_LABEL: Record<SupplierListingStringOperator, string> = {
 const SUPPLIER_OP_LABEL: Record<SupplierListingSupplierOperator, string> = {
   [SupplierListingSupplierOperator.IsExactly]: 'Is exactly',
   [SupplierListingSupplierOperator.IsDistinctFrom]: 'Is distinct from',
+};
+
+const CATEGORY_MAPPING_OP_LABEL: Record<
+  SupplierListingProductCategoryStatusOperator,
+  string
+> = {
+  [SupplierListingProductCategoryStatusOperator.IsExactly]: 'Is exactly',
+  [SupplierListingProductCategoryStatusOperator.IsDistinctFrom]:
+    'Is distinct from',
 };
 
 const PRICE_OP_LABEL: Record<SupplierListingPriceOperator, string> = {
@@ -110,6 +133,15 @@ export function SupplierListingsFilterForm({
         });
         return;
       }
+      if (fid === SupplierListingFilterFieldId.ProductCategoryMapping) {
+        setFilterDraft({
+          ...base,
+          fieldId: fid,
+          productCategoryStatusOperator:
+            SupplierListingProductCategoryStatusOperator.IsExactly,
+        });
+        return;
+      }
       setFilterDraft({
         ...base,
         fieldId: fid,
@@ -131,11 +163,16 @@ export function SupplierListingsFilterForm({
     () => Object.values(SupplierListingPriceOperator),
     [],
   );
+  const categoryMappingOps = useMemo(
+    () => Object.values(SupplierListingProductCategoryStatusOperator),
+    [],
+  );
 
   const effectiveStringOperator = useMemo(() => {
     if (
       fieldId !== SupplierListingFilterFieldId.SupplierProductId &&
-      fieldId !== SupplierListingFilterFieldId.CatalogProductName
+      fieldId !== SupplierListingFilterFieldId.CatalogProductName &&
+      fieldId !== SupplierListingFilterFieldId.ProductCategory
     ) {
       return '';
     }
@@ -174,6 +211,17 @@ export function SupplierListingsFilterForm({
     return SupplierListingPriceOperator.Eq;
   }, [fieldId, filterDraft.priceOperator, priceOps]);
 
+  const effectiveCategoryMappingOperator = useMemo(() => {
+    if (fieldId !== SupplierListingFilterFieldId.ProductCategoryMapping) {
+      return '';
+    }
+    const op = filterDraft.productCategoryStatusOperator;
+    if (op && categoryMappingOps.includes(op)) {
+      return op;
+    }
+    return SupplierListingProductCategoryStatusOperator.IsExactly;
+  }, [fieldId, filterDraft.productCategoryStatusOperator, categoryMappingOps]);
+
   const stringOperatorOptions: FilterSelectOption[] = useMemo(() => {
     const base = stringOps.map((op) => ({
       value: op,
@@ -207,6 +255,15 @@ export function SupplierListingsFilterForm({
         label: PRICE_OP_LABEL[op] ?? op,
       })),
     [priceOps],
+  );
+
+  const categoryMappingOperatorOptions: FilterSelectOption[] = useMemo(
+    () =>
+      categoryMappingOps.map((op) => ({
+        value: op,
+        label: CATEGORY_MAPPING_OP_LABEL[op] ?? op,
+      })),
+    [categoryMappingOps],
   );
 
   const operandSection = useMemo(() => {
@@ -253,9 +310,44 @@ export function SupplierListingsFilterForm({
       );
     }
 
+    if (fieldId === SupplierListingFilterFieldId.ProductCategoryMapping) {
+      return (
+        <div>
+          <label
+            htmlFor="supplier-filter-category-mapping-value"
+            className="block text-sm/6 font-medium text-white"
+          >
+            Category mapping
+          </label>
+          <div className="mt-2">
+            <Select
+              id="supplier-filter-category-mapping-value"
+              value={filterDraft.productCategoryStatusSingle}
+              onChange={(e) =>
+                setFilterDraft((d) => ({
+                  ...d,
+                  productCategoryStatusSingle: e.target.value as
+                    | ProductCategoryStatus
+                    | '',
+                }))
+              }
+            >
+              <option value="">Select status…</option>
+              {PRODUCT_CATEGORY_MAPPING_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {ProductCategoryMappingDisplayLabel[status]}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      );
+    }
+
     if (
       fieldId === SupplierListingFilterFieldId.SupplierProductId ||
-      fieldId === SupplierListingFilterFieldId.CatalogProductName
+      fieldId === SupplierListingFilterFieldId.CatalogProductName ||
+      fieldId === SupplierListingFilterFieldId.ProductCategory
     ) {
       if (
         fieldId === SupplierListingFilterFieldId.CatalogProductName &&
@@ -313,7 +405,8 @@ export function SupplierListingsFilterForm({
           options={[{ value: '', label: 'Select field…' }, ...FIELD_OPTIONS]}
         />
         {fieldId === SupplierListingFilterFieldId.SupplierProductId ||
-        fieldId === SupplierListingFilterFieldId.CatalogProductName ? (
+        fieldId === SupplierListingFilterFieldId.CatalogProductName ||
+        fieldId === SupplierListingFilterFieldId.ProductCategory ? (
           <FilterLabeledSelect
             id="supplier-listing-filter-string-op"
             label="Operator"
@@ -354,6 +447,20 @@ export function SupplierListingsFilterForm({
               }))
             }
             options={priceOperatorOptions}
+          />
+        ) : fieldId === SupplierListingFilterFieldId.ProductCategoryMapping ? (
+          <FilterLabeledSelect
+            id="supplier-listing-filter-category-mapping-op"
+            label="Operator"
+            value={effectiveCategoryMappingOperator}
+            onChange={(v) =>
+              setFilterDraft((d) => ({
+                ...d,
+                productCategoryStatusOperator:
+                  v as SupplierListingProductCategoryStatusOperator,
+              }))
+            }
+            options={categoryMappingOperatorOptions}
           />
         ) : (
           <FilterLabeledSelect

@@ -1,6 +1,7 @@
 import {
   SupplierListingFilterFieldId,
   SupplierListingPriceOperator,
+  SupplierListingProductCategoryStatusOperator,
   SupplierListingSortFieldId,
   SupplierListingStringOperator,
   SupplierListingSupplierOperator,
@@ -151,6 +152,27 @@ function applyPriceFilter(
   });
 }
 
+function applyProductCategoryStatusFilter(
+  qb: SelectQueryBuilder<CatalogueProductSupplierListingEntity>,
+  filter: Extract<SupplierListingFilter, { kind: 'productCategoryStatus' }>,
+  next: NextParam,
+): void {
+  const col = 'listing.product_category_status';
+  const k = next();
+  if (
+    filter.operator === SupplierListingProductCategoryStatusOperator.IsExactly
+  ) {
+    qb.andWhere(`${col} = :${k}`, { [k]: filter.value });
+    return;
+  }
+  if (
+    filter.operator ===
+    SupplierListingProductCategoryStatusOperator.IsDistinctFrom
+  ) {
+    qb.andWhere(`(${col} IS NULL OR ${col} <> :${k})`, { [k]: filter.value });
+  }
+}
+
 export function applySupplierListingFilters(
   qb: SelectQueryBuilder<CatalogueProductSupplierListingEntity>,
   filters: SupplierListingFilter[] | undefined,
@@ -169,6 +191,15 @@ export function applySupplierListingFilters(
             filter,
             next,
           );
+        } else if (
+          filter.fieldId === SupplierListingFilterFieldId.ProductCategory
+        ) {
+          applyStringFilterOnColumn(
+            qb,
+            'listing.product_category',
+            filter,
+            next,
+          );
         } else {
           applyStringFilterOnColumn(qb, 'product.name', filter, next);
         }
@@ -181,6 +212,9 @@ export function applySupplierListingFilters(
         break;
       case 'decimal':
         applyPriceFilter(qb, filter, next);
+        break;
+      case 'productCategoryStatus':
+        applyProductCategoryStatusFilter(qb, filter, next);
         break;
       default:
         break;
@@ -213,6 +247,12 @@ export function applySupplierListingSort(
       break;
     case SupplierListingSortFieldId.CatalogProductName:
       qb.orderBy('product.name', dir, 'NULLS LAST');
+      break;
+    case SupplierListingSortFieldId.ProductCategory:
+      qb.orderBy('listing.product_category', dir, 'NULLS LAST');
+      break;
+    case SupplierListingSortFieldId.ProductCategoryMapping:
+      qb.orderBy('listing.product_category_status', dir, 'NULLS LAST');
       break;
     default:
       qb.orderBy('listing.updatedAt', 'DESC');

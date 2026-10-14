@@ -9,7 +9,10 @@ import {
   fetchCatalogueSupplierListings,
   postBulkUnlinkSupplierListings,
   postLinkSupplierListingsToProduct,
+  postUpdateSupplierListingProductCategory,
 } from '@/utils/vetply-api/catalogue-api';
+import { messageForVetplyFailReason } from '@/utils/vetply-api/fail-reason-messages';
+import { VetplyBadRequestError } from '@/utils/vetply-api/vetply-bad-request-error';
 import {
   CATALOGUE_SUPPLIER_LISTINGS_DEFAULT_PAGE_SIZE,
   type CatalogueProductPickerListRes,
@@ -86,6 +89,14 @@ type SupplierListingsViewContextValue = {
   linkListingsModalOpen: boolean;
   openLinkListingsModal: () => void;
   closeLinkListingsModal: () => void;
+  quickEditListing: CatalogueSupplierListingListItem | null;
+  quickEditOpen: boolean;
+  openQuickEdit: (listing: CatalogueSupplierListingListItem) => void;
+  closeQuickEdit: () => void;
+  saveListingProductCategory: (
+    listingId: string,
+    productCategory: string,
+  ) => Promise<boolean>;
 };
 
 const SupplierListingsViewContext =
@@ -153,6 +164,9 @@ export function SupplierListingsViewProvider({
   const searchCommitRef = useRef('');
   const [filterAddModalOpen, setFilterAddModalOpen] = useState(false);
   const [linkListingsModalOpen, setLinkListingsModalOpen] = useState(false);
+  const [quickEditListing, setQuickEditListing] =
+    useState<CatalogueSupplierListingListItem | null>(null);
+  const [quickEditOpen, setQuickEditOpen] = useState(false);
 
   const {
     selectedIds: selectedListingIds,
@@ -363,6 +377,43 @@ export function SupplierListingsViewProvider({
     setLinkListingsModalOpen(false);
   }, []);
 
+  const openQuickEdit = useCallback(
+    (listing: CatalogueSupplierListingListItem) => {
+      setQuickEditListing(listing);
+      setQuickEditOpen(true);
+    },
+    [],
+  );
+
+  const closeQuickEdit = useCallback(() => {
+    setQuickEditOpen(false);
+    setQuickEditListing(null);
+  }, []);
+
+  const saveListingProductCategory = useCallback(
+    async (listingId: string, productCategory: string): Promise<boolean> => {
+      try {
+        await postUpdateSupplierListingProductCategory({
+          listingId,
+          productCategory,
+        });
+        refetch();
+        toast.success('Product category updated.');
+        return true;
+      } catch (err: unknown) {
+        if (err instanceof VetplyBadRequestError) {
+          toast.error(messageForVetplyFailReason(err.failReason));
+          return false;
+        }
+        toast.error(
+          nestErrorMessage(err, 'Could not update product category.'),
+        );
+        return false;
+      }
+    },
+    [refetch],
+  );
+
   const toggleSortColumn = useCallback(
     (fieldId: SupplierListingSortFieldId) => {
       const newSort = nextSupplierListingSortState(sort, fieldId);
@@ -528,6 +579,11 @@ export function SupplierListingsViewProvider({
       linkListingsModalOpen,
       openLinkListingsModal,
       closeLinkListingsModal,
+      quickEditListing,
+      quickEditOpen,
+      openQuickEdit,
+      closeQuickEdit,
+      saveListingProductCategory,
     }),
     [
       page,
@@ -562,6 +618,11 @@ export function SupplierListingsViewProvider({
       linkListingsModalOpen,
       openLinkListingsModal,
       closeLinkListingsModal,
+      quickEditListing,
+      quickEditOpen,
+      openQuickEdit,
+      closeQuickEdit,
+      saveListingProductCategory,
     ],
   );
 

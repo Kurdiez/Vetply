@@ -1,8 +1,10 @@
 import { z } from 'zod';
+import { ProductCategoryStatus } from './product-category-status';
 import { Supplier } from './supplier';
 import {
   SupplierListingFilterFieldId,
   SupplierListingPriceOperator,
+  SupplierListingProductCategoryStatusOperator,
   SupplierListingStringOperator,
   SupplierListingSupplierOperator,
 } from './supplier-listing-filter.enums';
@@ -27,6 +29,7 @@ const supplierListingStringFilterSchema = z
     fieldId: z.union([
       z.literal(SupplierListingFilterFieldId.SupplierProductId),
       z.literal(SupplierListingFilterFieldId.CatalogProductName),
+      z.literal(SupplierListingFilterFieldId.ProductCategory),
     ]),
     operator: z.nativeEnum(SupplierListingStringOperator),
     value: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]),
@@ -73,11 +76,20 @@ export const supplierListingPriceFilterSchema = z.object({
   value: z.string().min(1),
 });
 
+export const supplierListingProductCategoryStatusFilterSchema = z.object({
+  id: z.string().optional(),
+  kind: z.literal('productCategoryStatus'),
+  fieldId: z.literal(SupplierListingFilterFieldId.ProductCategoryMapping),
+  operator: z.nativeEnum(SupplierListingProductCategoryStatusOperator),
+  value: z.nativeEnum(ProductCategoryStatus),
+});
+
 export const supplierListingFilterSchema = z.union([
   supplierListingStringFilterSchema,
   supplierListingSupplierFilterSchema,
   supplierListingPriceFilterSchema,
   supplierListingCatalogProductNotLinkedFilterSchema,
+  supplierListingProductCategoryStatusFilterSchema,
 ]);
 
 export type SupplierListingFilter = z.infer<typeof supplierListingFilterSchema>;

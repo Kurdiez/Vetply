@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ProductCategoryStatus } from '../../catalogue/product-category-status';
 import {
   supplierListingFilterSchema,
   supplierListingSortSchema,
@@ -104,7 +105,28 @@ export const catalogueSupplierListingListItemSchema = z.object({
   listedPrice: z.string().nullable(),
   catalogProductName: z.string().nullable(),
   thumbnailImage: z.string().max(2048).nullable(),
+  productCategory: z.string().nullable(),
+  productCategoryStatus: z.nativeEnum(ProductCategoryStatus).nullable(),
 });
+
+export const updateSupplierListingProductCategoryBodySchema = z.object({
+  listingId: z.string().uuid(),
+  productCategory: z.string().min(1),
+});
+
+export type UpdateSupplierListingProductCategoryBody = z.infer<
+  typeof updateSupplierListingProductCategoryBodySchema
+>;
+
+export const updateSupplierListingProductCategoryResSchema = z.object({
+  id: z.string().uuid(),
+  productCategory: z.string(),
+  productCategoryStatus: z.literal(ProductCategoryStatus.Reviewed),
+});
+
+export type UpdateSupplierListingProductCategoryRes = z.infer<
+  typeof updateSupplierListingProductCategoryResSchema
+>;
 
 export type CatalogueSupplierListingListItem = z.infer<
   typeof catalogueSupplierListingListItemSchema

@@ -1,8 +1,11 @@
 import type { AppliedFilterRow } from '@/components/ui/filters/AppliedFiltersStack';
 import {
+  ProductCategoryMappingDisplayLabel,
+  ProductCategoryStatus,
   Supplier,
   SupplierListingFilterFieldId,
   SupplierListingPriceOperator,
+  SupplierListingProductCategoryStatusOperator,
   SupplierListingStringOperator,
   SupplierListingSupplierOperator,
   type SupplierListingFilter,
@@ -26,6 +29,8 @@ const FIELD_LABELS: Record<SupplierListingFilterFieldId, string> = {
   [SupplierListingFilterFieldId.SupplierProductId]: 'Supplier product ID',
   [SupplierListingFilterFieldId.ListedPrice]: 'Price',
   [SupplierListingFilterFieldId.CatalogProductName]: 'Catalogue product',
+  [SupplierListingFilterFieldId.ProductCategory]: 'Category',
+  [SupplierListingFilterFieldId.ProductCategoryMapping]: 'Category mapping',
 };
 
 const STRING_OP_LABEL: Record<SupplierListingStringOperator, string> = {
@@ -41,6 +46,15 @@ const STRING_OP_LABEL: Record<SupplierListingStringOperator, string> = {
 const SUPPLIER_OP_LABEL: Record<SupplierListingSupplierOperator, string> = {
   [SupplierListingSupplierOperator.IsExactly]: 'is exactly',
   [SupplierListingSupplierOperator.IsDistinctFrom]: 'is distinct from',
+};
+
+const CATEGORY_MAPPING_OP_LABEL: Record<
+  SupplierListingProductCategoryStatusOperator,
+  string
+> = {
+  [SupplierListingProductCategoryStatusOperator.IsExactly]: 'is exactly',
+  [SupplierListingProductCategoryStatusOperator.IsDistinctFrom]:
+    'is distinct from',
 };
 
 const PRICE_OP_LABEL: Record<SupplierListingPriceOperator, string> = {
@@ -87,6 +101,11 @@ export function appliedSupplierListingFilterRows(
         operator = PRICE_OP_LABEL[f.operator];
         operands = f.value;
         break;
+      case 'productCategoryStatus':
+        field = FIELD_LABELS[f.fieldId];
+        operator = CATEGORY_MAPPING_OP_LABEL[f.operator];
+        operands = ProductCategoryMappingDisplayLabel[f.value];
+        break;
       default:
         field = '';
         break;
@@ -102,3 +121,7 @@ export function appliedSupplierListingFilterRows(
 }
 
 export const SUPPLIER_OPTIONS = Object.values(Supplier) as Supplier[];
+
+export const PRODUCT_CATEGORY_MAPPING_OPTIONS = Object.values(
+  ProductCategoryStatus,
+) as ProductCategoryStatus[];

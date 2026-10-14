@@ -4,6 +4,8 @@ export const SupplierListingSortFieldId = {
   SupplierProductId: 'supplierProductId',
   ListedPrice: 'listedPrice',
   CatalogProductName: 'catalogProductName',
+  ProductCategory: 'productCategory',
+  ProductCategoryMapping: 'productCategoryMapping',
 } as const;
 
 export type SupplierListingSortFieldId =

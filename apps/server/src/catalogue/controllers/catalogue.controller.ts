@@ -30,6 +30,7 @@ import {
   linkSupplierListingsBodySchema,
   supplierListingsMappingImportBatchReqSchema,
   unlinkSupplierListingsBodySchema,
+  updateSupplierListingProductCategoryBodySchema,
   type CatalogueBulkDeleteProductsBody,
   type CatalogueManufacturerCreateBody,
   type CatalogueManufacturerUpdateBody,
@@ -39,6 +40,7 @@ import {
   type LinkSupplierListingsBody,
   type SupplierListingsMappingImportBatchReq,
   type UnlinkSupplierListingsBody,
+  type UpdateSupplierListingProductCategoryBody,
 } from '@vetply/shared';
 import type { Response } from 'express';
 import { ZodError } from 'zod';
@@ -162,6 +164,17 @@ export class CatalogueController {
     body: UnlinkSupplierListingsBody,
   ) {
     return this.catalogueProductDetailService.bulkUnlinkSupplierListings(body);
+  }
+
+  @Post('supplier-listings/update-product-category')
+  @HttpCode(HttpStatus.OK)
+  updateSupplierListingProductCategory(
+    @Body(new ZodValidationPipe(updateSupplierListingProductCategoryBodySchema))
+    body: UpdateSupplierListingProductCategoryBody,
+  ) {
+    return this.catalogueSupplierListingListService.updateListingProductCategory(
+      body,
+    );
   }
 
   @Post('products/:productId/listings/:listingId/unlink')

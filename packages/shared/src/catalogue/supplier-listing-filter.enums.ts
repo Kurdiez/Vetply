@@ -4,6 +4,8 @@ export const SupplierListingFilterFieldId = {
   SupplierProductId: 'supplierProductId',
   ListedPrice: 'listedPrice',
   CatalogProductName: 'catalogProductName',
+  ProductCategory: 'productCategory',
+  ProductCategoryMapping: 'productCategoryMapping',
 } as const;
 
 export type SupplierListingFilterFieldId =
@@ -42,3 +44,12 @@ export const SupplierListingSupplierOperator = {
 
 export type SupplierListingSupplierOperator =
   (typeof SupplierListingSupplierOperator)[keyof typeof SupplierListingSupplierOperator];
+
+/** Product-category mapping status (AI mapped / Needs review / Admin mapped). */
+export const SupplierListingProductCategoryStatusOperator = {
+  IsExactly: 'isExactly',
+  IsDistinctFrom: 'isDistinctFrom',
+} as const;
+
+export type SupplierListingProductCategoryStatusOperator =
+  (typeof SupplierListingProductCategoryStatusOperator)[keyof typeof SupplierListingProductCategoryStatusOperator];

@@ -1,7 +1,9 @@
 import {
+  ProductCategoryStatus,
   Supplier,
   SupplierListingFilterFieldId,
   SupplierListingPriceOperator,
+  SupplierListingProductCategoryStatusOperator,
   SupplierListingStringOperator,
   SupplierListingSupplierOperator,
   type SupplierListingFilter,
@@ -20,9 +22,13 @@ export type SupplierListingsFilterDraft = {
     | '';
   supplierOperator: SupplierListingSupplierOperator | '';
   priceOperator: SupplierListingPriceOperator | '';
+  productCategoryStatusOperator:
+    | SupplierListingProductCategoryStatusOperator
+    | '';
   stringSingle: string;
   stringTags: string[];
   supplierSingle: Supplier | '';
+  productCategoryStatusSingle: ProductCategoryStatus | '';
   priceValue: string;
 };
 
@@ -32,9 +38,11 @@ export function createEmptySupplierListingsDraft(): SupplierListingsFilterDraft 
     stringOperator: '',
     supplierOperator: '',
     priceOperator: '',
+    productCategoryStatusOperator: '',
     stringSingle: '',
     stringTags: [],
     supplierSingle: '',
+    productCategoryStatusSingle: '',
     priceValue: '',
   };
 }
@@ -121,6 +129,27 @@ export function validateDraftAndBuildSupplierListingFilter(
     };
   }
 
+  if (fieldId === SupplierListingFilterFieldId.ProductCategoryMapping) {
+    const op =
+      draft.productCategoryStatusOperator ===
+      SupplierListingProductCategoryStatusOperator.IsDistinctFrom
+        ? SupplierListingProductCategoryStatusOperator.IsDistinctFrom
+        : SupplierListingProductCategoryStatusOperator.IsExactly;
+    if (draft.productCategoryStatusSingle === '') {
+      return { ok: false, message: 'Select a category mapping status.' };
+    }
+    const filter: SupplierListingFilter = {
+      kind: 'productCategoryStatus',
+      fieldId: SupplierListingFilterFieldId.ProductCategoryMapping,
+      operator: op,
+      value: draft.productCategoryStatusSingle,
+    };
+    return {
+      ok: true,
+      filter: { ...filter, id: newId() },
+    };
+  }
+
   const stringOps: readonly SupplierListingStringOperator[] = [
     SupplierListingStringOperator.IsExactly,
     SupplierListingStringOperator.IsDistinctFrom,
@@ -144,6 +173,18 @@ export function validateDraftAndBuildSupplierListingFilter(
     };
   }
 
+  const stringFieldId =
+    fieldId === SupplierListingFilterFieldId.SupplierProductId
+      ? SupplierListingFilterFieldId.SupplierProductId
+      : fieldId === SupplierListingFilterFieldId.ProductCategory
+        ? SupplierListingFilterFieldId.ProductCategory
+        : fieldId === SupplierListingFilterFieldId.CatalogProductName
+          ? SupplierListingFilterFieldId.CatalogProductName
+          : null;
+  if (stringFieldId == null) {
+    return { ok: false, message: 'Select a field.' };
+  }
+
   const effectiveOp =
     op && stringOps.includes(op as SupplierListingStringOperator)
       ? op
@@ -159,10 +200,7 @@ export function validateDraftAndBuildSupplierListingFilter(
     }
     const filter: SupplierListingFilter = {
       kind: 'string',
-      fieldId:
-        fieldId === SupplierListingFilterFieldId.SupplierProductId
-          ? SupplierListingFilterFieldId.SupplierProductId
-          : SupplierListingFilterFieldId.CatalogProductName,
+      fieldId: stringFieldId,
       operator: effectiveOp as SupplierListingStringOperator,
       value: tags,
     };
@@ -178,10 +216,7 @@ export function validateDraftAndBuildSupplierListingFilter(
   }
   const filter: SupplierListingFilter = {
     kind: 'string',
-    fieldId:
-      fieldId === SupplierListingFilterFieldId.SupplierProductId
-        ? SupplierListingFilterFieldId.SupplierProductId
-        : SupplierListingFilterFieldId.CatalogProductName,
+    fieldId: stringFieldId,
     operator: effectiveOp as SupplierListingStringOperator,
     value: single,
   };

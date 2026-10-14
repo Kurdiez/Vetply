@@ -13,6 +13,7 @@ import {
   linkSupplierListingsResSchema,
   supplierListingsMappingImportBatchResSchema,
   unlinkSupplierListingsResSchema,
+  updateSupplierListingProductCategoryResSchema,
   type CatalogueBulkDeleteProductsBody,
   type CatalogueBulkDeleteProductsRes,
   type CatalogueProductDetail,
@@ -35,6 +36,8 @@ import {
   type SupplierListingsMappingImportBatchRes,
   type UnlinkSupplierListingsBody,
   type UnlinkSupplierListingsRes,
+  type UpdateSupplierListingProductCategoryBody,
+  type UpdateSupplierListingProductCategoryRes,
   Supplier,
 } from '@vetply/shared';
 import { vetplyApiClient } from './http-client';
@@ -241,6 +244,16 @@ export async function postBulkUnlinkSupplierListings(
     body,
   );
   return unlinkSupplierListingsResSchema.parse(data);
+}
+
+export async function postUpdateSupplierListingProductCategory(
+  body: UpdateSupplierListingProductCategoryBody,
+): Promise<UpdateSupplierListingProductCategoryRes> {
+  const { data } = await vetplyApiClient.post<unknown>(
+    '/admin/catalogue/supplier-listings/update-product-category',
+    body,
+  );
+  return updateSupplierListingProductCategoryResSchema.parse(data);
 }
 
 export async function postUnlinkCatalogueSupplierListing(

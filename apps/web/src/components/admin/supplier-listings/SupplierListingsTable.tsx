@@ -5,11 +5,13 @@ import {
   DataTable,
   type DataTableColumn,
 } from '@/components/ui/data-table/DataTable';
+import { CatalogueProductThumbnail } from '@/components/admin/catalogue/CatalogueProductThumbnail';
 import {
   SupplierListingSortFieldId,
+  formatProductCategoryPathDisplay,
+  productCategoryMappingDisplayLabel,
   type CatalogueSupplierListingListItem,
 } from '@vetply/shared';
-import { CatalogueProductThumbnail } from '@/components/admin/catalogue/CatalogueProductThumbnail';
 import type { SupplierListingSortState } from './supplier-listing-sort';
 
 type SupplierListingsViewStatus = 'idle' | 'loading' | 'ready' | 'error';
@@ -22,6 +24,8 @@ const SORTABLE_COLUMN_IDS = [
   SupplierListingSortFieldId.SupplierProductId,
   SupplierListingSortFieldId.ListedPrice,
   SupplierListingSortFieldId.CatalogProductName,
+  SupplierListingSortFieldId.ProductCategory,
+  SupplierListingSortFieldId.ProductCategoryMapping,
 ];
 
 const COLUMNS: DataTableColumn[] = [
@@ -38,6 +42,11 @@ const COLUMNS: DataTableColumn[] = [
     id: SupplierListingSortFieldId.CatalogProductName,
     header: 'Catalogue product',
   },
+  { id: SupplierListingSortFieldId.ProductCategory, header: 'Category' },
+  {
+    id: SupplierListingSortFieldId.ProductCategoryMapping,
+    header: 'Category mapping',
+  },
 ];
 
 function formatPriceCell(value: string | null): string {
@@ -45,6 +54,13 @@ function formatPriceCell(value: string | null): string {
     return '—';
   }
   return value;
+}
+
+function formatCategoryCell(path: string | null): string {
+  if (path == null || path.trim() === '') {
+    return '—';
+  }
+  return formatProductCategoryPathDisplay(path);
 }
 
 export type SupplierListingsTableProps = {
@@ -55,6 +71,7 @@ export type SupplierListingsTableProps = {
   toggleSortColumn: (fieldId: SupplierListingSortColumnId) => void;
   toggleListingSelection: (listingId: string) => void;
   isListingSelected: (listingId: string) => boolean;
+  openQuickEdit: (listing: CatalogueSupplierListingListItem) => void;
 };
 
 export function SupplierListingsTable({
@@ -65,6 +82,7 @@ export function SupplierListingsTable({
   toggleSortColumn,
   toggleListingSelection,
   isListingSelected,
+  openQuickEdit,
 }: SupplierListingsTableProps) {
   if (status === 'loading' && items.length === 0) {
     return (
@@ -106,6 +124,7 @@ export function SupplierListingsTable({
       onSortColumnClick={(columnId) =>
         toggleSortColumn(columnId as SupplierListingSortColumnId)
       }
+      onRowClick={(row) => openQuickEdit(row)}
       getRowKey={(row) => row.id}
       getRowClassName={(row) =>
         isListingSelected(row.id) ? 'bg-primary-500/15' : undefined
@@ -152,12 +171,13 @@ export function SupplierListingsTable({
         if (columnId === SupplierListingSortFieldId.CatalogProductName) {
           return row.catalogProductName ?? '—';
         }
-        const k = columnId as keyof CatalogueSupplierListingListItem;
-        const v = row[k];
-        if (v === null || v === undefined) {
-          return '—';
+        if (columnId === SupplierListingSortFieldId.ProductCategory) {
+          return formatCategoryCell(row.productCategory);
         }
-        return typeof v === 'string' ? v : '';
+        if (columnId === SupplierListingSortFieldId.ProductCategoryMapping) {
+          return productCategoryMappingDisplayLabel(row.productCategoryStatus);
+        }
+        return '—';
       }}
     />
   );

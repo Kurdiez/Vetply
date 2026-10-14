@@ -1,10 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   CatalogueSupplierListingListItem,
   CatalogueSupplierListingsListRes,
   CatalogueSupplierListingsQuery,
+  ProductCategoryStatus,
+  UpdateSupplierListingProductCategoryBody,
+  UpdateSupplierListingProductCategoryRes,
   catalogueSupplierListingsListResSchema,
+  isProductCategoryLeafPath,
+  updateSupplierListingProductCategoryResSchema,
 } from '@vetply/shared';
 import { Repository } from 'typeorm';
 import { zodResTransform } from '~/commons/validations';
@@ -39,15 +48,9 @@ export class CatalogueSupplierListingListService {
       .take(pageSize)
       .getManyAndCount();
 
-    const items: CatalogueSupplierListingListItem[] = entities.map((l) => ({
-      id: l.id,
-      name: l.name,
-      supplierName: l.supplier.name,
-      supplierProductId: l.supplierProductId,
-      listedPrice: l.listedPrice != null ? String(l.listedPrice) : null,
-      catalogProductName: l.product?.name ?? null,
-      thumbnailImage: l.product?.image ?? null,
-    }));
+    const items: CatalogueSupplierListingListItem[] = entities.map((l) =>
+      this.toListItem(l),
+    );
 
     const payload = {
       items,
@@ -59,5 +62,57 @@ export class CatalogueSupplierListingListService {
       zodResTransform(payload, catalogueSupplierListingsListResSchema) ??
       payload
     );
+  }
+
+  async updateListingProductCategory(
+    body: UpdateSupplierListingProductCategoryBody,
+  ): Promise<UpdateSupplierListingProductCategoryRes> {
+    this.assertValidProductCategoryPath(body.productCategory);
+
+    const listing = await this.listingRepository.findOne({
+      where: { id: body.listingId },
+    });
+    if (listing == null) {
+      throw new NotFoundException('Supplier listing not found');
+    }
+
+    listing.productCategory = body.productCategory;
+    listing.productCategoryStatus = ProductCategoryStatus.Reviewed;
+    await this.listingRepository.save(listing);
+
+    const payload = {
+      id: listing.id,
+      productCategory: listing.productCategory,
+      productCategoryStatus: ProductCategoryStatus.Reviewed,
+    };
+    return (
+      zodResTransform(payload, updateSupplierListingProductCategoryResSchema) ??
+      payload
+    );
+  }
+
+  private assertValidProductCategoryPath(path: string): void {
+    if (!isProductCategoryLeafPath(path)) {
+      throw new BadRequestException({
+        failReason: 'INVALID_PRODUCT_CATEGORY_PATH',
+      });
+    }
+  }
+
+  private toListItem(
+    listing: CatalogueProductSupplierListingEntity,
+  ): CatalogueSupplierListingListItem {
+    return {
+      id: listing.id,
+      name: listing.name,
+      supplierName: listing.supplier.name,
+      supplierProductId: listing.supplierProductId,
+      listedPrice:
+        listing.listedPrice != null ? String(listing.listedPrice) : null,
+      catalogProductName: listing.product?.name ?? null,
+      thumbnailImage: listing.product?.image ?? null,
+      productCategory: listing.productCategory,
+      productCategoryStatus: listing.productCategoryStatus,
+    };
   }
 }

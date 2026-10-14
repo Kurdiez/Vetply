@@ -5,6 +5,7 @@ import { AdminListStack } from '@/components/admin/list/AdminListStack';
 import { Button } from '@/components/ui/Button';
 import { routes } from '@/constants/routes';
 import { LinkSupplierListingsToCatalogueProductModal } from './LinkSupplierListingsToCatalogueProductModal';
+import { SupplierListingQuickEditModal } from './SupplierListingQuickEditModal';
 import { SupplierListingsFiltersSection } from './SupplierListingsFiltersSection';
 import { SupplierListingsPagination } from './SupplierListingsPagination';
 import { SupplierListingsSearch } from './SupplierListingsSearch';
@@ -69,6 +70,7 @@ function SupplierListingsViewPageBody() {
             toggleSortColumn={s.toggleSortColumn}
             toggleListingSelection={s.toggleListingSelection}
             isListingSelected={s.isListingSelected}
+            openQuickEdit={s.openQuickEdit}
           />
           <SupplierListingsPagination
             page={s.page}
@@ -85,6 +87,12 @@ function SupplierListingsViewPageBody() {
         searchCatalogueProductsForPicker={s.searchCatalogueProductsForPicker}
         linkSelectedListingsToProduct={s.linkSelectedListingsToProduct}
         selectedListingCount={s.selectedListingCount}
+      />
+      <SupplierListingQuickEditModal
+        open={s.quickEditOpen}
+        listing={s.quickEditListing}
+        onClose={s.closeQuickEdit}
+        saveProductCategory={s.saveListingProductCategory}
       />
     </>
   );

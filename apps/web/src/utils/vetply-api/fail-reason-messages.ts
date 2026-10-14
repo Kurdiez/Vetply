@@ -7,6 +7,8 @@ const FAIL_REASON_MESSAGES: Record<VetplyFailReason, string> = {
   DUPLICATE_CATALOGUE_PRODUCT_MAPPING:
     'Multiple listings map to the same catalogue product. Only one listing per supplier can use each product ID.',
   DUPLICATE_MANUFACTURER_NAME: 'A manufacturer with this name already exists.',
+  INVALID_PRODUCT_CATEGORY_PATH:
+    'Choose a valid product category from the list.',
   INSIGHTS_AI_NOT_CONFIGURED:
     'AI Insights is not configured. Ask an admin to set OPENAI_API_KEY.',
   INSIGHTS_CHAT_EMPTY_MESSAGES: 'Send at least one chat message.',
