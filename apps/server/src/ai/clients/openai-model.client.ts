@@ -57,6 +57,39 @@ export class OpenAiModelClient implements AiModelClient {
     };
   }
 
+  /** Responses API with hosted web_search + strict JSON schema output. */
+  async completeJsonWithWebSearch(request: {
+    systemPrompt: string;
+    userPrompt: string;
+    schemaName: string;
+    schema: Record<string, unknown>;
+  }): Promise<string> {
+    this.assertApiKeyConfigured();
+
+    const response = await this.client.responses.create({
+      model: this.model,
+      tools: [{ type: 'web_search' }],
+      input: [
+        { role: 'system', content: request.systemPrompt },
+        { role: 'user', content: request.userPrompt },
+      ],
+      text: {
+        format: {
+          type: 'json_schema',
+          name: request.schemaName,
+          strict: true,
+          schema: request.schema,
+        },
+      },
+    });
+
+    const content = response.output_text?.trim() ?? '';
+    if (content === '') {
+      throw new Error('OpenAI Responses API returned empty output_text');
+    }
+    return content;
+  }
+
   private assertApiKeyConfigured(): void {
     const apiKey = this.configService.get('OPENAI_API_KEY');
     if (!apiKey) {

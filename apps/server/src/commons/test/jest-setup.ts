@@ -25,6 +25,25 @@ async function applyMigrationsToTestDbOnce() {
   await ds.query(
     `ALTER TABLE "catalogue_products" ADD COLUMN IF NOT EXISTS "image" character varying(2048)`,
   );
+  // Keep in sync with CatalogueProductSupplierListingEntity until a tracked migration adds them.
+  await ds.query(`
+    DO $$ BEGIN
+      CREATE TYPE "catalogue_product_supplier_listings_product_category_status_enum"
+        AS ENUM ('confident', 'needs_review', 'reviewed');
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END $$;
+  `);
+  await ds.query(`
+    ALTER TABLE "catalogue_product_supplier_listings"
+      ADD COLUMN IF NOT EXISTS "product_category" character varying(512),
+      ADD COLUMN IF NOT EXISTS "product_category_status"
+        "catalogue_product_supplier_listings_product_category_status_enum"
+  `);
+  await ds.query(`
+    CREATE INDEX IF NOT EXISTS
+      "IDX_catalogue_product_supplier_listings_product_category_status"
+      ON "catalogue_product_supplier_listings" ("product_category_status")
+  `);
   await ds.destroy();
 }
 

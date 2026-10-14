@@ -1,7 +1,9 @@
+import { ProductCategoryStatus } from '@vetply/shared';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -19,6 +21,9 @@ import { CatalogueSupplierEntity } from './catalogue-supplier.entity';
 @Unique('UQ_catalogue_product_supplier_listings_product_supplier', [
   'productId',
   'supplierId',
+])
+@Index('IDX_catalogue_product_supplier_listings_product_category_status', [
+  'productCategoryStatus',
 ])
 export class CatalogueProductSupplierListingEntity {
   @PrimaryGeneratedColumn('uuid', { name: 'id' })
@@ -57,6 +62,23 @@ export class CatalogueProductSupplierListingEntity {
     nullable: true,
   })
   listedPrice!: string | null;
+
+  /** Dot path into ProductCategory, e.g. consumables.anaesthesia.adaptors */
+  @Column({
+    name: 'product_category',
+    type: 'varchar',
+    length: 512,
+    nullable: true,
+  })
+  productCategory!: string | null;
+
+  @Column({
+    name: 'product_category_status',
+    type: 'enum',
+    enum: ProductCategoryStatus,
+    nullable: true,
+  })
+  productCategoryStatus!: ProductCategoryStatus | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

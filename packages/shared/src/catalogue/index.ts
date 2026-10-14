@@ -5,6 +5,8 @@ export * from './enums';
 export * from './nvs-all-products-line';
 export * from './nvs-supplier-product-id';
 export * from './product-category';
+export * from './product-category-leaves';
+export * from './product-category-status';
 export * from './strip-trailing-unit-quantity-from-product-name';
 export * from './supplier';
 export * from './supplier-listing-filter.enums';

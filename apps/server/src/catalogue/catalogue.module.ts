@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AiModule } from '~/ai';
 import { DatabaseModule } from '~/database/database.module';
 import { CatalogueManufacturerEntity } from '~/database/entities/catalogue/catalogue-manufacturer.entity';
 import { CatalogueProductEntity } from '~/database/entities/catalogue/catalogue-product.entity';
@@ -17,10 +18,12 @@ import { CatalogueProductListService } from './services/catalogue-product-list.s
 import { CatalogueProductsCsvImportService } from './services/catalogue-products-csv-import.service';
 import { CatalogueSupplierListingListService } from './services/catalogue-supplier-listing-list.service';
 import { CatalogueSupplierListingsMappingImportService } from './services/catalogue-supplier-listings-mapping-import.service';
+import { SupplierListingProductCategoryClassifyService } from './services/supplier-listing-product-category-classify.service';
 
 @Module({
   imports: [
     DatabaseModule,
+    AiModule,
     TypeOrmModule.forFeature([
       UserEntity,
       CatalogueProductEntity,
@@ -40,6 +43,7 @@ import { CatalogueSupplierListingsMappingImportService } from './services/catalo
     CatalogueProductDetailService,
     CatalogueProductsCsvImportService,
     CatalogueSupplierListingsMappingImportService,
+    SupplierListingProductCategoryClassifyService,
     SuperUserGuard,
   ],
   exports: [
@@ -47,6 +51,7 @@ import { CatalogueSupplierListingsMappingImportService } from './services/catalo
     CatalogueProductDetailService,
     CatalogueSupplierListingListService,
     CatalogueManufacturerService,
+    SupplierListingProductCategoryClassifyService,
   ],
 })
 export class CatalogueModule {}

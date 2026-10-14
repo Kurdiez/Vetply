@@ -14,6 +14,6 @@ import { AiAgentRunnerService } from './services/ai-agent-runner.service';
     },
     AiAgentRunnerService,
   ],
-  exports: [AI_MODEL_CLIENT, AiAgentRunnerService],
+  exports: [AI_MODEL_CLIENT, AiAgentRunnerService, OpenAiModelClient],
 })
 export class AiModule {}
